@@ -1653,7 +1653,7 @@ async function callClaude(messages){
     r=await fetch('https://nutricoach-proxypalomapaltreworkersdev.palomapaltre.workers.dev',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-3-5-sonnet-20241022',max_tokens:1800,messages,_key:getApiKey()})
+      body:JSON.stringify({model:'claude-opus-4-5',max_tokens:1800,messages,_key:getApiKey()})
     });
   }catch(err){
     // Network-level failure: CORS, no internet, firewall, etc.
