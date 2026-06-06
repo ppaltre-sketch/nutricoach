@@ -1,0 +1,19 @@
+{
+  "name": "NutriCoach",
+  "short_name": "NutriCoach",
+  "description": "Tu coach personal de nutrición y entrenamiento",
+  "start_url": "/nutricoach/",
+  "scope": "/nutricoach/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

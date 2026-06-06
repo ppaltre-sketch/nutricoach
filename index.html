@@ -4,7 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NutriCoach" />
   <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.svg" />
   <title>NutriCoach</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -845,7 +849,13 @@ const getMeals = () => JSON.parse(localStorage.getItem('meals_'+dk())||'[]');
 const saveMeals = m => localStorage.setItem('meals_'+dk(), JSON.stringify(m));
 const getApiKey = () => localStorage.getItem('anthropic_key')||'';
 const getProfile = () => JSON.parse(localStorage.getItem('nc_profile')||'{"peso":90,"altura":174,"edad":37,"sexo":"mujer","actividad":"bajo"}');
-const getGoals = () => JSON.parse(localStorage.getItem('nc_goals')||'{"p":120,"c":150,"f":55}');
+const getGoalsBase = () => JSON.parse(localStorage.getItem('nc_goals')||'{"p":120,"c":150,"f":55}');
+function getGoals(){
+  const base=getGoalsBase();
+  const boost=getMacroBoost();
+  if(!boost)return base;
+  return{p:Math.round(base.p*(1+boost.p/100)),c:Math.round(base.c*(1+boost.c/100)),f:base.f};
+}
 const getWater = () => parseInt(localStorage.getItem('water_'+dk())||'0');
 const setWater = n => localStorage.setItem('water_'+dk(), n);
 const getLastWorkout = () => localStorage.getItem('last_workout')||'';
@@ -858,6 +868,8 @@ const getMeasures = () => JSON.parse(localStorage.getItem('nc_measures')||'[]');
 const saveMeasures = m => localStorage.setItem('nc_measures', JSON.stringify(m));
 const getActivity = (d=dk()) => JSON.parse(localStorage.getItem('nc_activity_'+d)||'{"pasos":0,"actividades":[]}');
 const saveActivity = (a,d=dk()) => localStorage.setItem('nc_activity_'+d, JSON.stringify(a));
+const getMacroBoost = () => JSON.parse(localStorage.getItem('nc_macro_boost_'+dk())||'null');
+const saveMacroBoost = b => localStorage.setItem('nc_macro_boost_'+dk(), JSON.stringify(b));
 
 function getAllPastMeals(){
   const all=[], today=dk();
@@ -889,7 +901,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('cfg-edad').value=p.edad;
   document.getElementById('cfg-sexo').value=p.sexo;
   document.getElementById('cfg-actividad').value=p.actividad;
-  const g=getGoals();
+  const g=getGoalsBase();
   document.getElementById('cfg-goal-p').value=g.p;
   document.getElementById('cfg-goal-c').value=g.c;
   document.getElementById('cfg-goal-f').value=g.f;
@@ -1056,6 +1068,8 @@ function renderHome(){
     if(C>goals.c*1.2) msgs.push(`<div class="status-strip warn">⚠️ Carbohidratos altos hoy — cena sin féculas o muy poca cantidad</div>`);
     if(F>goals.f*1.2) msgs.push(`<div class="status-strip warn">⚠️ Grasa alta hoy — cena muy ligera en grasas</div>`);
     if(msgs.length===0&&meals.length>=2&&energyStatus==='ok') msgs.push(`<div class="status-strip ok">✓ Macros equilibrados hoy — vas muy bien</div>`);
+  const boost=getMacroBoost();
+  if(boost) msgs.unshift(`<div class="status-strip ok">⚡ Macros de hoy ajustados por tu entreno (+${boost.p}% proteína, +${boost.c}% carbos) — ¡come bien para recuperarte!</div>`);
   }
   document.getElementById('status-messages').innerHTML=msgs.join('');
 
@@ -2081,6 +2095,51 @@ function logActivity(){
   saveActivity(act);
   document.getElementById('act-duracion').value='';
   renderActivityToday();showToast('✓ Actividad registrada');
+  // Offer macro boost for intense/long workouts
+  const esIntensa=intensidad==='intensa'||(intensidad==='moderada'&&duracion>=45);
+  if(esIntensa&&!getMacroBoost()){
+    setTimeout(()=>offerMacroBoost(tipo,duracion,intensidad),300);
+  }
+}
+
+function offerMacroBoost(tipo,duracion,intensidad){
+  const base=getGoalsBase();
+  // Calculate boost: intense → +20% protein +15% carbs; moderate long → +10% protein +10% carbs
+  const pBoost=intensidad==='intensa'?20:10;
+  const cBoost=intensidad==='intensa'?15:10;
+  const newP=Math.round(base.p*(1+pBoost/100));
+  const newC=Math.round(base.c*(1+cBoost/100));
+  // Show boost offer as status strip in activity section
+  const boostEl=document.createElement('div');
+  boostEl.id='macro-boost-offer';
+  boostEl.innerHTML=`
+    <div class="status-strip ok" style="flex-direction:column;gap:10px;margin-top:10px;">
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <span>⚡</span>
+        <div>
+          <strong style="color:var(--green)">Entreno ${intensidad} de ${duracion} min</strong> — tu cuerpo necesita más combustible para recuperarse.<br>
+          <span style="font-size:0.75rem;">¿Ajusto los macros de hoy? Proteína ${base.p}g → <strong>${newP}g</strong> · Carbos ${base.c}g → <strong>${newC}g</strong></span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="applyMacroBoost(${pBoost},${cBoost})" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--green);color:#0f172a;font-weight:700;cursor:pointer;font-size:0.82rem;">Sí, ajustar macros</button>
+        <button onclick="document.getElementById('macro-boost-offer').remove()" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--surface2);color:var(--muted);font-weight:600;cursor:pointer;font-size:0.82rem;">No, mantener</button>
+      </div>
+    </div>`;
+  document.getElementById('activity-list-today').after(boostEl);
+}
+
+function applyMacroBoost(pBoost,cBoost){
+  saveMacroBoost({p:pBoost,c:cBoost,applied:new Date().toISOString()});
+  const b=document.getElementById('macro-boost-offer');
+  if(b)b.remove();
+  showToast('⚡ Macros ajustados para recuperación');
+  renderHome();renderCenaRemaining();renderAlmuerzoRemaining();
+  // Show confirmation
+  const conf=document.createElement('div');
+  conf.innerHTML=`<div class="status-strip ok" style="margin-top:10px;">⚡ Macros de hoy ajustados por tu entreno. La IA de cena/almuerzo también lo tendrá en cuenta.</div>`;
+  document.getElementById('activity-list-today').after(conf);
+  setTimeout(()=>conf.remove(),4000);
 }
 
 function deleteActivity(idx){
@@ -2171,6 +2230,13 @@ function renderWeeklySummary(){
 }
 
 // ═══════════════ UTILS ═══════════════
+// ═══════════════ SERVICE WORKER ═══════════════
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
 function fileToBase64(f){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.onerror=j;fr.readAsDataURL(f);});}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function showToast(msg){
