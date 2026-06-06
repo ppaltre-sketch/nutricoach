@@ -509,8 +509,8 @@
         <div class="card">
           <div class="card-title">🤖 Sugerencia de almuerzo</div>
           <div class="form-group">
-            <label>Preferencias (opcional)</label>
-            <input type="text" id="almuerzo-prefs" placeholder="Ej: rápido, sin gluten, Wetaca..." />
+            <label>¿Qué tienes disponible? (opcional)</label>
+            <input type="text" id="almuerzo-prefs" placeholder="Ej: pollo y arroz en casa, voy al Mercadona, pido delivery, tupper Wetaca de salmón..." />
           </div>
           <button class="btn btn-primary" onclick="getAlmuerzoSuggestion()" id="almuerzo-btn">Sugerir mi almuerzo</button>
         </div>
@@ -522,8 +522,8 @@
         <div class="card">
           <div class="card-title">🤖 Sugerencia de cena</div>
           <div class="form-group">
-            <label>Preferencias o restricciones (opcional)</label>
-            <input type="text" id="cena-prefs" placeholder="Ej: algo ligero, sin gluten, rápido..." />
+            <label>¿Qué tienes disponible? (opcional)</label>
+            <input type="text" id="cena-prefs" placeholder="Ej: huevos y verduras en casa, pido Glovo, paso por Carrefour, quiero algo rápido..." />
           </div>
           <button class="btn btn-primary" onclick="getCenaSuggestion()" id="cena-btn">Sugerir mi cena de hoy</button>
         </div>
@@ -1426,7 +1426,7 @@ COMIDO HOY: ${meals.length===0?'Nada':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g
 MACROS ACUMULADOS: P${P}g C${C}g G${F}g
 OBJETIVOS DIARIOS: P${goals.p}g C${goals.c}g G${goals.f}g
 MACROS QUE FALTAN (adapta la cena a esto exactamente): P${rP}g C${rC}g G${rF}g
-${prefs?'PREFERENCIAS: '+prefs:''}
+${prefs?'DISPONIBILIDAD/CONTEXTO: '+prefs+'\n→ Adapta la sugerencia EXACTAMENTE a esto (si menciona ingredientes úsalos, si es delivery indica qué pedir y dónde, si es supermercado qué comprar).':''}
 
 Propón UNA cena que cubra exactamente los macros que faltan. Usa esta estructura:
 
@@ -2037,7 +2037,7 @@ Paciente: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm.
 Comido hoy (desayuno/snack): ${meals.length===0?'Nada todavía':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g G${m.f}g`).join(' | ')}
 Macros disponibles para el RESTO del día: P${rP}g C${rC}g G${rF}g
 TARGET para el ALMUERZO (dejando margen para cena): P${tP}g C${tC}g G${tF}g
-${prefs?'Preferencias: '+prefs:''}
+${prefs?'Disponibilidad/contexto: '+prefs+'\n→ Adapta la sugerencia EXACTAMENTE a esto (si tiene ingredientes concretos úsalos, si es delivery sugiere qué pedir y dónde, si es supermercado qué comprar).':''}
 
 Sugiere UN almuerzo completo y saciante para este target. Usa estructura:
 
