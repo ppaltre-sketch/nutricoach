@@ -247,7 +247,8 @@
     <!-- ═══ ADD ═══ -->
     <div class="page" id="page-add">
       <div class="add-mode-tabs">
-        <div class="add-mode-tab active" id="tab-scan" onclick="setAddMode('scan')">📸 Foto etiqueta</div>
+        <div class="add-mode-tab active" id="tab-scan" onclick="setAddMode('scan')">📸 Foto Wetaca</div>
+        <div class="add-mode-tab" id="tab-ingredientes" onclick="setAddMode('ingredientes')">🥗 Ingredientes</div>
         <div class="add-mode-tab" id="tab-manual" onclick="setAddMode('manual')">✏️ Manual</div>
       </div>
 
@@ -299,6 +300,50 @@
               </div>
             </div>
             <button class="btn btn-primary" onclick="addMeal('scan')">Guardar comida</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- INGREDIENTES MODE -->
+      <div id="add-ingredientes-mode" style="display:none">
+        <div class="card">
+          <div class="card-title">🥗 ¿Qué has comido?</div>
+          <div class="form-group">
+            <label>Escribe los ingredientes con cantidades</label>
+            <textarea id="ing-texto" rows="4" placeholder="Ej: 200g pechuga de pollo a la plancha, 150g arroz blanco cocido, ensalada con tomate y pepino, 1 cucharada aceite de oliva..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:0.9rem;outline:none;resize:vertical;font-family:inherit;transition:border-color .15s;"></textarea>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Cuanto más detallado, más preciso. Puedes poner gramos, piezas, cucharadas...</div>
+          </div>
+          <div class="form-group">
+            <label>Nombre del plato (opcional)</label>
+            <input type="text" id="ing-nombre" placeholder="Se genera automáticamente si lo dejas vacío" />
+          </div>
+          <div class="form-group">
+            <label>Tipo de comida</label>
+            <div class="type-chips" id="ing-type-chips"></div>
+          </div>
+          <button class="btn btn-primary" onclick="calcularMacrosIA()" id="ing-btn">Calcular macros con IA</button>
+        </div>
+
+        <div id="ing-resultado" style="display:none">
+          <div class="card">
+            <div class="card-title">Macros calculados — confirma y guarda</div>
+            <div id="ing-resultado-inner"></div>
+            <div class="macros-row" style="margin:14px 0 13px;">
+              <div class="macro-input-wrap p">
+                <div class="macro-input-lbl" style="color:var(--green)">Proteína g</div>
+                <input type="number" id="ing-meal-p" min="0" />
+              </div>
+              <div class="macro-input-wrap c">
+                <div class="macro-input-lbl" style="color:var(--accent)">Carbos g</div>
+                <input type="number" id="ing-meal-c" min="0" />
+              </div>
+              <div class="macro-input-wrap f">
+                <div class="macro-input-lbl" style="color:var(--orange)">Grasa g</div>
+                <input type="number" id="ing-meal-f" min="0" />
+              </div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">Puedes ajustar los valores si algo no cuadra</div>
+            <button class="btn btn-primary" onclick="addMeal('ingredientes')">Guardar comida</button>
           </div>
         </div>
       </div>
@@ -820,9 +865,12 @@ function deleteMeal(i){
 // ═══════════════ ADD ═══════════════
 function setAddMode(mode){
   document.getElementById('add-scan-mode').style.display=mode==='scan'?'block':'none';
+  document.getElementById('add-ingredientes-mode').style.display=mode==='ingredientes'?'block':'none';
   document.getElementById('add-manual-mode').style.display=mode==='manual'?'block':'none';
   document.getElementById('tab-scan').classList.toggle('active',mode==='scan');
+  document.getElementById('tab-ingredientes').classList.toggle('active',mode==='ingredientes');
   document.getElementById('tab-manual').classList.toggle('active',mode==='manual');
+  if(mode==='ingredientes') renderTypeChips('ing-type-chips','ing');
 }
 function renderTypeChips(id,prefix){
   const def=guessCurrentMealType();
@@ -838,26 +886,99 @@ function getSelectedType(prefix){
   return el?el.dataset.val:guessCurrentMealType();
 }
 function addMeal(mode){
-  const pre=mode==='scan'?'s':'m';
-  const name=document.getElementById(`${pre}-meal-name`).value.trim();
-  if(!name){showToast('Escribe el nombre del plato');return;}
-  const meal={name,type:getSelectedType(pre),
-    p:parseFloat(document.getElementById(`${pre}-meal-p`).value)||0,
-    c:parseFloat(document.getElementById(`${pre}-meal-c`).value)||0,
-    f:parseFloat(document.getElementById(`${pre}-meal-f`).value)||0,
-    time:new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})};
-  const m=getMeals();m.push(meal);saveMeals(m);
-  [`${pre}-meal-name`,`${pre}-meal-p`,`${pre}-meal-c`,`${pre}-meal-f`].forEach(id=>document.getElementById(id).value='');
-  if(mode==='scan'){
-    document.getElementById('photo-preview-img').style.display='none';
-    document.getElementById('scanned-result').style.display='none';
-    document.getElementById('scan-form').style.display='none';
-    document.getElementById('photo-zone').style.display='block';
-    scannedMacros=null;
+  let name,type,p,c,f;
+
+  if(mode==='ingredientes'){
+    name=document.getElementById('ing-nombre').value.trim()||document.getElementById('ing-nombre').getAttribute('data-generated')||'Comida';
+    type=getSelectedType('ing');
+    p=parseFloat(document.getElementById('ing-meal-p').value)||0;
+    c=parseFloat(document.getElementById('ing-meal-c').value)||0;
+    f=parseFloat(document.getElementById('ing-meal-f').value)||0;
+    // reset
+    document.getElementById('ing-texto').value='';
+    document.getElementById('ing-nombre').value='';
+    document.getElementById('ing-resultado').style.display='none';
+    renderTypeChips('ing-type-chips','ing');
+  } else {
+    const pre=mode==='scan'?'s':'m';
+    name=document.getElementById(`${pre}-meal-name`).value.trim();
+    if(!name){showToast('Escribe el nombre del plato');return;}
+    type=getSelectedType(pre);
+    p=parseFloat(document.getElementById(`${pre}-meal-p`).value)||0;
+    c=parseFloat(document.getElementById(`${pre}-meal-c`).value)||0;
+    f=parseFloat(document.getElementById(`${pre}-meal-f`).value)||0;
+    [`${pre}-meal-name`,`${pre}-meal-p`,`${pre}-meal-c`,`${pre}-meal-f`].forEach(id=>document.getElementById(id).value='');
+    if(mode==='scan'){
+      document.getElementById('photo-preview-img').style.display='none';
+      document.getElementById('scanned-result').style.display='none';
+      document.getElementById('scan-form').style.display='none';
+      document.getElementById('photo-zone').style.display='block';
+      scannedMacros=null;
+    }
+    renderTypeChips(`${pre}-type-chips`,pre);
   }
-  renderTypeChips(`${pre}-type-chips`,pre);
+
+  const meal={name,type,p,c,f,time:new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})};
+  const m=getMeals();m.push(meal);saveMeals(m);
   showToast('✓ Comida guardada');
   showPage('home');
+}
+
+// ═══════════════ CALCULAR MACROS IA ═══════════════
+async function calcularMacrosIA(){
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  const texto=document.getElementById('ing-texto').value.trim();
+  if(!texto){showToast('Escribe los ingredientes primero');return;}
+
+  const btn=document.getElementById('ing-btn');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Calculando macros...';
+
+  const prompt=`Eres nutricionista experta. Calcula los macros de esta comida con la mayor precisión posible usando valores nutricionales estándar por 100g.
+
+INGREDIENTES: ${texto}
+
+Responde SOLO en este JSON exacto, sin texto adicional:
+{"nombre":"nombre corto del plato","proteinas":0,"carbohidratos":0,"grasas":0,"desglose":[{"ingrediente":"nombre","p":0,"c":0,"f":0}]}
+
+Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima razonablemente. Redondea a 1 decimal.`;
+
+  try{
+    const res=await callClaude([{role:'user',content:prompt}]);
+    const json=JSON.parse(res.match(/\{[\s\S]*\}/)?.[0]||'{}');
+
+    const nombreGenerado=json.nombre||'Comida';
+    document.getElementById('ing-nombre').setAttribute('data-generated',nombreGenerado);
+    if(!document.getElementById('ing-nombre').value)
+      document.getElementById('ing-nombre').placeholder=nombreGenerado;
+
+    document.getElementById('ing-meal-p').value=json.proteinas??0;
+    document.getElementById('ing-meal-c').value=json.carbohidratos??0;
+    document.getElementById('ing-meal-f').value=json.grasas??0;
+
+    // Desglose visual
+    const desglose=json.desglose||[];
+    const desgloseHtml=desglose.length>0?`
+      <div style="margin-bottom:10px;">
+        <div style="font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Desglose por ingrediente</div>
+        ${desglose.map(d=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.8rem;">
+            <span style="color:var(--text);flex:1">${esc(d.ingrediente)}</span>
+            <span style="display:flex;gap:8px;">
+              <span style="color:var(--green)">P${d.p}g</span>
+              <span style="color:var(--accent)">C${d.c}g</span>
+              <span style="color:var(--orange)">G${d.f}g</span>
+            </span>
+          </div>`).join('')}
+      </div>`:'';
+
+    document.getElementById('ing-resultado-inner').innerHTML=desgloseHtml;
+    document.getElementById('ing-resultado').style.display='block';
+    setTimeout(()=>document.getElementById('ing-resultado').scrollIntoView({behavior:'smooth',block:'start'}),100);
+
+  }catch(e){
+    showToast('Error al calcular: '+e.message);
+  }
+  btn.disabled=false;btn.innerHTML='Calcular macros con IA';
 }
 
 // ═══════════════ PHOTO ═══════════════
