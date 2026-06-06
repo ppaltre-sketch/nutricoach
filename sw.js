@@ -1,5 +1,5 @@
-const CACHE = 'nutricoach-v7';
-const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
+const CACHE = 'nutricoach-v8';
+const ASSETS = ['./manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
@@ -14,15 +14,20 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Only cache same-origin GET requests (skip API calls to anthropic)
-  if (e.request.method !== 'GET' || e.request.url.includes('anthropic.com')) return;
+  // HTML siempre de la red (nunca caché)
+  if (e.request.destination === 'document') {
+    e.respondWith(fetch(e.request).catch(() => caches.match('./index.html')));
+    return;
+  }
+  // API calls: nunca cachear
+  if (e.request.method !== 'GET' || e.request.url.includes('anthropic.com') || e.request.url.includes('workers.dev')) return;
+  // Resto: caché normal
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       if (res.ok && e.request.url.startsWith(self.location.origin)) {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
+        caches.open(CACHE).then(c => c.put(e.request, res.clone()));
       }
       return res;
-    }).catch(() => caches.match('./index.html')))
+    }))
   );
 });
