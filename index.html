@@ -855,6 +855,21 @@ const MEAL_EMOJIS = {desayuno:'☀️',almuerzo:'🍱',merienda:'🍎',cena:'�
 
 // ═══════════════ STORAGE ═══════════════
 const dk = () => new Date().toISOString().split('T')[0];
+
+// Helper compartido: calcula el estado energético del día (sin mostrar calorías)
+function computeEnergyStatus(meals){
+  const kcal=meals.reduce((s,m)=>s+(m.p||0)*4+(m.c||0)*4+(m.f||0)*9,0);
+  const p=getProfile();
+  const bmr=Math.round(10*p.peso+6.25*p.altura-5*p.edad-161);
+  const actMult={sedentario:1.2,bajo:1.375,medio:1.55,alto:1.725};
+  const tdee=Math.round(bmr*(actMult[p.actividad]||1.375));
+  const targetKcal=Math.round(tdee-500);
+  if(meals.length===0)return'none';
+  if(kcal<1200*0.7)return'very_low';
+  if(kcal<targetKcal*0.55)return'low';
+  if(kcal>tdee)return'over';
+  return'ok';
+}
 const getMeals = () => JSON.parse(localStorage.getItem('meals_'+dk())||'[]');
 const saveMeals = m => localStorage.setItem('meals_'+dk(), JSON.stringify(m));
 const getApiKey = () => localStorage.getItem('anthropic_key')||'';
@@ -947,20 +962,8 @@ function renderHome(){
   const meals=getMeals(), goals=getGoals();
   let P=0,C=0,F=0;
   meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
-  // Hidden energy check (never show kcal number)
-  const kcal=Math.round(P*4+C*4+F*9);
   const p=getProfile();
-  // Mifflin-St Jeor BMR
-  const bmr=Math.round(10*p.peso+6.25*p.altura-5*p.edad-161);
-  const actMult={sedentario:1.2,bajo:1.375,medio:1.55,alto:1.725};
-  const tdee=Math.round(bmr*(actMult[p.actividad]||1.375));
-  const targetKcal=Math.round(tdee-500); // ~500 deficit for fat loss
-  const minKcal=1200;
-  const energyStatus = meals.length===0 ? 'none'
-    : kcal < minKcal*0.7 ? 'very_low'
-    : kcal < targetKcal*0.55 ? 'low'
-    : kcal > tdee ? 'over'
-    : 'ok';
+  const energyStatus=computeEnergyStatus(meals);
 
   // Onboarding (dismissible)
   const dismissed=localStorage.getItem('onboard_dismissed');
@@ -990,7 +993,6 @@ function renderHome(){
   const SIZE=130, R=52, cx=SIZE/2, cy=SIZE/2;
   const C2=2*Math.PI*R; // circumference
   const seg=C2*(110/360); // arc length for 100% progress
-  const gap=C2*(10/360);  // gap between segments
   const offsets=[0, C2*(120/360), C2*(240/360)]; // start of each segment
 
   function arcBg(offset){
@@ -1079,9 +1081,9 @@ function renderHome(){
     if(C>goals.c*1.2) msgs.push(`<div class="status-strip warn">⚠️ Carbohidratos altos hoy — cena sin féculas o muy poca cantidad</div>`);
     if(F>goals.f*1.2) msgs.push(`<div class="status-strip warn">⚠️ Grasa alta hoy — cena muy ligera en grasas</div>`);
     if(msgs.length===0&&meals.length>=2&&energyStatus==='ok') msgs.push(`<div class="status-strip ok">✓ Macros equilibrados hoy — vas muy bien</div>`);
+  }
   const boost=getMacroBoost();
   if(boost) msgs.unshift(`<div class="status-strip ok">⚡ Macros de hoy ajustados por tu entreno (+${boost.p}% proteína, +${boost.c}% carbos) — ¡come bien para recuperarte!</div>`);
-  }
   document.getElementById('status-messages').innerHTML=msgs.join('');
 
   // ── Favorites ──
@@ -1174,7 +1176,7 @@ function repeatMeal(m){
   renderHome();
 }
 function deleteMeal(i){
-  const m=getMeals();m.splice(i,1);saveMeals(m);renderHome();renderCenaRemaining();
+  const m=getMeals();m.splice(i,1);saveMeals(m);renderHome();renderCenaRemaining();renderAlmuerzoRemaining();
 }
 
 // ═══════════════ ADD ═══════════════
@@ -1372,7 +1374,6 @@ function renderCenaRemaining(){
 
   // Time context
   const h=new Date().getHours();
-  const pctDay=Math.round(((h-7)/15)*100); // 7am=0%, 22pm=100%
   const pctEaten=meals.length===0?0:Math.round(((P/goals.p)+(C/goals.c)+(F/goals.f))/3*100);
   let timeCtx='';
   if(meals.length>0){
@@ -1404,6 +1405,7 @@ async function getCenaSuggestion(){
   const btn=document.getElementById('cena-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Analizando tu día...';
 
+  const energyStatus=computeEnergyStatus(meals);
   const kcalTodayNote = energyStatus==='very_low'?'IMPORTANTE: ha comido muy poco hoy, la cena debe ser suficientemente nutritiva para cubrir las necesidades básicas del cuerpo.'
     : energyStatus==='low'?'Ha comido poco hoy, la cena debe ser completa y satisfactoria.'
     : energyStatus==='over'?'Ha comido bastante hoy, propón una cena ligera pero que cubra los macros que faltan.'
@@ -1706,8 +1708,7 @@ function calcStreak(){
     const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
     const hasFood=meals.length>0;
     const hasActivity=act.actividades.length>0||act.pasos>=3000;
-    if(i===0){if(hasFood)streak++;else break;}
-    else if(hasFood||hasActivity){streak++;}
+    if(hasFood||hasActivity){streak++;}
     else break;
     d=new Date(d.getTime()-86400000);
   }
@@ -1771,6 +1772,8 @@ function renderDailyCheck(meals,goals,water,energyStatus){
 
 // ═══════════════ EMPUJÓN ═══════════════
 function renderEmpujonButton(){
+  // No rerender if already shown to avoid destroying a displayed result
+  if(document.getElementById('empujon-btn'))return;
   document.getElementById('empujon-card-wrap').innerHTML=`
     <div class="empujon-card">
       <div class="empujon-row">
@@ -1866,7 +1869,6 @@ async function generarRetos(){
   const {streak}=calcStreak();
   // Last 7 days summary
   let activeDays=0,mealsTracked=0,avgP=0,exerciseDays=0;
-  const days7=[];
   for(let i=1;i<=7;i++){
     const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
     const m=JSON.parse(localStorage.getItem('meals_'+d)||'[]');
