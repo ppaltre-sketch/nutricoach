@@ -1650,10 +1650,10 @@ function clearToday(){
 async function callClaude(messages){
   let r;
   try{
-    r=await fetch('https://api.anthropic.com/v1/messages',{
+    r=await fetch('https://nutricoach-proxypalomapaltreworkersdev.palomapaltre.workers.dev',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':getApiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1800,messages})
+      headers:{'Content-Type':'application/json','x-api-key':getApiKey(),'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1800,messages})
     });
   }catch(err){
     // Network-level failure: CORS, no internet, firewall, etc.
