@@ -8,6 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="NutriCoach" />
   <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="manifest.json" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <link rel="apple-touch-icon" href="icon.svg" />
   <title>NutriCoach</title>
   <style>
@@ -739,7 +740,16 @@
           <button class="btn-verify" onclick="verifyApiKey()" id="verify-btn">
             <span id="verify-icon">🔗</span> Probar conexión
           </button>
-          <div id="api-key-status" style="font-size:0.78rem;"></div>
+          <button class="btn-verify" onclick="showQR()" style="background:rgba(52,211,153,.12);color:var(--green);border-color:rgba(52,211,153,.3);">
+            📱 Pasar al móvil
+          </button>
+          <div id="api-key-status" style="font-size:0.78rem;width:100%;"></div>
+        </div>
+        <div id="qr-section" style="display:none;margin-top:14px;text-align:center;">
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">Escanea con la cámara del móvil — la app se abre con tu key ya configurada</div>
+          <div id="qr-code" style="display:inline-block;background:#fff;padding:12px;border-radius:12px;"></div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;">El QR solo funciona una vez · no lo compartas</div>
+          <button onclick="document.getElementById('qr-section').style.display='none'" style="display:block;margin:10px auto 0;background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;">Cerrar ✕</button>
         </div>
       </div>
 
@@ -907,6 +917,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('cfg-goal-f').value=g.f;
   renderGoalsHint();
 
+  checkSetupFromURL();
   renderTypeChips('s-type-chips','s');
   renderTypeChips('m-type-chips','m');
   renderTypeChips('bc-type-chips','bc');
@@ -2244,6 +2255,35 @@ function renderWeeklySummary(){
 }
 
 // ═══════════════ UTILS ═══════════════
+// ═══════════════ QR / MOBILE SETUP ═══════════════
+function showQR(){
+  const key=getApiKey();
+  if(!key){showToast('Introduce primero tu API Key');return;}
+  const encoded=btoa(key);
+  const url=`https://ppaltre-sketch.github.io/nutricoach/#setup=${encoded}`;
+  const section=document.getElementById('qr-section');
+  const qrDiv=document.getElementById('qr-code');
+  qrDiv.innerHTML='';
+  section.style.display='block';
+  new QRCode(qrDiv,{text:url,width:180,height:180,colorDark:'#0f172a',colorLight:'#ffffff'});
+  section.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function checkSetupFromURL(){
+  const hash=location.hash;
+  if(!hash.startsWith('#setup='))return;
+  try{
+    const key=atob(hash.slice(7));
+    if(key.startsWith('sk-')){
+      localStorage.setItem('anthropic_key',key);
+      document.getElementById('api-key-input').value=key;
+      document.getElementById('api-key-status').innerHTML='<span style="color:var(--green)">✓ Key configurada desde QR</span>';
+      history.replaceState(null,'',location.pathname); // clean URL
+      showToast('✓ API Key configurada automáticamente');
+    }
+  }catch(e){}
+}
+
 // ═══════════════ SERVICE WORKER ═══════════════
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
