@@ -1633,12 +1633,26 @@ function clearToday(){
 
 // ═══════════════ API ═══════════════
 async function callClaude(messages){
-  const r=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':getApiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1800,messages})
-  });
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`Error ${r.status}`);}
+  let r;
+  try{
+    r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':getApiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1800,messages})
+    });
+  }catch(err){
+    // Network-level failure: CORS, no internet, firewall, etc.
+    const isHttps=location.protocol==='https:';
+    if(!isHttps) throw new Error('Necesitas abrir la app desde HTTPS (usa la URL de GitHub Pages, no localhost)');
+    throw new Error('Sin conexión con la API — comprueba tu internet. Si usas VPN o red corporativa, puede estar bloqueando api.anthropic.com');
+  }
+  if(!r.ok){
+    const body=await r.json().catch(()=>({}));
+    const msg=body.error?.message||`Error ${r.status}`;
+    if(r.status===401) throw new Error('API Key inválida o expirada — revísala en Configuración');
+    if(r.status===429) throw new Error('Límite de uso alcanzado — espera un momento e inténtalo de nuevo');
+    throw new Error(msg);
+  }
   return (await r.json()).content?.[0]?.text||'';
 }
 
