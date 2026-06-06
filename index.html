@@ -218,6 +218,35 @@
     .empty-icon{font-size:2.6rem;margin-bottom:10px;}
     .empty-text{font-size:0.875rem;line-height:1.5;}
 
+    /* STREAK */
+    .streak-card{background:linear-gradient(135deg,rgba(251,146,60,.15),rgba(251,191,36,.08));border:1px solid rgba(251,146,60,.3);border-radius:16px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;}
+    .streak-fire{font-size:2.4rem;line-height:1;flex-shrink:0;}
+    .streak-info{flex:1;}
+    .streak-num{font-size:1.6rem;font-weight:800;line-height:1;color:var(--orange);}
+    .streak-label{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+    .streak-best{font-size:0.68rem;color:var(--yellow);margin-top:3px;}
+    /* DAILY CHECK */
+    .check-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .check-item{background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:9px;border:1px solid var(--border);transition:border-color .2s;}
+    .check-item.done{border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.07);}
+    .check-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.7rem;transition:all .2s;}
+    .check-item.done .check-dot{background:var(--green);border-color:var(--green);color:#fff;}
+    .check-text{font-size:0.75rem;font-weight:600;line-height:1.3;}
+    .check-sub{font-size:0.65rem;color:var(--muted);margin-top:1px;}
+    /* EMPUJON */
+    .empujon-card{background:linear-gradient(135deg,rgba(129,140,248,.12),rgba(99,102,241,.05));border:1px solid rgba(129,140,248,.25);border-radius:16px;padding:14px 16px;margin-bottom:14px;}
+    .empujon-row{display:flex;align-items:center;gap:12px;}
+    .empujon-icon{font-size:1.8rem;flex-shrink:0;}
+    .empujon-title{font-weight:700;font-size:0.9rem;}
+    .empujon-sub{font-size:0.75rem;color:var(--muted);margin-top:2px;}
+    /* RETO */
+    .reto-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+    .reto-item:last-child{border-bottom:none;}
+    .reto-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.75rem;transition:all .15s;}
+    .reto-check.done{background:var(--green);border-color:var(--green);color:#fff;}
+    .reto-text{flex:1;font-size:0.82rem;line-height:1.45;}
+    .reto-text.done{text-decoration:line-through;color:var(--muted);}
+
     /* BARCODE */
     .barcode-zone{border:2px dashed var(--border);border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .2s;}
     .barcode-zone.scanning{border-color:var(--accent);background:rgba(129,140,248,.05);}
@@ -278,9 +307,12 @@
     <!-- ═══ HOME ═══ -->
     <div class="page active" id="page-home">
       <div id="home-onboard"></div>
+      <div id="streak-card"></div>
       <div id="macro-ring-card"></div>
       <div id="water-tracker-wrap"></div>
+      <div id="daily-check-card"></div>
       <div id="status-messages"></div>
+      <div id="empujon-card-wrap"></div>
       <div id="quick-repeat-section"></div>
       <div class="card">
         <div class="card-title">Comidas de hoy</div>
@@ -578,6 +610,7 @@
         <div class="progress-tab active" id="ptab-actividad" onclick="setProgresoTab('actividad')">🏃 Actividad</div>
         <div class="progress-tab" id="ptab-medidas" onclick="setProgresoTab('medidas')">📏 Medidas</div>
         <div class="progress-tab" id="ptab-semana" onclick="setProgresoTab('semana')">📊 Semana</div>
+        <div class="progress-tab" id="ptab-retos" onclick="setProgresoTab('retos')">🎯 Retos</div>
       </div>
 
       <!-- Actividad hoy -->
@@ -657,6 +690,19 @@
         <div class="card" id="medidas-history-card">
           <div class="card-title">Historial de medidas</div>
           <div id="medidas-history"></div>
+        </div>
+      </div>
+
+      <!-- Retos semanales -->
+      <div id="progreso-retos" style="display:none">
+        <div class="card">
+          <div class="card-title">🎯 Mis retos de esta semana</div>
+          <div id="retos-content"></div>
+          <button class="btn btn-secondary" style="margin-top:12px;" onclick="generarRetos()" id="retos-btn">✨ Generar mis retos con IA</button>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg,rgba(129,140,248,.1),rgba(99,102,241,.04));border-color:rgba(129,140,248,.2);">
+          <div class="card-title" style="color:var(--accent);">¿Para qué sirven los retos?</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;">La IA analiza cómo fue tu semana — días activos, macros, agua — y te propone 3 objetivos pequeños pero concretos. No perfectos, alcanzables. La constancia en pequeños hábitos es lo que cambia el cuerpo a largo plazo.</p>
         </div>
       </div>
 
@@ -985,8 +1031,17 @@ function renderHome(){
       </div>
     </div>`;
 
+  // ── Streak ──
+  renderStreak();
+
   // ── Water tracker ──
   renderWaterTracker();
+
+  // ── Daily check ──
+  renderDailyCheck(meals,goals,getWater(),energyStatus);
+
+  // ── Empujón button ──
+  renderEmpujonButton();
 
   // ── Status messages ──
   const msgs=[];
@@ -1409,6 +1464,10 @@ async function getEntrenoSuggestion(){
   const notas=document.getElementById('entreno-notas').value.trim();
   const meals=getMeals(),p=getProfile();
   const lastW=getLastWorkout();
+  const {streak}=calcStreak();
+  // Days since last workout
+  const lastWDate=getLastWorkoutDate();
+  const daysSinceWorkout=lastWDate?Math.round((Date.now()-new Date(lastWDate+'T12:00:00').getTime())/86400000):99;
 
   const prompt=`Eres entrenadora personal experta en fitness femenino, pérdida de volumen y grasa, y fuerza funcional. Tu enfoque es positivo, sin presión, fomentando la constancia.
 
@@ -1422,6 +1481,10 @@ ${lastW?'Último entreno: '+lastW+' — propón algo diferente o complementario'
 ${chipState.cuerpo==='agujetas'?'IMPORTANTE: tiene agujetas — evita trabajar los mismos grupos musculares, prioriza movilidad o un grupo diferente.':''}
 ${chipState.cuerpo==='molestia'?'IMPORTANTE: tiene alguna molestia física — propón algo de bajo impacto, sin forzar, que le siente bien.':''}
 ${chipState.cuerpo==='cansada'?'IMPORTANTE: cuerpo cansado — sesión suave o de recuperación activa, nada intenso hoy.':''}
+${daysSinceWorkout>=5?'IMPORTANTE: lleva '+daysSinceWorkout+' días sin entrenar — propón vuelta gradual y motivadora, que dé ganas de volver mañana.':''}
+${daysSinceWorkout>=3&&daysSinceWorkout<5?'Lleva unos días sin entrenar — propón algo motivador que la enganche de nuevo.':''}
+${streak>=7?'Lleva '+streak+' días de racha activa — puede subir la intensidad, está en modo constancia.':''}
+Racha actual: ${streak} días. El consejo final del entreno debe mencionar esto y motivarla a mantenerla.
 
 Diseña UN entrenamiento concreto. Estructura:
 
@@ -1592,6 +1655,212 @@ function formatAI(raw){
   return t;
 }
 
+// ═══════════════ STREAK ═══════════════
+function calcStreak(){
+  let streak=0,best=parseInt(localStorage.getItem('nc_best_streak')||'0');
+  const today=dk();
+  // Count today as active if meals logged
+  let d=new Date();
+  for(let i=0;i<365;i++){
+    const key=d.toISOString().split('T')[0];
+    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
+    const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    const hasFood=meals.length>0;
+    const hasActivity=act.actividades.length>0||act.pasos>=3000;
+    if(i===0){if(hasFood)streak++;else break;}
+    else if(hasFood||hasActivity){streak++;}
+    else break;
+    d=new Date(d.getTime()-86400000);
+  }
+  if(streak>best){best=streak;localStorage.setItem('nc_best_streak',best);}
+  return{streak,best};
+}
+
+function renderStreak(){
+  const {streak,best}=calcStreak();
+  const el=document.getElementById('streak-card');
+  if(streak===0){el.innerHTML='';return;}
+  const msgs=[
+    [1,'¡Primer día! Cada gran cambio empieza aquí 💪'],
+    [3,'3 días seguidos — el hábito empieza a formarse 🌱'],
+    [7,'¡Una semana! Tu cuerpo ya nota la diferencia 🔥'],
+    [14,'2 semanas de constancia — eso es carácter 💎'],
+    [21,'21 días. Dicen que un hábito tarda 21 días en formarse. Tú lo tienes ⚡'],
+    [30,'Un mes. Esto ya eres tú, no un esfuerzo 🏆'],
+  ];
+  let msg=msgs[0][1];
+  for(const[d,m] of msgs){if(streak>=d)msg=m;}
+  el.innerHTML=`
+    <div class="streak-card">
+      <div class="streak-fire">${streak>=7?'🔥':streak>=3?'⚡':'✨'}</div>
+      <div class="streak-info">
+        <div class="streak-num">${streak} ${streak===1?'día':'días'}</div>
+        <div class="streak-label">de racha activa</div>
+        <div class="streak-best">${msg}</div>
+      </div>
+      ${best>streak?`<div style="text-align:right;font-size:0.7rem;color:var(--muted);">Mejor racha<br><strong style="color:var(--yellow)">${best}d</strong></div>`:''}
+    </div>`;
+}
+
+// ═══════════════ DAILY CHECK ═══════════════
+function renderDailyCheck(meals,goals,water,energyStatus){
+  const act=getActivity();
+  const P=meals.reduce((s,m)=>s+m.p,0);
+  const checks=[
+    {label:'Comidas',sub:meals.length+' registradas',done:meals.length>=2,icon:'🍽️'},
+    {label:'Agua',sub:water+'/8 vasos',done:water>=4,icon:'💧'},
+    {label:'Proteína',sub:Math.round(P/goals.p*100)+'% del objetivo',done:P>=goals.p*0.7,icon:'💪'},
+    {label:'Movimiento',sub:act.actividades.length>0||(act.pasos||0)>=3000?'¡Activa!':'Sin actividad',done:act.actividades.length>0||(act.pasos||0)>=3000,icon:'🏃'},
+  ];
+  const allDone=checks.every(c=>c.done);
+  document.getElementById('daily-check-card').innerHTML=`
+    <div class="card" style="${allDone?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.04);':''}">
+      <div class="card-title">${allDone?'✅ Día completado':'Tu día de hoy'}</div>
+      <div class="check-grid">
+        ${checks.map(c=>`
+          <div class="check-item${c.done?' done':''}">
+            <div class="check-dot">${c.done?'✓':''}</div>
+            <div>
+              <div class="check-text">${c.icon} ${c.label}</div>
+              <div class="check-sub">${c.sub}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+      ${allDone?`<div style="text-align:center;margin-top:12px;font-size:0.82rem;color:var(--green);font-weight:700;">¡Día perfecto! Esto es constancia 🏆</div>`:''}
+    </div>`;
+}
+
+// ═══════════════ EMPUJÓN ═══════════════
+function renderEmpujonButton(){
+  document.getElementById('empujon-card-wrap').innerHTML=`
+    <div class="empujon-card">
+      <div class="empujon-row">
+        <div class="empujon-icon">💬</div>
+        <div style="flex:1;">
+          <div class="empujon-title">¿Necesitas un empujón?</div>
+          <div class="empujon-sub">La IA te habla directamente, sin rollos</div>
+        </div>
+        <button onclick="getEmpujon()" id="empujon-btn" style="padding:9px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:0.8rem;white-space:nowrap;flex-shrink:0;">Dame caña</button>
+      </div>
+      <div id="empujon-result" style="display:none;margin-top:12px;font-size:0.855rem;line-height:1.7;color:var(--text);border-top:1px solid var(--border);padding-top:12px;"></div>
+    </div>`;
+}
+
+async function getEmpujon(){
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  const btn=document.getElementById('empujon-btn');
+  btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
+  const {streak}=calcStreak();
+  const meals=getMeals(),goals=getGoals(),p=getProfile();
+  const act=getActivity();
+  let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  const totalMin=act.actividades.reduce((s,a)=>s+parseInt(a.duracion||0),0);
+  // Get last 7 days stats
+  let activeDays=0;
+  for(let i=1;i<=7;i++){
+    const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
+    if(JSON.parse(localStorage.getItem('meals_'+d)||'[]').length>0)activeDays++;
+  }
+  const prompt=`Eres una coach de salud directa, cálida y sin rodeos. Hablas de tú, en español de España.
+
+Contexto de la usuaria:
+- Mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm
+- Objetivo: reducir peso y volumen, ganar fuerza, mejorar relación con la comida y con ella misma
+- Racha actual: ${streak} días
+- Días activos últimos 7 días: ${activeDays}/7
+- Hoy: ${meals.length} comidas registradas, P${P}g/${goals.p}g, ejercicio: ${totalMin>0?totalMin+' min':'ninguno registrado'}
+- Se vio en fotos y no le gusta cómo está — quiere cambiar de verdad
+
+Dame un mensaje de motivación PERSONAL y DIRECTO. Máximo 4-5 frases. No genérico, que sienta que la conoces.
+Reconoce exactamente dónde está (no finjas que va perfecta si no va), valida que es difícil, y dale un empujón concreto para HOY.
+Tono: como una amiga que dice las cosas claras pero con cariño. Sin frases de Pinterest. Sin mencionar calorías.
+Sin asteriscos ni formato — texto corrido.`;
+  try{
+    const res=await callClaude([{role:'user',content:prompt}]);
+    const el=document.getElementById('empujon-result');
+    el.style.display='block';
+    el.textContent=res;
+  }catch(e){showToast('Error: '+e.message);}
+  btn.innerHTML='Dame caña';btn.disabled=false;
+}
+
+// ═══════════════ RETOS ═══════════════
+function getRetosData(){return JSON.parse(localStorage.getItem('nc_retos')||'null');}
+function saveRetosData(d){localStorage.setItem('nc_retos',JSON.stringify(d));}
+
+function renderRetos(){
+  const data=getRetosData();
+  const el=document.getElementById('retos-content');
+  if(!data||!data.retos){
+    el.innerHTML='<div style="font-size:0.8rem;color:var(--muted);padding:8px 0 4px;">Genera tus retos de esta semana con la IA — serán concretos y alcanzables para ti.</div>';
+    return;
+  }
+  const weekStr=getWeekKey();
+  if(data.week!==weekStr){
+    el.innerHTML='<div style="font-size:0.8rem;color:var(--muted);padding:8px 0 4px;">Nueva semana — genera tus nuevos retos 🎯</div>';
+    return;
+  }
+  el.innerHTML=data.retos.map((r,i)=>`
+    <div class="reto-item">
+      <div class="reto-check${r.done?' done':''}" onclick="toggleReto(${i})">${r.done?'✓':''}</div>
+      <div class="reto-text${r.done?' done':''}">${esc(r.texto)}</div>
+    </div>`).join('');
+}
+
+function toggleReto(idx){
+  const data=getRetosData();if(!data)return;
+  data.retos[idx].done=!data.retos[idx].done;
+  saveRetosData(data);renderRetos();
+  if(data.retos[idx].done)showToast('🎯 ¡Reto completado!');
+}
+
+function getWeekKey(){
+  const d=new Date(),day=d.getDay(),diff=d.getDate()-day+(day===0?-6:1);
+  return new Date(d.setDate(diff)).toISOString().split('T')[0];
+}
+
+async function generarRetos(){
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  const btn=document.getElementById('retos-btn');
+  btn.disabled=true;btn.innerHTML='<div class="spinner spinner-accent"></div> Analizando tu semana...';
+  const goals=getGoals(),p=getProfile();
+  const {streak}=calcStreak();
+  // Last 7 days summary
+  let activeDays=0,mealsTracked=0,avgP=0,exerciseDays=0;
+  const days7=[];
+  for(let i=1;i<=7;i++){
+    const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
+    const m=JSON.parse(localStorage.getItem('meals_'+d)||'[]');
+    const act=JSON.parse(localStorage.getItem('nc_activity_'+d)||'{"pasos":0,"actividades":[]}');
+    if(m.length>0){mealsTracked++;let pp=0;m.forEach(x=>pp+=x.p||0);avgP+=pp;}
+    if(act.actividades.length>0||(act.pasos||0)>=5000)exerciseDays++;
+  }
+  if(mealsTracked>0)avgP=Math.round(avgP/mealsTracked);
+  const prompt=`Eres coach de salud. Analiza esta semana y propón 3 retos para la próxima semana.
+
+Perfil: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm. Objetivo: perder grasa, ganar fuerza, relación sana con la comida.
+Semana pasada: ${mealsTracked}/7 días con comidas registradas, proteína media ${avgP}g/${goals.p}g objetivo, ${exerciseDays}/7 días con ejercicio.
+Racha actual: ${streak} días.
+
+REGLAS para los retos:
+1. Deben ser CONCRETOS y MEDIBLES (no "comer mejor", sino "registrar todas las comidas 5 de 7 días")
+2. ALCANZABLES — ni muy fáciles ni imposibles, basados en cómo fue la semana
+3. Sin mencionar calorías
+4. Orientados a los 3 pilares: nutrición, movimiento, constancia
+
+Responde SOLO JSON sin texto adicional:
+{"retos":["texto reto 1","texto reto 2","texto reto 3"]}`;
+  try{
+    const res=await callClaude([{role:'user',content:prompt}]);
+    const json=JSON.parse(res.match(/\{[\s\S]*\}/)?.[0]||'{}');
+    if(json.retos&&json.retos.length===3){
+      saveRetosData({week:getWeekKey(),retos:json.retos.map(t=>({texto:t,done:false}))});
+      renderRetos();showToast('🎯 Retos generados');
+    }
+  }catch(e){showToast('Error al generar retos');}
+  btn.disabled=false;btn.innerHTML='↺ Regenerar retos';
+}
+
 // ═══════════════ FAVORITES ═══════════════
 function toggleFavorite(meal){
   let favs=getFavorites();
@@ -1750,13 +2019,14 @@ Usa ingredientes de supermercado español o tuppers Wetaca. Práctico para entre
 
 // ═══════════════ PROGRESO PAGE ═══════════════
 function setProgresoTab(tab){
-  ['actividad','medidas','semana'].forEach(t=>{
+  ['actividad','medidas','semana','retos'].forEach(t=>{
     document.getElementById('progreso-'+t).style.display=t===tab?'block':'none';
     document.getElementById('ptab-'+t).classList.toggle('active',t===tab);
   });
   if(tab==='actividad')renderActivityToday();
   if(tab==='medidas')renderMeasuresHistory();
   if(tab==='semana')renderWeeklySummary();
+  if(tab==='retos')renderRetos();
 }
 
 function renderProgreso(){
