@@ -964,6 +964,7 @@ function renderHome(){
   const meals=getMeals(), goals=getGoals();
   let P=0,C=0,F=0;
   meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  P=Math.round(P*10)/10; C=Math.round(C*10)/10; F=Math.round(F*10)/10;
   const p=getProfile();
   const energyStatus=computeEnergyStatus(meals);
 
