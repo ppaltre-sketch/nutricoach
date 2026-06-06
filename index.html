@@ -218,6 +218,50 @@
     .empty-icon{font-size:2.6rem;margin-bottom:10px;}
     .empty-text{font-size:0.875rem;line-height:1.5;}
 
+    /* BARCODE */
+    .barcode-zone{border:2px dashed var(--border);border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .2s;}
+    .barcode-zone.scanning{border-color:var(--accent);background:rgba(129,140,248,.05);}
+    #barcode-video{width:100%;border-radius:10px;max-height:200px;object-fit:cover;display:none;margin-bottom:10px;}
+    .barcode-manual{display:flex;gap:8px;margin-top:10px;}
+    .barcode-manual input{flex:1;}
+    .barcode-manual button{white-space:nowrap;padding:11px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:0.85rem;}
+    /* FAVORITES */
+    .meal-fav{font-size:1.1rem;cursor:pointer;padding:4px 6px;border-radius:6px;transition:transform .15s;flex-shrink:0;opacity:.35;}
+    .meal-fav.active{opacity:1;}
+    .meal-fav:active{transform:scale(.8);}
+    /* PROGRESO page */
+    .progress-tabs{display:flex;background:var(--surface2);border-radius:12px;padding:3px;margin-bottom:16px;}
+    .progress-tab{flex:1;padding:9px 4px;text-align:center;border-radius:9px;font-size:0.78rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
+    .progress-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+    /* Medidas */
+    .medidas-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+    .medida-input-wrap{text-align:center;}
+    .medida-input-wrap label{font-size:0.68rem;text-align:center;margin-bottom:4px;display:block;font-weight:600;color:var(--muted);}
+    .medida-input-wrap input{text-align:center;font-weight:700;}
+    .medida-history-item{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:0.8rem;}
+    .medida-history-item:last-child{border-bottom:none;}
+    .medida-delta{font-size:0.72rem;font-weight:700;}
+    .medida-delta.good{color:var(--green);}
+    .medida-delta.bad{color:var(--red);}
+    /* Actividad */
+    .steps-display{text-align:center;padding:16px 0 8px;}
+    .steps-number{font-size:2.2rem;font-weight:800;line-height:1;}
+    .steps-label{font-size:0.72rem;color:var(--muted);margin-top:4px;}
+    .steps-bar-wrap{background:var(--surface2);border-radius:99px;height:8px;margin:10px 0 6px;overflow:hidden;}
+    .steps-bar{height:100%;border-radius:99px;transition:width .5s var(--ease);}
+    .activity-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.82rem;}
+    .activity-item:last-child{border-bottom:none;}
+    /* Weekly summary bars */
+    .week-day{margin-bottom:10px;}
+    .week-day-header{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-bottom:4px;}
+    .week-bars{display:flex;gap:3px;height:8px;}
+    .week-bar-wrap{flex:1;background:var(--surface2);border-radius:99px;overflow:hidden;}
+    .week-bar{height:100%;border-radius:99px;transition:width .4s;}
+    /* IA tabs */
+    .ia-tabs{display:flex;background:var(--surface2);border-radius:12px;padding:3px;margin-bottom:16px;}
+    .ia-tab{flex:1;padding:9px;text-align:center;border-radius:9px;font-size:0.85rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
+    .ia-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+
     @media(min-width:500px){.macros-row{gap:12px;}.ring-container{width:140px;height:140px;}}
   </style>
 </head>
@@ -246,10 +290,11 @@
 
     <!-- ═══ ADD ═══ -->
     <div class="page" id="page-add">
-      <div class="add-mode-tabs">
-        <div class="add-mode-tab active" id="tab-scan" onclick="setAddMode('scan')">📸 Foto Wetaca</div>
-        <div class="add-mode-tab" id="tab-ingredientes" onclick="setAddMode('ingredientes')">🥗 Ingredientes</div>
-        <div class="add-mode-tab" id="tab-manual" onclick="setAddMode('manual')">✏️ Manual</div>
+      <div class="add-mode-tabs" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <div class="add-mode-tab active" id="tab-scan" onclick="setAddMode('scan')" style="white-space:nowrap;">📸 Wetaca</div>
+        <div class="add-mode-tab" id="tab-ingredientes" onclick="setAddMode('ingredientes')" style="white-space:nowrap;">🥗 Ingredientes</div>
+        <div class="add-mode-tab" id="tab-barcode" onclick="setAddMode('barcode')" style="white-space:nowrap;">📦 Código</div>
+        <div class="add-mode-tab" id="tab-manual" onclick="setAddMode('manual')" style="white-space:nowrap;">✏️ Manual</div>
       </div>
 
       <div id="add-scan-mode">
@@ -348,6 +393,44 @@
         </div>
       </div>
 
+      <!-- BARCODE MODE -->
+      <div id="add-barcode-mode" style="display:none">
+        <div class="card">
+          <div class="card-title">📦 Buscar producto por código</div>
+          <div class="barcode-zone" id="barcode-zone">
+            <div style="font-size:2rem;margin-bottom:8px;">📷</div>
+            <div style="font-weight:700;font-size:0.95rem;">Escanear con cámara</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Apunta al código de barras del producto</div>
+          </div>
+          <video id="barcode-video" autoplay playsinline></video>
+          <div id="barcode-scan-status" style="font-size:0.78rem;color:var(--muted);text-align:center;margin-top:6px;display:none;"></div>
+          <div class="barcode-manual">
+            <input type="number" id="barcode-input" placeholder="O escribe el código EAN (13 dígitos)" />
+            <button onclick="lookupBarcode(document.getElementById('barcode-input').value)">Buscar</button>
+          </div>
+        </div>
+        <div id="barcode-result" style="display:none">
+          <div class="card">
+            <div class="card-title">Producto encontrado — confirma y guarda</div>
+            <div class="form-group">
+              <label>Nombre del producto</label>
+              <input type="text" id="bc-meal-name" />
+            </div>
+            <div class="form-group">
+              <label>Tipo de comida</label>
+              <div class="type-chips" id="bc-type-chips"></div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;">Valores por porción consumida (ajusta si hace falta)</div>
+            <div class="macros-row" style="margin-bottom:13px;">
+              <div class="macro-input-wrap p"><div class="macro-input-lbl" style="color:var(--green)">Proteína g</div><input type="number" id="bc-meal-p" min="0"/></div>
+              <div class="macro-input-wrap c"><div class="macro-input-lbl" style="color:var(--accent)">Carbos g</div><input type="number" id="bc-meal-c" min="0"/></div>
+              <div class="macro-input-wrap f"><div class="macro-input-lbl" style="color:var(--orange)">Grasa g</div><input type="number" id="bc-meal-f" min="0"/></div>
+            </div>
+            <button class="btn btn-primary" onclick="addMeal('barcode')">Guardar comida</button>
+          </div>
+        </div>
+      </div>
+
       <div id="add-manual-mode" style="display:none">
         <div class="card">
           <div class="form-group">
@@ -377,32 +460,52 @@
       </div>
     </div>
 
-    <!-- ═══ CENA ═══ -->
+    <!-- ═══ IA (ALMUERZO + CENA) ═══ -->
     <div class="page" id="page-cena">
-      <div id="cena-remaining"></div>
-      <div class="card">
-        <div class="card-title">🤖 Sugerencia de cena</div>
-        <div class="form-group">
-          <label>Preferencias o restricciones (opcional)</label>
-          <input type="text" id="cena-prefs" placeholder="Ej: algo ligero, sin gluten, rápido..." />
-        </div>
-        <button class="btn btn-primary" onclick="getCenaSuggestion()" id="cena-btn">Sugerir mi cena de hoy</button>
+      <div class="ia-tabs">
+        <div class="ia-tab active" id="ia-tab-almuerzo" onclick="setIATab('almuerzo')">🍱 ¿Qué como?</div>
+        <div class="ia-tab" id="ia-tab-cena" onclick="setIATab('cena')">🌙 ¿Qué ceno?</div>
       </div>
-      <div id="cena-result"></div>
-      <div id="alternativas-section" style="display:none">
+      <!-- Almuerzo -->
+      <div id="ia-almuerzo-section">
+        <div id="almuerzo-remaining"></div>
         <div class="card">
-          <div class="card-title">🔄 Cambiar un ingrediente</div>
+          <div class="card-title">🤖 Sugerencia de almuerzo</div>
           <div class="form-group">
-            <label>¿Qué ingrediente quieres cambiar?</label>
-            <input type="text" id="ingrediente-cambiar" placeholder="Ej: pollo, arroz, brócoli..." />
+            <label>Preferencias (opcional)</label>
+            <input type="text" id="almuerzo-prefs" placeholder="Ej: rápido, sin gluten, Wetaca..." />
           </div>
-          <div class="form-group">
-            <label>¿Por qué? (opcional)</label>
-            <input type="text" id="motivo-cambio" placeholder="Ej: no tengo, no me gusta..." />
-          </div>
-          <button class="btn btn-secondary" onclick="getAlternativas()" id="alt-btn">Ver alternativas</button>
+          <button class="btn btn-primary" onclick="getAlmuerzoSuggestion()" id="almuerzo-btn">Sugerir mi almuerzo</button>
         </div>
-        <div id="alternativas-result"></div>
+        <div id="almuerzo-result"></div>
+      </div>
+      <!-- Cena -->
+      <div id="ia-cena-section" style="display:none">
+        <div id="cena-remaining"></div>
+        <div class="card">
+          <div class="card-title">🤖 Sugerencia de cena</div>
+          <div class="form-group">
+            <label>Preferencias o restricciones (opcional)</label>
+            <input type="text" id="cena-prefs" placeholder="Ej: algo ligero, sin gluten, rápido..." />
+          </div>
+          <button class="btn btn-primary" onclick="getCenaSuggestion()" id="cena-btn">Sugerir mi cena de hoy</button>
+        </div>
+        <div id="cena-result"></div>
+        <div id="alternativas-section" style="display:none">
+          <div class="card">
+            <div class="card-title">🔄 Cambiar un ingrediente</div>
+            <div class="form-group">
+              <label>¿Qué ingrediente quieres cambiar?</label>
+              <input type="text" id="ingrediente-cambiar" placeholder="Ej: pollo, arroz, brócoli..." />
+            </div>
+            <div class="form-group">
+              <label>¿Por qué? (opcional)</label>
+              <input type="text" id="motivo-cambio" placeholder="Ej: no tengo, no me gusta..." />
+            </div>
+            <button class="btn btn-secondary" onclick="getAlternativas()" id="alt-btn">Ver alternativas</button>
+          </div>
+          <div id="alternativas-result"></div>
+        </div>
       </div>
     </div>
 
@@ -467,6 +570,107 @@
         <button class="btn btn-primary" onclick="getEntrenoSuggestion()" id="entreno-btn">Dame un entrenamiento</button>
       </div>
       <div id="entreno-result"></div>
+    </div>
+
+    <!-- ═══ PROGRESO ═══ -->
+    <div class="page" id="page-progreso">
+      <div class="progress-tabs">
+        <div class="progress-tab active" id="ptab-actividad" onclick="setProgresoTab('actividad')">🏃 Actividad</div>
+        <div class="progress-tab" id="ptab-medidas" onclick="setProgresoTab('medidas')">📏 Medidas</div>
+        <div class="progress-tab" id="ptab-semana" onclick="setProgresoTab('semana')">📊 Semana</div>
+      </div>
+
+      <!-- Actividad hoy -->
+      <div id="progreso-actividad">
+        <div class="card">
+          <div class="card-title">Pasos de hoy</div>
+          <div class="steps-display">
+            <div class="steps-number" id="steps-display-num">0</div>
+            <div class="steps-label">pasos · objetivo 8.000</div>
+          </div>
+          <div class="steps-bar-wrap"><div class="steps-bar" id="steps-bar" style="width:0%;background:var(--accent);"></div></div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input type="number" id="steps-input" placeholder="Añadir pasos..." style="flex:1;" />
+            <button onclick="saveSteps()" style="padding:11px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:0.85rem;white-space:nowrap;">Guardar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Actividad de hoy</div>
+          <div id="activity-list-today"></div>
+          <div style="margin-top:12px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div class="form-group" style="margin:0;">
+                <label>Tipo de actividad</label>
+                <select id="act-tipo">
+                  <option value="🚶 Paseo">🚶 Paseo</option>
+                  <option value="🏋️ Pesas / Gym">🏋️ Pesas / Gym</option>
+                  <option value="🧘 Yoga / Pilates">🧘 Yoga / Pilates</option>
+                  <option value="🚴 Bici">🚴 Bici</option>
+                  <option value="🏊 Natación">🏊 Natación</option>
+                  <option value="🤸 Cardio en casa">🤸 Cardio en casa</option>
+                  <option value="💃 Baile">💃 Baile</option>
+                  <option value="🏃 Carrera">🏃 Carrera</option>
+                  <option value="⚫ Kettlebell">⚫ Kettlebell</option>
+                  <option value="🎯 Bandas / Fuerza">🎯 Bandas / Fuerza</option>
+                  <option value="🧗 ClassPass">🧗 ClassPass</option>
+                  <option value="🏞️ Madrid Río">🏞️ Madrid Río</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label>Duración (min)</label>
+                <input type="number" id="act-duracion" placeholder="30" min="1" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>Intensidad</label>
+              <div class="chips" id="chips-intensidad" style="margin-top:6px;">
+                <button class="chip selected" data-val="suave" onclick="selectChip(this,'intensidad')">😌 Suave</button>
+                <button class="chip" data-val="moderada" onclick="selectChip(this,'intensidad')">💪 Moderada</button>
+                <button class="chip" data-val="intensa" onclick="selectChip(this,'intensidad')">🔥 Intensa</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="logActivity()">Añadir actividad</button>
+          </div>
+        </div>
+
+        <div class="card" id="movement-status-card">
+          <div class="card-title">¿Te has movido suficiente?</div>
+          <div id="movement-status"></div>
+        </div>
+      </div>
+
+      <!-- Medidas -->
+      <div id="progreso-medidas" style="display:none">
+        <div class="card">
+          <div class="card-title">📏 Registrar medidas de hoy</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Tómatelas en ayunas, misma hora siempre. No es obligatorio rellenar todas.</div>
+          <div class="medidas-grid">
+            <div class="medida-input-wrap"><label>Cintura cm</label><input type="number" id="med-cintura" placeholder="—" step="0.5" /></div>
+            <div class="medida-input-wrap"><label>Cadera cm</label><input type="number" id="med-cadera" placeholder="—" step="0.5" /></div>
+            <div class="medida-input-wrap"><label>Pecho cm</label><input type="number" id="med-pecho" placeholder="—" step="0.5" /></div>
+            <div class="medida-input-wrap"><label>Brazo cm</label><input type="number" id="med-brazo" placeholder="—" step="0.5" /></div>
+            <div class="medida-input-wrap"><label>Muslo cm</label><input type="number" id="med-muslo" placeholder="—" step="0.5" /></div>
+          </div>
+          <button class="btn btn-primary" onclick="saveMeasure()">Guardar medidas de hoy</button>
+        </div>
+        <div class="card" id="medidas-history-card">
+          <div class="card-title">Historial de medidas</div>
+          <div id="medidas-history"></div>
+        </div>
+      </div>
+
+      <!-- Semana -->
+      <div id="progreso-semana" style="display:none">
+        <div class="card">
+          <div class="card-title">📊 Últimos 7 días — macros</div>
+          <div id="weekly-summary"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🏃 Actividad esta semana</div>
+          <div id="weekly-activity"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ═══ CONFIG ═══ -->
@@ -556,16 +760,19 @@
 
 <nav class="bottom-nav">
   <div class="bnav-item active" id="bnav-home" onclick="showPage('home')">
-    <div class="bnav-icon">🏠</div><div class="bnav-label">HOY</div>
+    <div class="bnav-icon">🏠</div><div class="bnav-label" style="font-size:.55rem;">HOY</div>
   </div>
   <div class="bnav-item" id="bnav-cena" onclick="showPage('cena')">
-    <div class="bnav-icon">🍽️</div><div class="bnav-label">CENA IA</div>
+    <div class="bnav-icon">🤖</div><div class="bnav-label" style="font-size:.55rem;">IA</div>
   </div>
   <div class="bnav-item" id="bnav-entreno" onclick="showPage('entreno')">
-    <div class="bnav-icon">💪</div><div class="bnav-label">ENTRENO</div>
+    <div class="bnav-icon">💪</div><div class="bnav-label" style="font-size:.55rem;">ENTRENA</div>
+  </div>
+  <div class="bnav-item" id="bnav-progreso" onclick="showPage('progreso')">
+    <div class="bnav-icon">📊</div><div class="bnav-label" style="font-size:.55rem;">PROGRESO</div>
   </div>
   <div class="bnav-item" id="bnav-config" onclick="showPage('config')">
-    <div class="bnav-icon">⚙️</div><div class="bnav-label">CONFIG</div>
+    <div class="bnav-icon">⚙️</div><div class="bnav-label" style="font-size:.55rem;">CONFIG</div>
   </div>
 </nav>
 
@@ -573,7 +780,7 @@
 
 <script>
 // ═══════════════ STATE ═══════════════
-let chipState = {energia:'alta', tiempo:'30', weather:'soleado', cuerpo:'bien'};
+let chipState = {energia:'alta', tiempo:'30', weather:'soleado', cuerpo:'bien', intensidad:'suave'};
 let chipOpciones = new Set(['paseo','classpass','youtube','bandas','kettlebell','cinta']);
 let scannedMacros = null;
 
@@ -599,6 +806,12 @@ const getLastWorkout = () => localStorage.getItem('last_workout')||'';
 const setLastWorkout = t => localStorage.setItem('last_workout', t);
 const getLastWorkoutDate = () => localStorage.getItem('last_workout_date')||'';
 const setLastWorkoutDate = d => localStorage.setItem('last_workout_date', d);
+const getFavorites = () => JSON.parse(localStorage.getItem('nc_favorites')||'[]');
+const saveFavorites = f => localStorage.setItem('nc_favorites', JSON.stringify(f));
+const getMeasures = () => JSON.parse(localStorage.getItem('nc_measures')||'[]');
+const saveMeasures = m => localStorage.setItem('nc_measures', JSON.stringify(m));
+const getActivity = (d=dk()) => JSON.parse(localStorage.getItem('nc_activity_'+d)||'{"pasos":0,"actividades":[]}');
+const saveActivity = (a,d=dk()) => localStorage.setItem('nc_activity_'+d, JSON.stringify(a));
 
 function getAllPastMeals(){
   const all=[], today=dk();
@@ -638,8 +851,10 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   renderTypeChips('s-type-chips','s');
   renderTypeChips('m-type-chips','m');
+  renderTypeChips('bc-type-chips','bc');
   renderHome();
   renderCenaRemaining();
+  renderAlmuerzoRemaining();
   renderYesterdayWorkout();
 });
 
@@ -653,8 +868,9 @@ function showPage(name){
   document.getElementById('fab').style.display=(name==='add')?'none':'flex';
   document.getElementById('scroll-container').scrollTop=0;
   if(name==='home')renderHome();
-  if(name==='cena')renderCenaRemaining();
+  if(name==='cena'){renderCenaRemaining();renderAlmuerzoRemaining();}
   if(name==='entreno')renderYesterdayWorkout();
+  if(name==='progreso')renderProgreso();
 }
 
 // ═══════════════ HOME ═══════════════
@@ -788,12 +1004,26 @@ function renderHome(){
   }
   document.getElementById('status-messages').innerHTML=msgs.join('');
 
+  // ── Favorites ──
+  const favs2=getFavorites();
+  const favHtml=favs2.length>0?`
+    <div class="quick-section">
+      <div class="quick-title">⭐ Mis favoritos</div>
+      <div class="quick-scroll">
+        ${favs2.map(m=>`
+          <div class="quick-card" onclick='repeatMeal(${JSON.stringify(m)})' style="border-color:rgba(251,191,36,.3);">
+            <div class="quick-card-name">${MEAL_EMOJIS[m.type]||'🍽️'} ${esc(m.name)}</div>
+            <div class="quick-card-meta">P${m.p}·C${m.c}·G${m.f}</div>
+          </div>`).join('')}
+      </div>
+    </div>`:'';
+
   // ── Quick repeat (from past days only) ──
   const past=getAllPastMeals();
   const seen=new Map();
   past.forEach(m=>{if(!seen.has(m.name))seen.set(m.name,m);});
   const recent=[...seen.values()].slice(-10).reverse().filter(m=>!getMeals().find(x=>x.name===m.name));
-  document.getElementById('quick-repeat-section').innerHTML=recent.length>0?`
+  document.getElementById('quick-repeat-section').innerHTML=favHtml+(recent.length>0?`
     <div class="quick-section">
       <div class="quick-title">Repetir de otros días</div>
       <div class="quick-scroll">
@@ -803,7 +1033,7 @@ function renderHome(){
             <div class="quick-card-meta">P${m.p}·C${m.c}·G${m.f}</div>
           </div>`).join('')}
       </div>
-    </div>`:'';
+    </div>`:'')
 
   // ── Meals list ──
   const listEl=document.getElementById('meals-list');
@@ -811,7 +1041,10 @@ function renderHome(){
     listEl.innerHTML=`<div class="empty-state"><div class="empty-icon">🍽️</div><div class="empty-text">Nada registrado aún<br><span style="font-size:0.8rem">Pulsa + para añadir tu primera comida</span></div></div>`;
     return;
   }
-  listEl.innerHTML=meals.map((m,i)=>`
+  const favs=getFavorites();
+  listEl.innerHTML=meals.map((m,i)=>{
+    const isFav=favs.some(f=>f.name===m.name);
+    return `
     <div class="meal-item">
       <div class="meal-emoji">${MEAL_EMOJIS[m.type]||'🍽️'}</div>
       <div class="meal-info">
@@ -823,8 +1056,10 @@ function renderHome(){
           <span class="macro-tag f">G ${m.f}g</span>
         </div>
       </div>
+      <div class="meal-fav${isFav?' active':''}" onclick='toggleFavorite(${JSON.stringify(m)})' title="Guardar como favorito">⭐</div>
       <div class="meal-del" onclick="deleteMeal(${i})">✕</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function dismissOnboard(){
@@ -864,13 +1099,12 @@ function deleteMeal(i){
 
 // ═══════════════ ADD ═══════════════
 function setAddMode(mode){
-  document.getElementById('add-scan-mode').style.display=mode==='scan'?'block':'none';
-  document.getElementById('add-ingredientes-mode').style.display=mode==='ingredientes'?'block':'none';
-  document.getElementById('add-manual-mode').style.display=mode==='manual'?'block':'none';
-  document.getElementById('tab-scan').classList.toggle('active',mode==='scan');
-  document.getElementById('tab-ingredientes').classList.toggle('active',mode==='ingredientes');
-  document.getElementById('tab-manual').classList.toggle('active',mode==='manual');
+  ['scan','ingredientes','barcode','manual'].forEach(m=>{
+    document.getElementById('add-'+m+'-mode').style.display=m===mode?'block':'none';
+    document.getElementById('tab-'+m).classList.toggle('active',m===mode);
+  });
   if(mode==='ingredientes') renderTypeChips('ing-type-chips','ing');
+  if(mode==='barcode'){renderTypeChips('bc-type-chips','bc');initBarcodeScanner();}
 }
 function renderTypeChips(id,prefix){
   const def=guessCurrentMealType();
@@ -899,6 +1133,17 @@ function addMeal(mode){
     document.getElementById('ing-nombre').value='';
     document.getElementById('ing-resultado').style.display='none';
     renderTypeChips('ing-type-chips','ing');
+  } else if(mode==='barcode'){
+    name=document.getElementById('bc-meal-name').value.trim();
+    if(!name){showToast('Escribe el nombre del plato');return;}
+    type=getSelectedType('bc');
+    p=parseFloat(document.getElementById('bc-meal-p').value)||0;
+    c=parseFloat(document.getElementById('bc-meal-c').value)||0;
+    f=parseFloat(document.getElementById('bc-meal-f').value)||0;
+    ['bc-meal-name','bc-meal-p','bc-meal-c','bc-meal-f'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('barcode-result').style.display='none';
+    stopBarcodeScanner();
+    renderTypeChips('bc-type-chips','bc');
   } else {
     const pre=mode==='scan'?'s':'m';
     name=document.getElementById(`${pre}-meal-name`).value.trim();
@@ -1345,6 +1590,314 @@ function formatAI(raw){
   }).join('');
   t=t.replace(/<p>\s*<\/p>/g,'');
   return t;
+}
+
+// ═══════════════ FAVORITES ═══════════════
+function toggleFavorite(meal){
+  let favs=getFavorites();
+  const idx=favs.findIndex(f=>f.name===meal.name);
+  if(idx>=0){favs.splice(idx,1);showToast('⭐ Eliminado de favoritos');}
+  else{favs.push({name:meal.name,type:meal.type,p:meal.p,c:meal.c,f:meal.f});showToast('⭐ Guardado en favoritos');}
+  saveFavorites(favs);
+  renderHome();
+}
+
+// ═══════════════ BARCODE ═══════════════
+let barcodeStream=null, barcodeDetector=null, barcodeInterval=null;
+
+function initBarcodeScanner(){
+  const zone=document.getElementById('barcode-zone');
+  const vid=document.getElementById('barcode-video');
+  if('BarcodeDetector' in window){
+    zone.onclick=startBarcodeCamera;
+    zone.querySelector('div:first-child').textContent='📷';
+  } else {
+    zone.querySelector('div:nth-child(2)').textContent='Introduce el código manualmente';
+    zone.querySelector('div:nth-child(3)').textContent='Tu navegador no soporta escaneo de cámara';
+    zone.style.cursor='default';
+  }
+}
+
+async function startBarcodeCamera(){
+  try{
+    barcodeStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const vid=document.getElementById('barcode-video');
+    vid.srcObject=barcodeStream;vid.style.display='block';
+    document.getElementById('barcode-zone').style.display='none';
+    document.getElementById('barcode-scan-status').style.display='block';
+    document.getElementById('barcode-scan-status').textContent='Apunta al código de barras...';
+    barcodeDetector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
+    barcodeInterval=setInterval(async()=>{
+      try{
+        const codes=await barcodeDetector.detect(vid);
+        if(codes.length>0){
+          clearInterval(barcodeInterval);
+          stopBarcodeScanner();
+          lookupBarcode(codes[0].rawValue);
+        }
+      }catch(e){}
+    },500);
+  }catch(e){showToast('No se pudo acceder a la cámara — introduce el código manualmente');}
+}
+
+function stopBarcodeScanner(){
+  if(barcodeStream){barcodeStream.getTracks().forEach(t=>t.stop());barcodeStream=null;}
+  clearInterval(barcodeInterval);
+  const vid=document.getElementById('barcode-video');
+  if(vid){vid.style.display='none';vid.srcObject=null;}
+  const zone=document.getElementById('barcode-zone');
+  if(zone)zone.style.display='block';
+  const st=document.getElementById('barcode-scan-status');
+  if(st)st.style.display='none';
+}
+
+async function lookupBarcode(code){
+  if(!code||String(code).length<8){showToast('Código no válido');return;}
+  document.getElementById('barcode-scan-status').style.display='block';
+  document.getElementById('barcode-scan-status').textContent='Buscando producto...';
+  try{
+    const r=await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}?fields=product_name,nutriments,serving_size`);
+    const data=await r.json();
+    if(data.status!==1||!data.product){showToast('Producto no encontrado — introduce los datos manualmente');return;}
+    const pr=data.product;
+    const n=pr.nutriments;
+    const p100=parseFloat(n['proteins_100g']||n['proteins']||0);
+    const c100=parseFloat(n['carbohydrates_100g']||n['carbohydrates']||0);
+    const f100=parseFloat(n['fat_100g']||n['fat']||0);
+    // Default to 100g serving
+    document.getElementById('bc-meal-name').value=pr.product_name||'Producto escaneado';
+    document.getElementById('bc-meal-p').value=Math.round(p100*10)/10;
+    document.getElementById('bc-meal-c').value=Math.round(c100*10)/10;
+    document.getElementById('bc-meal-f').value=Math.round(f100*10)/10;
+    document.getElementById('barcode-result').style.display='block';
+    showToast('✓ Producto encontrado');
+    setTimeout(()=>document.getElementById('barcode-result').scrollIntoView({behavior:'smooth',block:'start'}),100);
+  }catch(e){showToast('Error buscando producto');}
+  document.getElementById('barcode-scan-status').style.display='none';
+}
+
+// ═══════════════ IA TABS ═══════════════
+function setIATab(tab){
+  document.getElementById('ia-almuerzo-section').style.display=tab==='almuerzo'?'block':'none';
+  document.getElementById('ia-cena-section').style.display=tab==='cena'?'block':'none';
+  document.getElementById('ia-tab-almuerzo').classList.toggle('active',tab==='almuerzo');
+  document.getElementById('ia-tab-cena').classList.toggle('active',tab==='cena');
+  if(tab==='cena')renderCenaRemaining();
+  if(tab==='almuerzo')renderAlmuerzoRemaining();
+}
+
+function renderAlmuerzoRemaining(){
+  const meals=getMeals(),goals=getGoals();
+  let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  const rP=Math.max(0,goals.p-P),rC=Math.max(0,goals.c-C),rF=Math.max(0,goals.f-F);
+  const cls=(r,g)=>r<0?'over':r<g*0.1?'warn':'good';
+  document.getElementById('almuerzo-remaining').innerHTML=`
+    <div class="card">
+      <div class="card-title">Macros disponibles para hoy</div>
+      <div class="remaining-banner">
+        <div class="rem-cell ${cls(rP,goals.p)}"><div class="rem-val">${rP}g</div><div class="rem-lbl">Proteína</div></div>
+        <div class="rem-cell ${cls(rC,goals.c)}"><div class="rem-val">${rC}g</div><div class="rem-lbl">Carbos</div></div>
+        <div class="rem-cell ${cls(rF,goals.f)}"><div class="rem-val">${rF}g</div><div class="rem-lbl">Grasa</div></div>
+      </div>
+      <p style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:6px;">La sugerencia deja margen para la cena</p>
+    </div>`;
+}
+
+async function getAlmuerzoSuggestion(){
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  const meals=getMeals(),goals=getGoals(),p=getProfile();
+  const prefs=document.getElementById('almuerzo-prefs').value.trim();
+  let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  const rP=Math.max(0,goals.p-P),rC=Math.max(0,goals.c-C),rF=Math.max(0,goals.f-F);
+  // Almuerzo gets ~45% of remaining, leaving room for dinner
+  const tP=Math.round(rP*0.45),tC=Math.round(rC*0.45),tF=Math.round(rF*0.45);
+  const btn=document.getElementById('almuerzo-btn');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Pensando...';
+  const prompt=`Eres nutricionista experta. Objetivo paciente: reducción de grasa y volumen, preservar músculo, relación positiva con la comida. NUNCA menciones calorías.
+
+Paciente: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm.
+Comido hoy (desayuno/snack): ${meals.length===0?'Nada todavía':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g G${m.f}g`).join(' | ')}
+Macros disponibles para el RESTO del día: P${rP}g C${rC}g G${rF}g
+TARGET para el ALMUERZO (dejando margen para cena): P${tP}g C${tC}g G${tF}g
+${prefs?'Preferencias: '+prefs:''}
+
+Sugiere UN almuerzo completo y saciante para este target. Usa estructura:
+
+## [Nombre del plato]
+[Frase apetecible]
+
+### Ingredientes
+- [ingrediente]: [cantidad]g
+
+### Preparación rápida
+1. [paso]
+
+### Macros
+Proteína: Xg · Carbos: Xg · Grasa: Xg
+
+### Nota
+[1 frase motivadora, sin mencionar calorías]
+
+Usa ingredientes de supermercado español o tuppers Wetaca. Práctico para entre semana.`;
+  try{
+    const res=await callClaude([{role:'user',content:prompt}]);
+    document.getElementById('almuerzo-result').innerHTML=`<div class="card"><div class="card-title">Tu almuerzo de hoy</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
+  }catch(e){
+    document.getElementById('almuerzo-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
+  }
+  btn.disabled=false;btn.innerHTML='Sugerir mi almuerzo';
+}
+
+// ═══════════════ PROGRESO PAGE ═══════════════
+function setProgresoTab(tab){
+  ['actividad','medidas','semana'].forEach(t=>{
+    document.getElementById('progreso-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('ptab-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='actividad')renderActivityToday();
+  if(tab==='medidas')renderMeasuresHistory();
+  if(tab==='semana')renderWeeklySummary();
+}
+
+function renderProgreso(){
+  renderActivityToday();
+}
+
+// ── Actividad ──
+function renderActivityToday(){
+  const act=getActivity();
+  // Steps
+  document.getElementById('steps-input').value=act.pasos||'';
+  document.getElementById('steps-display-num').textContent=(act.pasos||0).toLocaleString('es-ES');
+  const pct=Math.min(100,((act.pasos||0)/8000)*100);
+  document.getElementById('steps-bar').style.width=pct+'%';
+  const stepsColor=act.pasos>=8000?'var(--green)':act.pasos>=5000?'var(--yellow)':'var(--accent)';
+  document.getElementById('steps-bar').style.background=stepsColor;
+  // Activity list
+  const listEl=document.getElementById('activity-list-today');
+  if(act.actividades.length===0){
+    listEl.innerHTML='<div style="font-size:0.8rem;color:var(--muted);padding:8px 0;">Sin actividades registradas hoy</div>';
+  } else {
+    listEl.innerHTML=act.actividades.map((a,i)=>`
+      <div class="activity-item">
+        <span>${a.tipo} · ${a.duracion} min · ${a.intensidad}</span>
+        <span style="color:var(--muted);cursor:pointer;font-size:0.85rem;" onclick="deleteActivity(${i})">✕</span>
+      </div>`).join('');
+  }
+  // Movement status
+  const totalMin=act.actividades.reduce((s,a)=>s+parseInt(a.duracion||0),0);
+  const steps=act.pasos||0;
+  let statusHtml='';
+  if(steps>=8000&&totalMin>=30) statusHtml=`<div class="status-strip ok">🏆 Día muy activo — excelente para tu objetivo de pérdida de volumen. El movimiento diario es clave.</div>`;
+  else if(steps>=5000||totalMin>=20) statusHtml=`<div class="status-strip ok">✓ Bien encaminada — llevas ${steps>=5000?steps.toLocaleString('es-ES')+' pasos':''}${totalMin>0?' y '+totalMin+' min de actividad':''}. ¡A por más!</div>`;
+  else if(steps>0||totalMin>0) statusHtml=`<div class="status-strip low">💪 Buen comienzo — intenta llegar a 8.000 pasos o 30 min de actividad para maximizar resultados.</div>`;
+  else statusHtml=`<div class="status-strip warn" style="opacity:.6;">Aún no hay actividad registrada hoy — cualquier movimiento cuenta.</div>`;
+  document.getElementById('movement-status').innerHTML=statusHtml;
+}
+
+function saveSteps(){
+  const steps=parseInt(document.getElementById('steps-input').value)||0;
+  const act=getActivity();act.pasos=steps;saveActivity(act);
+  renderActivityToday();showToast('✓ Pasos guardados');
+}
+
+function logActivity(){
+  const tipo=document.getElementById('act-tipo').value;
+  const duracion=parseInt(document.getElementById('act-duracion').value)||0;
+  if(!duracion){showToast('Indica la duración');return;}
+  const intensidad=chipState.intensidad||'moderada';
+  const act=getActivity();
+  act.actividades.push({tipo,duracion,intensidad});
+  saveActivity(act);
+  document.getElementById('act-duracion').value='';
+  renderActivityToday();showToast('✓ Actividad registrada');
+}
+
+function deleteActivity(idx){
+  const act=getActivity();act.actividades.splice(idx,1);saveActivity(act);renderActivityToday();
+}
+
+// ── Medidas ──
+function saveMeasure(){
+  const entry={
+    date:dk(),
+    cintura:parseFloat(document.getElementById('med-cintura').value)||null,
+    cadera:parseFloat(document.getElementById('med-cadera').value)||null,
+    pecho:parseFloat(document.getElementById('med-pecho').value)||null,
+    brazo:parseFloat(document.getElementById('med-brazo').value)||null,
+    muslo:parseFloat(document.getElementById('med-muslo').value)||null,
+  };
+  if(!entry.cintura&&!entry.cadera&&!entry.pecho&&!entry.brazo&&!entry.muslo){showToast('Introduce al menos una medida');return;}
+  const measures=getMeasures().filter(m=>m.date!==dk()); // replace today if exists
+  measures.push(entry);measures.sort((a,b)=>a.date.localeCompare(b.date));
+  saveMeasures(measures);
+  ['cintura','cadera','pecho','brazo','muslo'].forEach(k=>document.getElementById('med-'+k).value='');
+  showToast('✓ Medidas guardadas');renderMeasuresHistory();
+}
+
+function renderMeasuresHistory(){
+  const measures=getMeasures();
+  const el=document.getElementById('medidas-history');
+  if(measures.length===0){
+    el.innerHTML='<div style="font-size:0.8rem;color:var(--muted);padding:8px 0;">Sin medidas registradas todavía</div>';return;
+  }
+  const campos=[{k:'cintura',l:'Cintura'},{k:'cadera',l:'Cadera'},{k:'pecho',l:'Pecho'},{k:'brazo',l:'Brazo'},{k:'muslo',l:'Muslo'}];
+  const first=measures[0];
+  el.innerHTML=[...measures].reverse().map(m=>{
+    const dateStr=new Date(m.date+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+    const vals=campos.filter(c=>m[c.k]).map(c=>{
+      const delta=first[c.k]?Math.round((m[c.k]-first[c.k])*10)/10:null;
+      const deltaHtml=delta!==null&&m.date!==first.date?`<span class="medida-delta ${delta<=0?'good':'bad'}">${delta>0?'+':''}${delta}</span>`:'';
+      return `<span style="margin-right:10px;">${c.l}: <strong>${m[c.k]}</strong>cm ${deltaHtml}</span>`;
+    }).join('');
+    return `<div class="medida-history-item"><span style="color:var(--muted);flex-shrink:0;margin-right:10px;">${dateStr}</span><span style="flex:1;font-size:0.78rem;">${vals}</span></div>`;
+  }).join('');
+}
+
+// ── Weekly summary ──
+function renderWeeklySummary(){
+  const goals=getGoals();
+  const days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(Date.now()-i*86400000);
+    const key=d.toISOString().split('T')[0];
+    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
+    let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+    const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    days.push({key,label:d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}),P,C,F,hasMeals:meals.length>0,act});
+  }
+  const sumEl=document.getElementById('weekly-summary');
+  sumEl.innerHTML=days.map(d=>{
+    if(!d.hasMeals) return `<div class="week-day"><div class="week-day-header"><span style="text-transform:capitalize;">${d.label}</span><span style="color:var(--border)">sin datos</span></div></div>`;
+    const pP=Math.min(100,d.P/goals.p*100),pC=Math.min(100,d.C/goals.c*100),pF=Math.min(100,d.F/goals.f*100);
+    return `
+      <div class="week-day">
+        <div class="week-day-header">
+          <span style="text-transform:capitalize;">${d.label}</span>
+          <span>P${d.P}g C${d.C}g G${d.F}g</span>
+        </div>
+        <div class="week-bars">
+          <div class="week-bar-wrap"><div class="week-bar" style="width:${pP}%;background:var(--green);"></div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="width:${pC}%;background:var(--accent);"></div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="width:${pF}%;background:var(--orange);"></div></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const actEl=document.getElementById('weekly-activity');
+  actEl.innerHTML=days.map(d=>{
+    const min=d.act.actividades.reduce((s,a)=>s+parseInt(a.duracion||0),0);
+    const steps=d.act.pasos||0;
+    if(!min&&!steps) return `<div class="week-day"><div class="week-day-header"><span style="text-transform:capitalize;">${d.label}</span><span style="color:var(--border)">sin datos</span></div></div>`;
+    return `
+      <div class="week-day">
+        <div class="week-day-header">
+          <span style="text-transform:capitalize;">${d.label}</span>
+          <span>${steps?steps.toLocaleString('es-ES')+' pasos':''}${min?' · '+min+' min':''}</span>
+        </div>
+        ${steps>0?`<div class="steps-bar-wrap"><div class="steps-bar" style="width:${Math.min(100,steps/8000*100)}%;background:${steps>=8000?'var(--green)':steps>=5000?'var(--yellow)':'var(--accent)'};"></div></div>`:''}
+      </div>`;
+  }).join('');
 }
 
 // ═══════════════ UTILS ═══════════════
