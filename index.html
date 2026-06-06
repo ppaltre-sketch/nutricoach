@@ -1372,6 +1372,7 @@ function renderCenaRemaining(){
   const meals=getMeals(),goals=getGoals();
   let P=0,C=0,F=0;
   meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  P=Math.round(P*10)/10; C=Math.round(C*10)/10; F=Math.round(F*10)/10;
   const rP=Math.max(0,goals.p-P),rC=Math.max(0,goals.c-C),rF=Math.max(0,goals.f-F);
   const cls=(r,g)=>r<0?'over':r<g*0.1?'warn':'good';
 
@@ -1404,6 +1405,7 @@ async function getCenaSuggestion(){
   const meals=getMeals(),goals=getGoals(),p=getProfile();
   const prefs=document.getElementById('cena-prefs').value.trim();
   let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  P=Math.round(P*10)/10; C=Math.round(C*10)/10; F=Math.round(F*10)/10;
   const rP=Math.max(0,goals.p-P),rC=Math.max(0,goals.c-C),rF=Math.max(0,goals.f-F);
   const btn=document.getElementById('cena-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Analizando tu día...';
@@ -1799,6 +1801,7 @@ async function getEmpujon(){
   const meals=getMeals(),goals=getGoals(),p=getProfile();
   const act=getActivity();
   let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  P=Math.round(P*10)/10; C=Math.round(C*10)/10; F=Math.round(F*10)/10;
   const totalMin=act.actividades.reduce((s,a)=>s+parseInt(a.duracion||0),0);
   // Get last 7 days stats
   let activeDays=0;
@@ -2002,6 +2005,7 @@ function setIATab(tab){
 function renderAlmuerzoRemaining(){
   const meals=getMeals(),goals=getGoals();
   let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  P=Math.round(P*10)/10; C=Math.round(C*10)/10; F=Math.round(F*10)/10;
   const rP=Math.max(0,goals.p-P),rC=Math.max(0,goals.c-C),rF=Math.max(0,goals.f-F);
   const cls=(r,g)=>r<0?'over':r<g*0.1?'warn':'good';
   document.getElementById('almuerzo-remaining').innerHTML=`
@@ -2021,6 +2025,7 @@ async function getAlmuerzoSuggestion(){
   const meals=getMeals(),goals=getGoals(),p=getProfile();
   const prefs=document.getElementById('almuerzo-prefs').value.trim();
   let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  P=Math.round(P*10)/10; C=Math.round(C*10)/10; F=Math.round(F*10)/10;
   const rP=Math.max(0,goals.p-P),rC=Math.max(0,goals.c-C),rF=Math.max(0,goals.f-F);
   // Almuerzo gets ~45% of remaining, leaving room for dinner
   const tP=Math.round(rP*0.45),tC=Math.round(rC*0.45),tF=Math.round(rF*0.45);
