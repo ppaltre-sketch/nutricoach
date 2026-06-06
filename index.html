@@ -1659,7 +1659,7 @@ async function callClaude(messages){
     // Network-level failure: CORS, no internet, firewall, etc.
     const isHttps=location.protocol==='https:';
     if(!isHttps) throw new Error('Necesitas abrir la app desde HTTPS (usa la URL de GitHub Pages, no localhost)');
-    throw new Error('Sin conexión con la API — comprueba tu internet. Si usas VPN o red corporativa, puede estar bloqueando api.anthropic.com');
+    throw new Error('Sin conexión con la API ['+err.name+': '+err.message+'] — protocol:'+location.protocol);
   }
   if(!r.ok){
     const body=await r.json().catch(()=>({}));
