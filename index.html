@@ -786,6 +786,10 @@
           </div>
         </div>
         <div class="form-group">
+          <label>Peso objetivo (kg)</label>
+          <input type="number" id="cfg-peso-obj" value="69" oninput="saveProfile()" placeholder="Ej: 69" />
+        </div>
+        <div class="form-group">
           <label>Nivel de actividad</label>
           <select id="cfg-actividad" onchange="saveProfile()">
             <option value="sedentario">Sedentario</option>
@@ -899,7 +903,7 @@ function computeEnergyStatus(meals){
 const getMeals = () => JSON.parse(localStorage.getItem('meals_'+dk())||'[]');
 const saveMeals = m => localStorage.setItem('meals_'+dk(), JSON.stringify(m));
 const getApiKey = () => localStorage.getItem('anthropic_key')||'';
-const getProfile = () => JSON.parse(localStorage.getItem('nc_profile')||'{"peso":90,"altura":174,"edad":37,"sexo":"mujer","actividad":"bajo"}');
+const getProfile = () => { const d=JSON.parse(localStorage.getItem('nc_profile')||'{"peso":90,"altura":174,"edad":37,"sexo":"mujer","actividad":"bajo","pesoObj":69}'); if(!d.pesoObj)d.pesoObj=69; return d; };
 const getGoalsBase = () => JSON.parse(localStorage.getItem('nc_goals')||'{"p":120,"c":150,"f":55}');
 function getGoals(){
   const base=getGoalsBase();
@@ -952,6 +956,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('cfg-edad').value=p.edad;
   document.getElementById('cfg-sexo').value=p.sexo;
   document.getElementById('cfg-actividad').value=p.actividad;
+  document.getElementById('cfg-peso-obj').value=p.pesoObj||69;
   const g=getGoalsBase();
   document.getElementById('cfg-goal-p').value=g.p;
   document.getElementById('cfg-goal-c').value=g.c;
@@ -1443,8 +1448,8 @@ async function getCenaSuggestion(){
 
   const prompt=`Eres endocrinóloga y nutricionista con enfoque en pérdida de grasa saludable, fuerza y relación positiva con la comida. NUNCA menciones calorías en tu respuesta.
 
-Paciente: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}.
-Objetivo: reducir peso y volumen, estar sana y fuerte, mejorar relación con la comida.
+Paciente: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Peso objetivo: ${p.pesoObj||69}kg.
+Objetivo: llegar a ${p.pesoObj||69}kg reduciendo grasa y preservando músculo. Gestiona internamente el déficit calórico necesario — NUNCA menciones calorías al paciente.
 ${kcalTodayNote}
 
 COMIDO HOY: ${meals.length===0?'Nada':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g G${m.f}g`).join(' | ')}
@@ -1636,7 +1641,7 @@ async function recalcGoals(){
   const btn=document.getElementById('recalc-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner spinner-accent"></div> Calculando...';
   try{
-    const res=await callClaude([{role:'user',content:`Calcula los macros diarios óptimos (proteína, carbohidratos, grasa en gramos) para una mujer de ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}, cuyo objetivo es reducir peso y volumen, mejorar composición corporal y estar fuerte. Prioriza preservar músculo. RESPONDE SOLO JSON sin texto adicional: {"p":0,"c":0,"f":0}`}]);
+    const res=await callClaude([{role:'user',content:`Calcula los macros diarios óptimos (proteína, carbohidratos, grasa en gramos) para una mujer de ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Peso objetivo: ${p.pesoObj||69}kg. Objetivo: reducir grasa preservando músculo, llegar al peso objetivo de forma sostenible. Calcula internamente el TDEE y aplica un déficit de 400-500kcal diarias. RESPONDE SOLO JSON sin texto adicional: {"p":0,"c":0,"f":0}`}]);
     const json=JSON.parse(res.match(/\{[\s\S]*?\}/)?.[0]||'{}');
     if(json.p){
       document.getElementById('cfg-goal-p').value=json.p;
@@ -1656,7 +1661,8 @@ function saveProfile(){
     altura:parseFloat(document.getElementById('cfg-altura').value)||174,
     edad:parseInt(document.getElementById('cfg-edad').value)||37,
     sexo:document.getElementById('cfg-sexo').value,
-    actividad:document.getElementById('cfg-actividad').value
+    actividad:document.getElementById('cfg-actividad').value,
+    pesoObj:parseFloat(document.getElementById('cfg-peso-obj').value)||69
   }));
 }
 function saveGoals(){
@@ -2058,7 +2064,8 @@ async function getAlmuerzoSuggestion(){
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Pensando...';
   const prompt=`Eres nutricionista experta. Objetivo paciente: reducción de grasa y volumen, preservar músculo, relación positiva con la comida. NUNCA menciones calorías.
 
-Paciente: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm.
+Paciente: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Peso objetivo: ${p.pesoObj||69}kg.
+Objetivo: llegar a ${p.pesoObj||69}kg reduciendo grasa y preservando músculo. Gestiona internamente el déficit calórico — NUNCA menciones calorías.
 Comido hoy (desayuno/snack): ${meals.length===0?'Nada todavía':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g G${m.f}g`).join(' | ')}
 Macros disponibles para el RESTO del día: P${rP}g C${rC}g G${rF}g
 TARGET para el ALMUERZO (dejando margen para cena): P${tP}g C${tC}g G${tF}g
