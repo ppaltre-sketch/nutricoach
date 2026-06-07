@@ -381,6 +381,13 @@
                 <input type="number" id="s-meal-f" min="0" />
               </div>
             </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>¿Cuánto te comes?</label>
+              <div style="display:flex;gap:8px;margin-top:6px;">
+                <button id="portion-full" onclick="setPortionScan(1)" style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer;">🍱 Ración completa</button>
+                <button id="portion-half" onclick="setPortionScan(0.5)" style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-weight:700;font-size:0.85rem;cursor:pointer;">½ Media ración</button>
+              </div>
+            </div>
             <button class="btn btn-primary" onclick="addMeal('scan')">Guardar comida</button>
           </div>
         </div>
@@ -845,6 +852,23 @@
 let chipState = {energia:'alta', tiempo:'30', weather:'soleado', cuerpo:'bien', intensidad:'suave'};
 let chipOpciones = new Set(['paseo','classpass','youtube','bandas','kettlebell','cinta']);
 let scannedMacros = null;
+let scanPortion = 1; // 1 = completa, 0.5 = mitad
+
+function setPortionScan(portion){
+  scanPortion = portion;
+  document.getElementById('portion-full').style.background = portion===1 ? 'var(--accent)' : 'var(--surface2)';
+  document.getElementById('portion-full').style.borderColor = portion===1 ? 'var(--accent)' : 'var(--border)';
+  document.getElementById('portion-full').style.color = portion===1 ? '#fff' : 'var(--text)';
+  document.getElementById('portion-half').style.background = portion===0.5 ? 'var(--accent)' : 'var(--surface2)';
+  document.getElementById('portion-half').style.borderColor = portion===0.5 ? 'var(--accent)' : 'var(--border)';
+  document.getElementById('portion-half').style.color = portion===0.5 ? '#fff' : 'var(--text)';
+  if(scannedMacros){
+    document.getElementById('s-meal-p').value = Math.round(scannedMacros.p * portion * 10)/10;
+    document.getElementById('s-meal-c').value = Math.round(scannedMacros.c * portion * 10)/10;
+    document.getElementById('s-meal-f').value = Math.round(scannedMacros.f * portion * 10)/10;
+    document.getElementById('s-meal-name').value = scannedMacros.name + (portion===0.5 ? ' (½ ración)' : '');
+  }
+}
 
 const MEAL_TYPES = [
   {val:'desayuno',label:'☀️ Desayuno'},
@@ -1340,7 +1364,8 @@ async function processPhotoFile(file){
       {type:'text',text:'Etiqueta nutricional de un tupper Wetaca. Extrae: nombre del plato, proteínas (g), carbohidratos (g), grasas totales (g), calorías. Responde SOLO JSON: {"nombre":"...","proteinas":0,"carbohidratos":0,"grasas":0,"calorias":0}. Si no lees algún valor pon null.'}
     ]}]);
     const json=JSON.parse(res.match(/\{[\s\S]*?\}/)?.[0]||'{}');
-    scannedMacros=json;
+    scannedMacros={p:json.proteinas??0, c:json.carbohidratos??0, f:json.grasas??0, name:json.nombre||'Plato Wetaca'};
+    scanPortion=1; setPortionScan(1); // reset a ración completa
     document.getElementById('scanned-result').style.display='block';
     document.getElementById('scanned-result').innerHTML=`
       <div class="scanned-card">
