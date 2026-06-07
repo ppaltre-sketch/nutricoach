@@ -297,6 +297,35 @@
     .ia-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3);}
 
     @media(min-width:500px){.macros-row{gap:12px;}.ring-container{width:140px;height:140px;}}
+
+    /* ── MORNING CHECK-IN MODAL ── */
+    .checkin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
+    .checkin-modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px 20px;max-width:420px;width:100%;animation:fadeIn .2s var(--ease);}
+    .checkin-modal h2{font-size:1.15rem;font-weight:800;margin-bottom:6px;}
+    .checkin-modal .checkin-sub{font-size:0.8rem;color:var(--muted);margin-bottom:20px;}
+    .checkin-section{margin-bottom:16px;}
+    .checkin-label{font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+    .checkin-chips{display:flex;flex-wrap:wrap;gap:7px;}
+
+    /* ── REMINDER BANNERS ── */
+    .reminder-banner{display:flex;align-items:center;gap:10px;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.3);color:var(--orange);border-radius:12px;padding:11px 14px;margin-bottom:12px;font-size:0.82rem;line-height:1.4;}
+    .reminder-banner.night{background:rgba(129,140,248,.1);border-color:rgba(129,140,248,.3);color:var(--accent);}
+    .reminder-banner .rem-dismiss{margin-left:auto;background:none;border:none;color:inherit;cursor:pointer;font-size:1rem;flex-shrink:0;opacity:.7;}
+
+    /* ── HAMBRE CARD ── */
+    .hambre-card{background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(251,146,60,.06));border:1px solid rgba(251,191,36,.3);border-radius:16px;padding:14px 16px;margin-bottom:14px;}
+    .hambre-row{display:flex;align-items:center;gap:12px;}
+
+    /* ── WEEKLY SUMMARY AI CARD ── */
+    @keyframes pulse-btn{0%,100%{box-shadow:0 0 0 0 rgba(129,140,248,.4);}50%{box-shadow:0 0 0 8px rgba(129,140,248,0);}}
+    .weekly-ai-card{background:linear-gradient(135deg,rgba(129,140,248,.12),rgba(99,102,241,.05));border:1px solid rgba(129,140,248,.3);border-radius:16px;padding:16px;margin-bottom:14px;}
+    .btn-pulse{animation:pulse-btn 1.8s infinite;}
+
+    /* ── MEASUREMENTS CHART ── */
+    .medidas-chart-wrap{margin-top:16px;}
+    .medidas-chart-title{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+    .medidas-chart-legend{display:flex;gap:14px;margin-top:8px;font-size:0.72rem;color:var(--muted);}
+    .medidas-chart-legend span{display:flex;align-items:center;gap:5px;}
   </style>
 </head>
 <body>
@@ -312,10 +341,12 @@
     <!-- ═══ HOME ═══ -->
     <div class="page active" id="page-home">
       <div id="home-onboard"></div>
+      <div id="reminder-banners"></div>
       <div id="streak-card"></div>
       <div id="macro-ring-card"></div>
       <div id="water-tracker-wrap"></div>
       <div id="daily-check-card"></div>
+      <div id="hambre-card"></div>
       <div id="status-messages"></div>
       <div id="empujon-card-wrap"></div>
       <div id="quick-repeat-section"></div>
@@ -509,6 +540,7 @@
       <div class="ia-tabs">
         <div class="ia-tab active" id="ia-tab-almuerzo" onclick="setIATab('almuerzo')">🍱 ¿Qué como?</div>
         <div class="ia-tab" id="ia-tab-cena" onclick="setIATab('cena')">🌙 ¿Qué ceno?</div>
+        <div class="ia-tab" id="ia-tab-restaurante" onclick="setIATab('restaurante')">🍽️ Restaurante</div>
       </div>
       <!-- Almuerzo -->
       <div id="ia-almuerzo-section">
@@ -523,6 +555,29 @@
         </div>
         <div id="almuerzo-result"></div>
       </div>
+      <!-- Restaurante -->
+      <div id="ia-restaurante-section" style="display:none">
+        <div id="restaurante-remaining"></div>
+        <div class="card">
+          <div class="card-title">📍 Estás en un restaurante o pidiendo delivery</div>
+          <div class="form-group">
+            <label>Escribe las opciones del menú o describe dónde estás</label>
+            <textarea id="restaurante-menu" rows="4" placeholder="Ej: sushi, hamburguesa, ensalada César, pasta carbonara... o 'estoy en McDonalds'" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:0.9rem;outline:none;resize:vertical;font-family:inherit;transition:border-color .15s;"></textarea>
+          </div>
+          <div class="form-group">
+            <label>📷 Foto del menú (opcional)</label>
+            <div class="photo-zone" id="restaurante-photo-zone" onclick="document.getElementById('restaurante-photo-input').click()" style="padding:18px 16px;">
+              <div class="photo-zone-icon" style="font-size:1.8rem;">📷</div>
+              <div class="photo-zone-text" style="font-size:0.85rem;">Toca para subir foto del menú</div>
+            </div>
+            <input type="file" id="restaurante-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleRestaurantePhoto(this)" />
+            <img id="restaurante-photo-preview" class="photo-preview-img" style="display:none" />
+          </div>
+          <button class="btn btn-primary" onclick="getRestauranteSuggestion()" id="restaurante-btn">🎯 ¿Qué pido?</button>
+        </div>
+        <div id="restaurante-result"></div>
+      </div>
+
       <!-- Cena -->
       <div id="ia-cena-section" style="display:none">
         <div id="cena-remaining"></div>
@@ -712,6 +767,14 @@
         <div class="card" id="medidas-history-card">
           <div class="card-title">Historial de medidas</div>
           <div id="medidas-history"></div>
+          <div id="medidas-chart-wrap" class="medidas-chart-wrap" style="display:none;">
+            <div class="medidas-chart-title">📈 Evolución</div>
+            <svg id="medidas-chart-svg" style="width:100%;display:block;"></svg>
+            <div class="medidas-chart-legend">
+              <span><svg width="18" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"/></svg> Cintura</span>
+              <span><svg width="18" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/></svg> Cadera</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -730,6 +793,17 @@
 
       <!-- Semana -->
       <div id="progreso-semana" style="display:none">
+        <div class="weekly-ai-card" id="weekly-ai-card">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="font-size:1.8rem;">🧠</div>
+            <div style="flex:1;">
+              <div style="font-weight:800;font-size:0.95rem;">Análisis inteligente de tu semana</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">La IA analiza patrones, aciertos y te da 3 acciones concretas</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="weekly-ai-btn" onclick="getWeeklyAISummary()">Ver mi análisis</button>
+          <div id="weekly-ai-result" style="display:none;margin-top:14px;"></div>
+        </div>
         <div class="card">
           <div class="card-title">📊 Últimos 7 días — macros</div>
           <div id="weekly-summary"></div>
@@ -740,6 +814,7 @@
         </div>
       </div>
     </div>
+
 
     <!-- ═══ CONFIG ═══ -->
     <div class="page" id="page-config">
@@ -831,11 +906,56 @@
       </div>
 
       <div class="card">
+        <div class="setting-group-title">Recordatorios</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Recibe avisos para registrar tus comidas y tu cena.</p>
+        <button class="btn btn-secondary" id="notif-btn" onclick="requestNotifPermission()">🔔 Activar recordatorios</button>
+        <div id="notif-status" style="font-size:0.78rem;margin-top:8px;"></div>
+      </div>
+
+      <div class="card">
         <div class="setting-group-title">Restablecer datos</div>
         <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3);" onclick="clearToday()">Borrar comidas de hoy</button>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ═══ MORNING CHECK-IN MODAL ═══ -->
+<div id="checkin-overlay" class="checkin-overlay" style="display:none;">
+  <div class="checkin-modal">
+    <h2>☀️ ¡Buenos días!</h2>
+    <div class="checkin-sub">Cuéntame cómo arrancas el día — te ayuda a personalizar mis sugerencias</div>
+
+    <div class="checkin-section">
+      <div class="checkin-label">😴 ¿Cómo has dormido?</div>
+      <div class="checkin-chips" id="ci-sueno">
+        <button class="chip" data-val="muy-bien" onclick="selectCheckin(this,'sueno')">Muy bien</button>
+        <button class="chip" data-val="bien" onclick="selectCheckin(this,'sueno')">Bien</button>
+        <button class="chip" data-val="regular" onclick="selectCheckin(this,'sueno')">Regular</button>
+        <button class="chip" data-val="mal" onclick="selectCheckin(this,'sueno')">Mal</button>
+      </div>
+    </div>
+    <div class="checkin-section">
+      <div class="checkin-label">🍽️ ¿Cómo tienes el hambre?</div>
+      <div class="checkin-chips" id="ci-hambre">
+        <button class="chip" data-val="sin-hambre" onclick="selectCheckin(this,'hambre')">Sin hambre</button>
+        <button class="chip" data-val="normal" onclick="selectCheckin(this,'hambre')">Normal</button>
+        <button class="chip" data-val="bastante" onclick="selectCheckin(this,'hambre')">Bastante hambre</button>
+      </div>
+    </div>
+    <div class="checkin-section">
+      <div class="checkin-label">💪 ¿Cómo tienes el cuerpo?</div>
+      <div class="checkin-chips" id="ci-cuerpo">
+        <button class="chip" data-val="fresco" onclick="selectCheckin(this,'cuerpo')">Fresco</button>
+        <button class="chip" data-val="bien" onclick="selectCheckin(this,'cuerpo')">Bien</button>
+        <button class="chip" data-val="cansado" onclick="selectCheckin(this,'cuerpo')">Cansado</button>
+        <button class="chip" data-val="dolorido" onclick="selectCheckin(this,'cuerpo')">Dolorido</button>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveCheckin()" style="margin-top:6px;">Empezar el día ☀️</button>
+    <button onclick="closeCheckin()" style="width:100%;margin-top:8px;background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;padding:6px;">Saltar por hoy</button>
   </div>
 </div>
 
@@ -981,6 +1101,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderCenaRemaining();
   renderAlmuerzoRemaining();
   renderYesterdayWorkout();
+  checkMorningCheckin();
+  // Notification status
+  const notifEl = document.getElementById('notif-status');
+  if(notifEl && 'Notification' in window){
+    if(Notification.permission==='granted') notifEl.innerHTML='<span style="color:var(--green)">✓ Recordatorios activados</span>';
+    else if(Notification.permission==='denied') notifEl.innerHTML='<span style="color:var(--orange)">Bloqueado — actívalo desde ajustes del navegador</span>';
+  }
 });
 
 // ═══════════════ NAV ═══════════════
@@ -1000,6 +1127,7 @@ function showPage(name){
 
 // ═══════════════ HOME ═══════════════
 function renderHome(){
+  renderReminderBanners();
   const meals=getMeals(), goals=getGoals();
   let P=0,C=0,F=0;
   meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
@@ -1109,6 +1237,9 @@ function renderHome(){
 
   // ── Empujón button ──
   renderEmpujonButton();
+
+  // ── Hambre card ──
+  renderHambreCard();
 
   // ── Status messages ──
   const msgs=[];
@@ -2039,10 +2170,13 @@ async function lookupBarcode(code){
 function setIATab(tab){
   document.getElementById('ia-almuerzo-section').style.display=tab==='almuerzo'?'block':'none';
   document.getElementById('ia-cena-section').style.display=tab==='cena'?'block':'none';
+  document.getElementById('ia-restaurante-section').style.display=tab==='restaurante'?'block':'none';
   document.getElementById('ia-tab-almuerzo').classList.toggle('active',tab==='almuerzo');
   document.getElementById('ia-tab-cena').classList.toggle('active',tab==='cena');
+  document.getElementById('ia-tab-restaurante').classList.toggle('active',tab==='restaurante');
   if(tab==='cena')renderCenaRemaining();
   if(tab==='almuerzo')renderAlmuerzoRemaining();
+  if(tab==='restaurante')renderRestauranteRemaining();
 }
 
 function renderAlmuerzoRemaining(){
@@ -2117,8 +2251,8 @@ function setProgresoTab(tab){
     document.getElementById('ptab-'+t).classList.toggle('active',t===tab);
   });
   if(tab==='actividad')renderActivityToday();
-  if(tab==='medidas')renderMeasuresHistory();
-  if(tab==='semana')renderWeeklySummary();
+  if(tab==='medidas'){renderMeasuresHistory();renderMeasuresChart();}
+  if(tab==='semana'){renderWeeklySummary();renderWeeklyAICard();}
   if(tab==='retos')renderRetos();
 }
 
@@ -2240,7 +2374,7 @@ function saveMeasure(){
   measures.push(entry);measures.sort((a,b)=>a.date.localeCompare(b.date));
   saveMeasures(measures);
   ['cintura','cadera','pecho','brazo','muslo'].forEach(k=>document.getElementById('med-'+k).value='');
-  showToast('✓ Medidas guardadas');renderMeasuresHistory();
+  showToast('✓ Medidas guardadas');renderMeasuresHistory();renderMeasuresChart();
 }
 
 function renderMeasuresHistory(){
@@ -2345,6 +2479,381 @@ function checkSetupFromURL(){
       showToast('✓ API Key configurada automáticamente');
     }
   }catch(e){}
+}
+
+// ═══════════════ MORNING CHECK-IN ═══════════════
+let checkinState = {sueno: null, hambre: null, cuerpo: null};
+
+function checkMorningCheckin(){
+  const key = 'nc_checkin_' + dk();
+  if(localStorage.getItem(key)) return; // already done today
+  // Show only between 5:00 and 12:00
+  const h = new Date().getHours();
+  if(h >= 5 && h < 12){
+    document.getElementById('checkin-overlay').style.display = 'flex';
+  }
+}
+
+function selectCheckin(el, group){
+  const containerId = 'ci-' + group;
+  document.querySelectorAll('#' + containerId + ' .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  checkinState[group] = el.dataset.val;
+}
+
+function saveCheckin(){
+  const key = 'nc_checkin_' + dk();
+  localStorage.setItem(key, JSON.stringify({...checkinState, ts: new Date().toISOString()}));
+  closeCheckin();
+  showToast('☀️ ¡Buen día! Todo anotado');
+}
+
+function closeCheckin(){
+  document.getElementById('checkin-overlay').style.display = 'none';
+}
+
+function getCheckin(){
+  return JSON.parse(localStorage.getItem('nc_checkin_' + dk()) || 'null');
+}
+
+// ═══════════════ REMINDER BANNERS ═══════════════
+function renderReminderBanners(){
+  const h = new Date().getHours();
+  const meals = getMeals();
+  const el = document.getElementById('reminder-banners');
+  let html = '';
+
+  if(h >= 14 && meals.length === 0){
+    const dismissed = sessionStorage.getItem('reminder_almuerzo_dismissed');
+    if(!dismissed){
+      html += `<div class="reminder-banner" id="reminder-almuerzo">🍽️ Aún no has registrado el almuerzo — ¿qué has comido hoy?<button class="rem-dismiss" onclick="dismissBanner('almuerzo')">✕</button></div>`;
+    }
+  }
+  if(h >= 21 && meals.length < 2){
+    const dismissed = sessionStorage.getItem('reminder_cena_dismissed');
+    if(!dismissed){
+      html += `<div class="reminder-banner night" id="reminder-cena">🌙 Recuerda registrar tu cena para ver el resumen del día<button class="rem-dismiss" onclick="dismissBanner('cena')">✕</button></div>`;
+    }
+  }
+  el.innerHTML = html;
+}
+
+function dismissBanner(type){
+  sessionStorage.setItem('reminder_' + type + '_dismissed', '1');
+  const el = document.getElementById('reminder-' + type);
+  if(el) el.remove();
+}
+
+function requestNotifPermission(){
+  if(!('Notification' in window)){
+    document.getElementById('notif-status').innerHTML = '<span style="color:var(--muted)">Tu navegador no soporta notificaciones</span>';
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    localStorage.setItem('nc_notif_perm', perm);
+    const el = document.getElementById('notif-status');
+    if(perm === 'granted'){
+      el.innerHTML = '<span style="color:var(--green)">✓ Recordatorios activados</span>';
+      showToast('🔔 Recordatorios activados');
+    } else {
+      el.innerHTML = '<span style="color:var(--orange)">Permiso denegado — actívalo desde los ajustes del navegador</span>';
+    }
+  });
+}
+
+// ═══════════════ HAMBRE CARD ═══════════════
+function renderHambreCard(){
+  const h = new Date().getHours();
+  const el = document.getElementById('hambre-card');
+  if(h < 10 || h >= 20){ el.innerHTML = ''; return; }
+  if(document.getElementById('hambre-btn')) return; // already rendered
+  el.innerHTML = `
+    <div class="hambre-card" id="hambre-card-inner">
+      <div class="hambre-row">
+        <div style="font-size:1.8rem;flex-shrink:0;">⚡</div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:0.9rem;">¿Tienes hambre ahora?</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Te sugiero un snack que encaja con tus macros</div>
+        </div>
+        <button id="hambre-btn" onclick="getHambreSuggestion()" style="padding:9px 14px;border-radius:10px;border:none;background:var(--yellow);color:#0f172a;font-weight:700;cursor:pointer;font-size:0.8rem;white-space:nowrap;flex-shrink:0;">Qué puedo comer</button>
+      </div>
+      <div id="hambre-result" style="display:none;margin-top:12px;font-size:0.855rem;line-height:1.7;border-top:1px solid var(--border);padding-top:12px;"></div>
+    </div>`;
+}
+
+async function getHambreSuggestion(){
+  if(!getApiKey()){ showToast('Configura tu API Key primero'); showPage('config'); return; }
+  const btn = document.getElementById('hambre-btn');
+  btn.innerHTML = '<div class="spinner" style="border-top-color:#0f172a;border-color:rgba(0,0,0,.2);"></div>';
+  btn.disabled = true;
+  const meals = getMeals(), goals = getGoals(), p = getProfile();
+  let P=0, C=0, F=0;
+  meals.forEach(m => { P+=m.p||0; C+=m.c||0; F+=m.f||0; });
+  const rP=Math.round(Math.max(0,goals.p-P)*10)/10;
+  const rC=Math.round(Math.max(0,goals.c-C)*10)/10;
+  const rF=Math.round(Math.max(0,goals.f-F)*10)/10;
+  const h=new Date().getHours();
+  const checkin=getCheckin();
+  const checkinNote=checkin?`Check-in esta mañana: sueño ${checkin.sueno}, hambre ${checkin.hambre}, cuerpo ${checkin.cuerpo}.`:'';
+
+  const prompt=`Eres nutricionista experta. Mujer, ${p.edad} años, ${p.peso}kg, objetivo ${p.pesoObj||69}kg. Son las ${h}h. Tiene hambre y quiere un snack. ${checkinNote}
+Macros que le quedan hoy: P${rP}g C${rC}g G${rF}g.
+Comidas hoy: ${meals.length===0?'ninguna':meals.map(m=>m.name).join(', ')}.
+Sugiere UN snack concreto que encaje. Máximo 3-4 líneas: qué comer exactamente (con cantidad), por qué encaja. Tono directo y sin calorías. Sin formato markdown, texto corrido.`;
+
+  try{
+    const res = await callClaude([{role:'user', content: prompt}]);
+    const el = document.getElementById('hambre-result');
+    el.style.display = 'block';
+    el.textContent = res;
+  }catch(e){ showToast('Error: '+e.message); }
+  btn.innerHTML = 'Qué puedo comer';
+  btn.disabled = false;
+}
+
+// ═══════════════ RESTAURANTE MODE ═══════════════
+let restaurantePhotoData = null;
+
+function setIATabRestaurante(){
+  renderRestauranteRemaining();
+}
+
+function renderRestauranteRemaining(){
+  const meals=getMeals(), goals=getGoals();
+  let P=0,C=0,F=0;
+  meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  P=Math.round(P*10)/10; C=Math.round(C*10)/10; F=Math.round(F*10)/10;
+  const rP=Math.round(Math.max(0,goals.p-P)*10)/10;
+  const rC=Math.round(Math.max(0,goals.c-C)*10)/10;
+  const rF=Math.round(Math.max(0,goals.f-F)*10)/10;
+  const cls=(r,g)=>r<0?'over':r<g*0.1?'warn':'good';
+  const el=document.getElementById('restaurante-remaining');
+  if(el) el.innerHTML=`
+    <div class="card">
+      <div class="card-title">Macros disponibles</div>
+      <div class="remaining-banner">
+        <div class="rem-cell ${cls(rP,goals.p)}"><div class="rem-val">${rP}g</div><div class="rem-lbl">Proteína</div></div>
+        <div class="rem-cell ${cls(rC,goals.c)}"><div class="rem-val">${rC}g</div><div class="rem-lbl">Carbos</div></div>
+        <div class="rem-cell ${cls(rF,goals.f)}"><div class="rem-val">${rF}g</div><div class="rem-lbl">Grasa</div></div>
+      </div>
+    </div>`;
+}
+
+function handleRestaurantePhoto(inp){
+  const f = inp.files[0];
+  if(!f) return;
+  const preview = document.getElementById('restaurante-photo-preview');
+  preview.src = URL.createObjectURL(f);
+  preview.style.display = 'block';
+  document.getElementById('restaurante-photo-zone').style.display = 'none';
+  fileToBase64(f).then(b64 => {
+    restaurantePhotoData = {b64: b64.split(',')[1], type: f.type || 'image/jpeg'};
+  });
+}
+
+async function getRestauranteSuggestion(){
+  if(!getApiKey()){ showToast('Configura tu API Key primero'); showPage('config'); return; }
+  const menu = document.getElementById('restaurante-menu').value.trim();
+  if(!menu && !restaurantePhotoData){ showToast('Describe el menú o sube una foto'); return; }
+
+  const btn = document.getElementById('restaurante-btn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Analizando...';
+
+  const meals=getMeals(), goals=getGoals(), p=getProfile();
+  let P=0,C=0,F=0;
+  meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  const rP=Math.round(Math.max(0,goals.p-P)*10)/10;
+  const rC=Math.round(Math.max(0,goals.c-C)*10)/10;
+  const rF=Math.round(Math.max(0,goals.f-F)*10)/10;
+
+  const systemPrompt=`Eres nutricionista experta. Mujer, ${p.edad} años, ${p.peso}kg, objetivo ${p.pesoObj||69}kg. Está en un restaurante o pidiendo delivery. NUNCA menciones calorías.
+Macros que le quedan hoy: P${rP}g C${rC}g G${rF}g.
+Comidas hoy: ${meals.length===0?'ninguna':meals.map(m=>m.name).join(', ')}.
+${menu?'Opciones disponibles: '+menu:''}
+
+Recomiéndale la mejor opción (máximo 2 platos). Para cada opción: nombre, por qué encaja con sus macros, qué pedir o modificar (sin salsas, sin patatas fritas, etc.). Tono directo y práctico. Máximo 8 líneas en total.`;
+
+  try{
+    let msgContent;
+    if(restaurantePhotoData){
+      msgContent = [
+        {type:'image', source:{type:'base64', media_type: restaurantePhotoData.type, data: restaurantePhotoData.b64}},
+        {type:'text', text: systemPrompt + '\nLee el menú de la imagen y recomienda.'}
+      ];
+    } else {
+      msgContent = systemPrompt;
+    }
+    const res = await callClaude([{role:'user', content: msgContent}]);
+    document.getElementById('restaurante-result').innerHTML=`<div class="card"><div class="card-title">🎯 Tu elección ideal</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
+  }catch(e){
+    document.getElementById('restaurante-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
+  }
+  btn.disabled=false; btn.innerHTML='🎯 ¿Qué pido?';
+}
+
+// ═══════════════ MEASUREMENTS CHART ═══════════════
+function renderMeasuresChart(){
+  const measures = getMeasures();
+  const wrap = document.getElementById('medidas-chart-wrap');
+  if(!wrap) return;
+
+  // Filter those with cintura or cadera, take last 8
+  const relevant = measures.filter(m => m.cintura || m.cadera).slice(-8);
+  if(relevant.length < 2){ wrap.style.display='none'; return; }
+
+  wrap.style.display = 'block';
+  const W = 300, H = 130, padL=8, padR=8, padT=10, padB=28;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  // Collect all values for scale
+  const allVals = relevant.flatMap(m => [m.cintura, m.cadera].filter(Boolean));
+  const minV = Math.min(...allVals) - 2;
+  const maxV = Math.max(...allVals) + 2;
+  const scaleY = v => padT + plotH - ((v - minV) / (maxV - minV)) * plotH;
+  const scaleX = i => padL + (i / (relevant.length - 1)) * plotW;
+
+  // Build polylines
+  function buildLine(key, color){
+    const pts = relevant.map((m,i) => m[key] ? `${scaleX(i).toFixed(1)},${scaleY(m[key]).toFixed(1)}` : null).filter(Boolean);
+    if(pts.length < 2) return '';
+    return `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+  function buildDots(key, color){
+    return relevant.map((m,i) => m[key] ? `<circle cx="${scaleX(i).toFixed(1)}" cy="${scaleY(m[key]).toFixed(1)}" r="3" fill="${color}"/>` : '').join('');
+  }
+
+  // X axis labels (every other)
+  const labels = relevant.map((m,i) => {
+    if(i % 2 !== 0 && i !== relevant.length-1) return '';
+    const d = new Date(m.date+'T12:00:00');
+    const lbl = d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+    return `<text x="${scaleX(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="9" fill="var(--muted)">${lbl}</text>`;
+  }).join('');
+
+  const svg = document.getElementById('medidas-chart-svg');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+  svg.innerHTML = `
+    ${buildLine('cintura','var(--green)')}
+    ${buildLine('cadera','var(--accent)')}
+    ${buildDots('cintura','var(--green)')}
+    ${buildDots('cadera','var(--accent)')}
+    ${labels}`;
+}
+
+// ═══════════════ WEEKLY AI SUMMARY ═══════════════
+async function getWeeklyAISummary(){
+  if(!getApiKey()){ showToast('Configura tu API Key primero'); showPage('config'); return; }
+
+  const weekKey = getWeekKey();
+  const stored = localStorage.getItem('nc_weekly_summary_'+weekKey);
+  const resultEl = document.getElementById('weekly-ai-result');
+  const btn = document.getElementById('weekly-ai-btn');
+
+  if(stored){
+    resultEl.innerHTML = `<div class="ai-bubble">${formatAI(stored)}</div><button onclick="regenerateWeeklySummary()" style="margin-top:10px;background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;">↺ Regenerar</button>`;
+    resultEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true; btn.innerHTML = '<div class="spinner spinner-accent"></div> Analizando tu semana...';
+
+  const goals = getGoals(), p = getProfile();
+  const days = [];
+  for(let i=6; i>=0; i--){
+    const d = new Date(Date.now()-i*86400000);
+    const key = d.toISOString().split('T')[0];
+    const meals = JSON.parse(localStorage.getItem('meals_'+key)||'[]');
+    const act = JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    const water = parseInt(localStorage.getItem('water_'+key)||'0');
+    const checkin = JSON.parse(localStorage.getItem('nc_checkin_'+key)||'null');
+    let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+    const totalMin = act.actividades.reduce((s,a)=>s+parseInt(a.duracion||0),0);
+    days.push({
+      label: d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}),
+      hasMeals: meals.length>0,
+      mealCount: meals.length,
+      P:Math.round(P), C:Math.round(C), F:Math.round(F),
+      pctP: goals.p>0?Math.round(P/goals.p*100):0,
+      pctC: goals.c>0?Math.round(C/goals.c*100):0,
+      pctF: goals.f>0?Math.round(F/goals.f*100):0,
+      actMinutes: totalMin,
+      actDays: act.actividades.length>0||act.pasos>=3000?1:0,
+      water,
+      checkin
+    });
+  }
+
+  const daysLogged = days.filter(d=>d.hasMeals).length;
+  const avgPctP = Math.round(days.filter(d=>d.hasMeals).reduce((s,d)=>s+d.pctP,0)/(daysLogged||1));
+  const avgPctC = Math.round(days.filter(d=>d.hasMeals).reduce((s,d)=>s+d.pctC,0)/(daysLogged||1));
+  const exerciseDays = days.filter(d=>d.actDays>0).length;
+  const avgWater = (days.reduce((s,d)=>s+d.water,0)/7).toFixed(1);
+  const daysSummary = days.map(d => `${d.label}: ${d.hasMeals?`${d.mealCount} comidas P${d.pctP}% C${d.pctC}% G${d.pctF}%${d.actMinutes?' actividad '+d.actMinutes+'min':''}`:'-'}${d.checkin?` sueño:${d.checkin.sueno}`:''}`).join('\n');
+
+  const prompt=`Eres una coach de salud y nutrición experta. Analiza esta semana de datos y proporciona un resumen motivador y accionable. NUNCA menciones calorías.
+
+Perfil: mujer, ${p.edad} años, ${p.peso}kg, objetivo ${p.pesoObj||69}kg. Actividad: ${p.actividad}.
+Objetivos diarios: P${goals.p}g C${goals.c}g G${goals.f}g.
+Días con registro: ${daysLogged}/7.
+Cumplimiento medio proteína: ${avgPctP}%, carbos: ${avgPctC}%.
+Días activos: ${exerciseDays}/7.
+Agua media: ${avgWater}/8 vasos.
+
+Detalle por día:
+${daysSummary}
+
+Estructura tu análisis así:
+
+## ✅ Lo que fue bien
+[2-3 logros concretos de la semana — sé específica con los datos]
+
+## 🔍 Patrón detectado
+[1 patrón concreto observado, ej: "los miércoles sueles fallar en proteína", "los fines de semana sin actividad", etc.]
+
+## 🎯 3 acciones para la próxima semana
+1. [acción concreta y medible]
+2. [acción concreta y medible]
+3. [acción concreta y medible]
+
+## 💪 Para cerrar
+[Frase motivadora personalizada — cálida, directa, sin cursilerías]`;
+
+  try{
+    const res = await callClaude([{role:'user', content: prompt}]);
+    localStorage.setItem('nc_weekly_summary_'+weekKey, res);
+    resultEl.innerHTML = `<div class="ai-bubble">${formatAI(res)}</div><button onclick="regenerateWeeklySummary()" style="margin-top:10px;background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;">↺ Regenerar</button>`;
+    resultEl.style.display='block';
+  }catch(e){
+    resultEl.innerHTML=`<div class="status-strip warn">Error: ${esc(e.message)}</div>`;
+    resultEl.style.display='block';
+  }
+  btn.disabled=false; btn.innerHTML='Ver mi análisis';
+}
+
+function renderWeeklyAICard(){
+  const isSunday = new Date().getDay() === 0;
+  const btn = document.getElementById('weekly-ai-btn');
+  if(btn){
+    if(isSunday){ btn.classList.add('btn-pulse'); }
+    else { btn.classList.remove('btn-pulse'); }
+  }
+  // If already generated this week, show it
+  const weekKey = getWeekKey();
+  const stored = localStorage.getItem('nc_weekly_summary_'+weekKey);
+  const resultEl = document.getElementById('weekly-ai-result');
+  if(stored && resultEl && resultEl.innerHTML.trim()===''){
+    resultEl.innerHTML = `<div class="ai-bubble">${formatAI(stored)}</div><button onclick="regenerateWeeklySummary()" style="margin-top:10px;background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;">↺ Regenerar</button>`;
+    resultEl.style.display = 'block';
+  }
+}
+
+function regenerateWeeklySummary(){
+  const weekKey = getWeekKey();
+  localStorage.removeItem('nc_weekly_summary_'+weekKey);
+  document.getElementById('weekly-ai-result').style.display='none';
+  getWeeklyAISummary();
 }
 
 // ═══════════════ SERVICE WORKER ═══════════════
