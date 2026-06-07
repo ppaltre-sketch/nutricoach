@@ -608,6 +608,16 @@
         </div>
 
         <div class="form-group" style="margin-top:14px;">
+          <label>🌙 ¿En qué fase de tu ciclo estás?</label>
+          <div class="chips" id="chips-ciclo">
+            <button class="chip" data-val="menstruacion" onclick="selectChip(this,'ciclo')">🔴 Regla</button>
+            <button class="chip" data-val="folicular" onclick="selectChip(this,'ciclo')">🌱 Post-regla</button>
+            <button class="chip selected" data-val="ovulacion" onclick="selectChip(this,'ciclo')">✨ Ovulación</button>
+            <button class="chip" data-val="lutea" onclick="selectChip(this,'ciclo')">🌙 Pre-regla</button>
+            <button class="chip" data-val="nodice" onclick="selectChip(this,'ciclo')">🤷 No sé</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:14px;">
           <label>¿Algo especial que trabajar o evitar? (opcional)</label>
           <input type="text" id="entreno-notas" placeholder="Ej: core, estiramientos, nada de impacto..." />
         </div>
@@ -853,7 +863,7 @@
 
 <script>
 // ═══════════════ STATE ═══════════════
-let chipState = {energia:'alta', tiempo:'30', weather:'soleado', cuerpo:'bien', intensidad:'suave'};
+let chipState = {energia:'alta', tiempo:'30', weather:'soleado', cuerpo:'bien', intensidad:'suave', ciclo:'ovulacion'};
 let chipOpciones = new Set(['paseo','classpass','youtube','bandas','kettlebell','cinta']);
 let scannedMacros = null;
 let scanPortion = 1; // 1 = completa, 0.5 = mitad
@@ -1536,6 +1546,7 @@ async function getEntrenoSuggestion(){
 Clienta: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Vive junto a Madrid Río. Tiene ClassPass.
 Objetivo: reducir peso y volumen, ganar fuerza, relación sana con el ejercicio.
 Energía mental: ${chipState.energia} | Estado físico: ${chipState.cuerpo} | Tiempo: ${chipState.tiempo} min | Tiempo exterior: ${chipState.weather}
+Fase ciclo menstrual: ${chipState.ciclo==='menstruacion'?'MENSTRUACIÓN (fase 1) — priorizar descanso activo, yoga, estiramientos, nada de alta intensidad, respetar el cuerpo':chipState.ciclo==='folicular'?'FASE FOLICULAR post-regla (fase 2) — energía creciente, buen momento para aumentar intensidad y cargas, el cuerpo responde muy bien al entrenamiento':chipState.ciclo==='ovulacion'?'OVULACIÓN (fase 3) — pico de energía y fuerza, momento ideal para entrenamientos intensos, HIIT, fuerza máxima':chipState.ciclo==='lutea'?'FASE LÚTEA pre-regla (fase 4) — energía bajando, posible retención e hinchazón, preferir fuerza moderada y pilates sobre cardio intenso, escuchar el cuerpo':'No especificada — propón entrenamiento equilibrado'}
 Opciones disponibles: ${opciones||'no especificadas'}
 ${notas?'Petición especial: '+notas:''}
 ${meals.length>0?'Ha comido hoy: '+meals.map(m=>m.name).join(', '):''}
@@ -1543,6 +1554,7 @@ ${lastW?'Último entreno: '+lastW+' — propón algo diferente o complementario'
 ${chipState.cuerpo==='agujetas'?'IMPORTANTE: tiene agujetas — evita trabajar los mismos grupos musculares, prioriza movilidad o un grupo diferente.':''}
 ${chipState.cuerpo==='molestia'?'IMPORTANTE: tiene alguna molestia física — propón algo de bajo impacto, sin forzar, que le siente bien.':''}
 ${chipState.cuerpo==='cansada'?'IMPORTANTE: cuerpo cansado — sesión suave o de recuperación activa, nada intenso hoy.':''}
+${chipState.ciclo==='menstruacion'?'RECUERDA: está con la regla — sé empática, nada de presión, validar que descansar también es entreno.':''}
 ${daysSinceWorkout>=5?'IMPORTANTE: lleva '+daysSinceWorkout+' días sin entrenar — propón vuelta gradual y motivadora, que dé ganas de volver mañana.':''}
 ${daysSinceWorkout>=3&&daysSinceWorkout<5?'Lleva unos días sin entrenar — propón algo motivador que la enganche de nuevo.':''}
 ${streak>=7?'Lleva '+streak+' días de racha activa — puede subir la intensidad, está en modo constancia.':''}
