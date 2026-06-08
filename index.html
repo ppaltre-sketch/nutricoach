@@ -398,6 +398,100 @@
     .medidas-chart-title{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
     .medidas-chart-legend{display:flex;gap:14px;margin-top:8px;font-size:0.72rem;color:var(--muted);}
     .medidas-chart-legend span{display:flex;align-items:center;gap:5px;}
+
+    /* ── EJERCICIOS LOG ── */
+    .ej-form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+    .ej-hist{background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:0.75rem;color:var(--muted);margin-top:8px;line-height:1.6;}
+    .ej-hist strong{color:var(--text);}
+    .ej-collapse{background:var(--surface2);border-radius:10px;margin-top:10px;}
+    .ej-collapse-header{padding:10px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;font-weight:600;color:var(--muted);}
+    .ej-collapse-body{display:none;padding:0 12px 10px;}
+    .ej-group{margin-bottom:12px;}
+    .ej-group-name{font-weight:700;font-size:0.8rem;margin-bottom:6px;color:var(--text);}
+    .ej-entry{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.75rem;}
+    .ej-entry:last-child{border-bottom:none;}
+    .pr-badge{background:rgba(251,191,36,.15);color:var(--yellow);border-radius:99px;padding:2px 7px;font-size:0.65rem;font-weight:700;margin-left:6px;}
+
+    /* ── PLAN SEMANAL ── */
+    .plan-day-card{background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:10px;border:1px solid var(--border);}
+    .plan-day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .plan-day-name{font-weight:700;font-size:0.9rem;}
+    .plan-done-btn{padding:6px 12px;border-radius:8px;border:none;font-size:0.78rem;font-weight:700;cursor:pointer;transition:all .15s;}
+    .plan-done-btn.done{background:rgba(52,211,153,.2);color:var(--green);border:1.5px solid rgba(52,211,153,.4);}
+    .plan-done-btn.pending{background:var(--surface);color:var(--muted);border:1.5px solid var(--border);}
+    .plan-tipo-chips{display:flex;flex-wrap:wrap;gap:5px;}
+    .plan-tipo-chip{padding:5px 10px;border-radius:99px;border:1.5px solid var(--border);font-size:0.72rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
+    .plan-tipo-chip.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+    /* ── CLASSPASS CARD ── */
+    .classpass-card{background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(99,102,241,.05));border:1px solid rgba(56,189,248,.25);border-radius:16px;padding:14px 16px;margin-bottom:14px;}
+
+    /* ── C25K ── */
+    .c25k-tabs{display:flex;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:14px;}
+    .c25k-tab{flex:1;padding:8px;text-align:center;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
+    .c25k-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+    .interval-bar{display:flex;gap:3px;flex-wrap:wrap;margin:12px 0;}
+    .interval-block{height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;min-width:28px;padding:0 4px;flex-shrink:0;}
+    .interval-walk{background:rgba(56,189,248,.2);color:var(--blue);}
+    .interval-run{background:rgba(52,211,153,.2);color:var(--green);}
+
+    /* ── LOGROS ── */
+    .logros-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+    .logro-badge{background:var(--surface2);border-radius:12px;padding:10px 8px;text-align:center;border:1px solid var(--border);}
+    .logro-badge.earned{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.06);}
+    .logro-badge.locked{opacity:.4;}
+    .logro-emoji{font-size:1.5rem;margin-bottom:4px;}
+    .logro-title{font-size:0.65rem;font-weight:700;line-height:1.3;}
+    .logro-date{font-size:0.58rem;color:var(--muted);margin-top:2px;}
+
+    /* ── DELOAD BANNER ── */
+    .deload-banner{background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.3);border-radius:14px;padding:14px 16px;margin-bottom:14px;font-size:0.82rem;color:var(--orange);line-height:1.5;}
+
+    /* ── HOY PLAN CARD ── */
+    .hoy-plan-card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;}
+
+    /* ── PERFORMANCE LOG ── */
+    .perf-ex-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:99px;background:var(--surface2);border:1px solid var(--border);font-size:0.75rem;font-weight:600;margin:3px;cursor:default;}
+    .perf-ex-chip .rm{cursor:pointer;color:var(--muted);margin-left:2px;font-size:0.9rem;line-height:1;}
+    .perf-unit-toggle{display:flex;background:var(--surface2);border-radius:8px;padding:2px;gap:2px;margin-bottom:0;}
+    .perf-unit-btn{flex:1;padding:5px;text-align:center;border-radius:6px;font-size:0.73rem;font-weight:700;cursor:pointer;color:var(--muted);border:none;background:none;transition:all .15s;}
+    .perf-unit-btn.active{background:var(--surface);color:var(--text);}
+
+    /* ── WEEKLY PLAN CARDS ── */
+    .wplan-day{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
+    .wplan-day:last-child{border-bottom:none;}
+    .wplan-day-name{width:36px;font-size:0.75rem;font-weight:700;color:var(--muted);flex-shrink:0;}
+    .wplan-day.today .wplan-day-name{color:var(--accent);}
+    .wplan-type-chips{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+    .wplan-type-chip{padding:4px 9px;border-radius:99px;border:1.5px solid var(--border);font-size:0.68rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .12s;}
+    .wplan-type-chip.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .wplan-done{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.7rem;cursor:pointer;transition:all .15s;}
+    .wplan-done.done{background:var(--green);border-color:var(--green);color:#fff;}
+
+    /* ── MADRID RÍO PROGRAM ── */
+    .mr-interval-row{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+    .mr-block{padding:6px 12px;border-radius:8px;font-size:0.75rem;font-weight:700;text-align:center;}
+    .mr-walk{background:rgba(56,189,248,.15);color:var(--blue);}
+    .mr-run{background:rgba(52,211,153,.15);color:var(--green);}
+    .mr-progress-bar{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:10px 0 4px;}
+    .mr-progress-fill{height:100%;background:var(--green);border-radius:99px;transition:width .5s;}
+
+    /* ── ACHIEVEMENTS ── */
+    .achievements-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+    .ach-badge{background:var(--surface2);border-radius:12px;padding:10px 8px;text-align:center;border:1px solid var(--border);}
+    .ach-badge.earned{border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.06);}
+    .ach-badge.locked{opacity:.35;}
+    .ach-emoji{font-size:1.5rem;margin-bottom:4px;}
+    .ach-title{font-size:0.62rem;font-weight:700;line-height:1.3;}
+    .ach-date{font-size:0.55rem;color:var(--muted);margin-top:2px;}
+
+    /* ── STRENGTH CHALLENGE ── */
+    .challenge-option{padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:all .15s;}
+    .challenge-option:hover,.challenge-option.selected{border-color:var(--accent);background:rgba(129,140,248,.06);}
+    .challenge-option-title{font-weight:700;font-size:0.88rem;margin-bottom:2px;}
+    .challenge-option-sub{font-size:0.72rem;color:var(--muted);}
+    .challenge-progress{background:var(--surface2);border-radius:99px;height:10px;overflow:hidden;margin:10px 0 4px;}
+    .challenge-progress-fill{height:100%;background:linear-gradient(to right,var(--accent),var(--green));border-radius:99px;transition:width .5s;}
   </style>
 </head>
 <body>
@@ -414,6 +508,7 @@
     <div class="page active" id="page-home">
       <div id="home-onboard"></div>
       <div id="reminder-banners"></div>
+      <div id="hoy-plan-card"></div>
       <div id="streak-card"></div>
       <div id="macro-ring-card"></div>
       <div id="water-tracker-wrap"></div>
@@ -737,6 +832,10 @@
 
     <!-- ═══ ENTRENO ═══ -->
     <div class="page" id="page-entreno">
+      <div id="deload-banner"></div>
+      <div id="weekly-plan-card-entreno"></div>
+      <div id="classpass-card"></div>
+      <div id="madrid-rio-card"></div>
       <div id="yesterday-workout"></div>
       <div class="card">
         <div class="card-title">💪 Tu entrenamiento de hoy</div>
@@ -806,15 +905,25 @@
         <button class="btn btn-primary" onclick="getEntrenoSuggestion()" id="entreno-btn">Dame un entrenamiento</button>
       </div>
       <div id="entreno-result"></div>
+      <div id="madrid-rio-program" style="display:none;margin-top:12px;"></div>
+      <div id="classpass-rec" style="display:none;margin-top:12px;"></div>
+
+      <!-- Performance log card -->
+      <div class="card" id="performance-log-card" style="margin-top:12px;">
+        <div class="card-title">📝 Registrar mi sesión</div>
+        <div id="performance-log-content"></div>
+      </div>
     </div>
 
     <!-- ═══ PROGRESO ═══ -->
     <div class="page" id="page-progreso">
-      <div class="progress-tabs">
-        <div class="progress-tab active" id="ptab-actividad" onclick="setProgresoTab('actividad')">🏃 Actividad</div>
-        <div class="progress-tab" id="ptab-medidas" onclick="setProgresoTab('medidas')">📏 Medidas</div>
-        <div class="progress-tab" id="ptab-semana" onclick="setProgresoTab('semana')">📊 Semana</div>
-        <div class="progress-tab" id="ptab-retos" onclick="setProgresoTab('retos')">🎯 Retos</div>
+      <div class="progress-tabs" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <div class="progress-tab active" id="ptab-actividad" onclick="setProgresoTab('actividad')" style="white-space:nowrap;">🏃 Actividad</div>
+        <div class="progress-tab" id="ptab-medidas" onclick="setProgresoTab('medidas')" style="white-space:nowrap;">📏 Medidas</div>
+        <div class="progress-tab" id="ptab-semana" onclick="setProgresoTab('semana')" style="white-space:nowrap;">📊 Semana</div>
+        <div class="progress-tab" id="ptab-retos" onclick="setProgresoTab('retos')" style="white-space:nowrap;">🎯 Retos</div>
+        <div class="progress-tab" id="ptab-plan" onclick="setProgresoTab('plan')" style="white-space:nowrap;">📅 Plan</div>
+        <div class="progress-tab" id="ptab-logros" onclick="setProgresoTab('logros')" style="white-space:nowrap;">🏆 Logros</div>
       </div>
 
       <!-- Actividad hoy -->
@@ -875,6 +984,14 @@
           <div class="card-title">¿Te has movido suficiente?</div>
           <div id="movement-status"></div>
         </div>
+        <div class="card" id="prs-card">
+          <div class="card-title">🏆 Mis récords personales</div>
+          <div id="prs-content"></div>
+        </div>
+        <div class="card" id="logros-card">
+          <div class="card-title">🎖️ Logros desbloqueados</div>
+          <div id="logros-content"></div>
+        </div>
       </div>
 
       <!-- Medidas -->
@@ -906,6 +1023,16 @@
         </div>
       </div>
 
+      <!-- Plan semanal -->
+      <div id="progreso-plan" style="display:none">
+        <div class="card">
+          <div class="card-title">📅 Tu semana de entrenamiento</div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;">Planifica el domingo, ejecuta el resto.</p>
+          <div id="plan-days-container"></div>
+          <button class="btn btn-primary" style="margin-top:6px;" onclick="generarPlanSemanalIA()" id="plan-ia-btn">✨ Generar plan con IA</button>
+        </div>
+      </div>
+
       <!-- Retos semanales -->
       <div id="progreso-retos" style="display:none">
         <div class="card">
@@ -916,6 +1043,19 @@
         <div class="card" style="background:linear-gradient(135deg,rgba(129,140,248,.1),rgba(99,102,241,.04));border-color:rgba(129,140,248,.2);">
           <div class="card-title" style="color:var(--accent);">¿Para qué sirven los retos?</div>
           <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;">La IA analiza cómo fue tu semana — días activos, macros, agua — y te propone 3 objetivos pequeños pero concretos. No perfectos, alcanzables. La constancia en pequeños hábitos es lo que cambia el cuerpo a largo plazo.</p>
+        </div>
+      </div>
+
+      <!-- Logros -->
+      <div id="progreso-logros" style="display:none">
+        <div class="card">
+          <div class="card-title">🏆 Mis logros</div>
+          <div id="logros-count" style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;"></div>
+          <div id="logros-grid" class="achievements-grid"></div>
+        </div>
+        <div class="card" id="strength-challenge-card">
+          <div class="card-title">💥 Reto de fuerza</div>
+          <div id="strength-challenge-content"></div>
         </div>
       </div>
 
@@ -3603,6 +3743,854 @@ function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);
 }
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 1: PERFORMANCE LOG
+// ═══════════════════════════════════════════════════════════
+const COMMON_EXERCISES = ['Sentadillas','Flexiones','Peso muerto rumano','Swing kettlebell','Plancha','Zancadas','Press hombros con bandas','Remo con banda','Hip thrust','Burpees'];
+const WEIGHT_OPTIONS = ['Sin peso','Bandas','Kettlebell 6kg','Peso corporal'];
+
+let perfUnit = 'reps'; // 'reps' or 'seconds'
+
+function getSessionExercises(date){ return JSON.parse(localStorage.getItem('nc_session_'+(date||dk()))||'[]'); }
+function saveSessionExercises(arr,date){ localStorage.setItem('nc_session_'+(date||dk()),JSON.stringify(arr)); }
+function getPRs(){ return JSON.parse(localStorage.getItem('nc_prs')||'{}'); }
+function savePRs(p){ localStorage.setItem('nc_prs',JSON.stringify(p)); }
+
+function renderPerformanceLog(){
+  const el=document.getElementById('performance-log-content');
+  if(!el)return;
+  const exercises=getSessionExercises();
+  const datalistOpts=COMMON_EXERCISES.map(e=>`<option value="${esc(e)}">`).join('');
+
+  el.innerHTML=`
+    <datalist id="exercise-datalist">${datalistOpts}</datalist>
+    <div class="form-group">
+      <label>Ejercicio</label>
+      <input type="text" id="perf-exercise" list="exercise-datalist" placeholder="Ej: Sentadillas, Flexiones..." />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div class="form-group" style="margin:0;">
+        <label>Series</label>
+        <input type="number" id="perf-sets" min="1" max="10" placeholder="3" style="text-align:center;" />
+      </div>
+      <div>
+        <label style="display:block;font-size:0.75rem;color:var(--muted);margin-bottom:5px;font-weight:600;">Reps / Segundos</label>
+        <div class="perf-unit-toggle" style="margin-bottom:6px;">
+          <button class="perf-unit-btn active" id="punit-reps" onclick="setPerfUnit('reps')">Reps</button>
+          <button class="perf-unit-btn" id="punit-seconds" onclick="setPerfUnit('seconds')">Seg</button>
+        </div>
+        <input type="number" id="perf-reps" min="1" max="300" placeholder="10" style="text-align:center;width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:8px 6px;color:var(--text);font-size:0.9rem;outline:none;" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Resistencia / Peso</label>
+      <div class="chips" style="margin-top:4px;">
+        ${WEIGHT_OPTIONS.map((w,i)=>`<button class="chip${i===3?' selected':''}" data-val="${esc(w)}" onclick="selectPerfWeight(this)">${esc(w)}</button>`).join('')}
+      </div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:4px;" onclick="addPerfExercise()">Añadir ejercicio</button>
+    ${exercises.length>0?`
+    <div style="margin-top:12px;">
+      <div style="font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Sesión de hoy</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${exercises.map((ex,i)=>`
+          <span class="perf-ex-chip">
+            ${esc(ex.exercise)} ${ex.sets}×${ex.reps}${ex.unit==='seconds'?'seg':''} ${esc(ex.weight)}
+            <span class="rm" onclick="removePerfExercise(${i})">✕</span>
+          </span>`).join('')}
+      </div>
+    </div>`:''}
+    ${exercises.length>0?`<button onclick="showHistorialModal()" style="margin-top:10px;width:100%;padding:9px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:0.8rem;font-weight:700;cursor:pointer;">📊 Ver historial de ejercicios</button>`:''}`;
+}
+
+function setPerfUnit(unit){
+  perfUnit=unit;
+  document.getElementById('punit-reps').classList.toggle('active',unit==='reps');
+  document.getElementById('punit-seconds').classList.toggle('active',unit==='seconds');
+}
+
+function selectPerfWeight(el){
+  el.closest('.chips').querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function addPerfExercise(){
+  const exercise=document.getElementById('perf-exercise').value.trim();
+  if(!exercise){showToast('Escribe el nombre del ejercicio');return;}
+  const sets=parseInt(document.getElementById('perf-sets').value)||3;
+  const reps=parseInt(document.getElementById('perf-reps').value)||10;
+  const weightEl=document.querySelector('#performance-log-content .chips .chip.selected');
+  const weight=weightEl?weightEl.dataset.val:'Peso corporal';
+  const unit=perfUnit;
+  const time=new Date().toISOString();
+
+  const exercises=getSessionExercises();
+  exercises.push({exercise,sets,reps,unit,weight,time});
+  saveSessionExercises(exercises);
+
+  // PR check
+  checkExercisePR(exercise,sets,reps,weight);
+
+  // Check achievements
+  checkAndUnlockAchievements();
+
+  // Clear inputs
+  document.getElementById('perf-exercise').value='';
+  document.getElementById('perf-sets').value='';
+  document.getElementById('perf-reps').value='';
+
+  showToast('✓ Ejercicio añadido');
+  renderPerformanceLog();
+}
+
+function removePerfExercise(idx){
+  const exercises=getSessionExercises();
+  exercises.splice(idx,1);
+  saveSessionExercises(exercises);
+  renderPerformanceLog();
+}
+
+function checkExercisePR(exercise,sets,reps,weight){
+  const prs=getPRs();
+  const prev=prs[exercise];
+  const weightScore={'Sin peso':0,'Bandas':1,'Peso corporal':2,'Kettlebell 6kg':6}[weight]||0;
+  const prevScore=prev?(prev.reps*(prev.sets||1)+(weightScore)):0;
+  const newScore=reps*sets+weightScore;
+  if(!prev||newScore>prevScore){
+    prs[exercise]={reps,sets,weight,date:dk()};
+    savePRs(prs);
+    showToast('🏆 ¡Nuevo récord en '+exercise+'!');
+    // unlock first_pr achievement
+    unlockAchievement('first_pr');
+  }
+}
+
+function showHistorialModal(){
+  const exercises=getSessionExercises();
+  if(!exercises.length)return;
+  // Collect unique exercise names
+  const names=[...new Set(exercises.map(e=>e.exercise))];
+  // For each exercise, gather last 5 sessions across all dates
+  let allSessions=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k.startsWith('nc_session_')){
+      const date=k.replace('nc_session_','');
+      const arr=JSON.parse(localStorage.getItem(k)||'[]');
+      arr.forEach(ex=>allSessions.push({...ex,date}));
+    }
+  }
+
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;display:flex;align-items:center;justify-content:center;padding:16px;';
+  let inner=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;max-width:440px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-weight:800;font-size:1rem;">📊 Historial de ejercicios</div>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;">✕</button>
+    </div>`;
+
+  names.forEach(name=>{
+    const history=allSessions.filter(s=>s.exercise===name).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+    if(!history.length)return;
+    inner+=`<div style="margin-bottom:14px;"><div style="font-weight:700;font-size:0.85rem;margin-bottom:6px;">${esc(name)}</div>`;
+    history.forEach((h,i)=>{
+      const prev=history[i+1];
+      let indicator='';
+      if(prev){
+        const delta=h.reps*h.sets - prev.reps*prev.sets;
+        indicator=delta>0?'<span style="color:var(--green);">↑</span>':delta<0?'<span style="color:var(--red);">↓</span>':'<span style="color:var(--muted);">→</span>';
+      }
+      inner+=`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.75rem;">
+        <span style="color:var(--muted);">${h.date}</span>
+        <span>${h.sets}×${h.reps}${h.unit==='seconds'?'seg':''} ${esc(h.weight)} ${indicator}</span>
+      </div>`;
+    });
+    inner+='</div>';
+  });
+  inner+='</div>';
+  modal.innerHTML=inner;
+  document.body.appendChild(modal);
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 2: WEEKLY PLANNER
+// ═══════════════════════════════════════════════════════════
+const PLAN_TYPES=['Fuerza','Cardio','ClassPass','Madrid Río','Yoga/Pilates','Descanso activo','Descanso'];
+const DAY_NAMES=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+function getWeeklyPlan(weekKey){ return JSON.parse(localStorage.getItem('nc_weekly_plan_'+(weekKey||getWeekKey()))||'null'); }
+function saveWeeklyPlan(plan,weekKey){ localStorage.setItem('nc_weekly_plan_'+(weekKey||getWeekKey()),JSON.stringify(plan)); }
+
+function getMondayDate(){
+  const d=new Date();
+  const day=d.getDay();
+  const diff=d.getDate()-day+(day===0?-6:1);
+  const mon=new Date(d);mon.setDate(diff);
+  return mon.toISOString().split('T')[0];
+}
+
+function renderWeeklyPlan(){
+  const el=document.getElementById('weekly-plan-card-entreno');
+  if(!el)return;
+  const weekKey=getMondayDate();
+  let plan=getWeeklyPlan(weekKey);
+  if(!plan){
+    // default empty plan
+    plan=DAY_NAMES.map((_,i)=>({type:'',done:false}));
+  }
+  const today=dk();
+  const todayDayIdx=(new Date().getDay()+6)%7; // Mon=0
+
+  // Count completed vs planned training days
+  const trainingDays=plan.filter(d=>d.type&&d.type!=='Descanso'&&d.type!=='Descanso activo').length;
+  const completedDays=plan.filter((d,i)=>{
+    if(!d.type||d.type==='Descanso')return false;
+    // check if session logged that day
+    const dayDate=new Date(weekKey);dayDate.setDate(dayDate.getDate()+i);
+    const dayKey=dayDate.toISOString().split('T')[0];
+    return d.done||getSessionExercises(dayKey).length>0||
+      JSON.parse(localStorage.getItem('nc_activity_'+dayKey)||'{"actividades":[]}').actividades.length>0;
+  }).length;
+
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>📅 Mi plan de esta semana</span>
+        <span style="font-size:0.72rem;color:var(--green);font-weight:700;">${completedDays}/${trainingDays} sesiones</span>
+      </div>
+      <div id="wplan-days"></div>
+    </div>`;
+
+  const daysEl=el.querySelector('#wplan-days');
+  daysEl.innerHTML=DAY_NAMES.map((name,i)=>{
+    const isToday=i===todayDayIdx;
+    const dayDate=new Date(weekKey);dayDate.setDate(dayDate.getDate()+i);
+    const dayKey=dayDate.toISOString().split('T')[0];
+    const hasActivity=getSessionExercises(dayKey).length>0||
+      JSON.parse(localStorage.getItem('nc_activity_'+dayKey)||'{"actividades":[]}').actividades.length>0;
+    const d=plan[i]||{type:'',done:false};
+    const isDone=d.done||hasActivity;
+    return `
+      <div class="wplan-day${isToday?' today':''}">
+        <div class="wplan-day-name">${name}${isToday?'<br><span style="color:var(--accent);font-size:0.6rem;">HOY</span>':''}</div>
+        <div class="wplan-type-chips">
+          ${PLAN_TYPES.map(t=>`<span class="wplan-type-chip${d.type===t?' selected':''}" onclick="setPlanDayType(${i},'${t}')">${t}</span>`).join('')}
+        </div>
+        <div class="wplan-done${isDone?' done':''}" onclick="togglePlanDone(${i})">${isDone?'✓':''}</div>
+      </div>`;
+  }).join('');
+}
+
+function setPlanDayType(dayIdx,type){
+  const weekKey=getMondayDate();
+  let plan=getWeeklyPlan(weekKey)||DAY_NAMES.map(()=>({type:'',done:false}));
+  plan[dayIdx].type=plan[dayIdx].type===type?'':type;
+  saveWeeklyPlan(plan,weekKey);
+  renderWeeklyPlan();
+}
+
+function togglePlanDone(dayIdx){
+  const weekKey=getMondayDate();
+  let plan=getWeeklyPlan(weekKey)||DAY_NAMES.map(()=>({type:'',done:false}));
+  plan[dayIdx].done=!plan[dayIdx].done;
+  saveWeeklyPlan(plan,weekKey);
+  renderWeeklyPlan();
+  checkAndUnlockAchievements();
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 3: CLASSPASS RECOMMENDATIONS
+// ═══════════════════════════════════════════════════════════
+async function getClassPassRec(){
+  if(!getApiKey())return;
+  const recEl=document.getElementById('classpass-rec');
+  if(!recEl)return;
+  recEl.style.display='block';
+  const ciclo=chipState.ciclo||localStorage.getItem('nc_ciclo_hoy')||'nodice';
+  const energia=chipState.energia||'media';
+  const dow=new Date().toLocaleDateString('es-ES',{weekday:'long'});
+  const lastW=getLastWorkout()||'';
+
+  // Rule-based quick recommendation
+  const recs={
+    menstruacion:{clase:'Yoga restaurativo o Pilates suave',motivo:'Con la regla, el cuerpo pide movimiento suave. Estas clases alivian molestias y te dejan bien.'},
+    folicular:{clase:'BodyPump, Barre o Pilates Reformer',motivo:'Estás en fase folicular — energía creciente. Perfectas para fuerza + tonificación.'},
+    ovulacion:{clase:'HIIT, Spinning, Boxeo o Boot Camp',motivo:'Pico de energía en ovulación. Es el mejor momento para clases intensas — tu cuerpo lo aprovecha.'},
+    lutea:{clase:'Pilates, Yoga Flow o Low-impact strength',motivo:'En fase lútea el cuerpo pide menos impacto. Estas clases te activan sin sobrecargarte.'},
+    nodice:{clase:'Pilates o Yoga Flow',motivo:'Sin datos de ciclo, apuesto por algo versátil que funciona siempre.'}
+  };
+  const rec=recs[ciclo]||recs.nodice;
+
+  recEl.innerHTML=`
+    <div class="classpass-card">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">🧘 ClassPass — Clase recomendada para hoy</div>
+      <div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${esc(rec.clase)}</div>
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;">${esc(rec.motivo)}</div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:6px;">Es ${dow} · Energía ${energia} · ${ciclo!=='nodice'?'Fase '+ciclo:'ciclo no especificado'}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 4: ACHIEVEMENTS
+// ═══════════════════════════════════════════════════════════
+const ACHIEVEMENTS=[
+  {id:'first_workout',emoji:'💪',title:'Primera sesión',desc:'Completaste tu primer entreno'},
+  {id:'streak_3',emoji:'🔥',title:'3 días seguidos',desc:'3 días activos consecutivos'},
+  {id:'streak_7',emoji:'⚡',title:'Racha de 7 días',desc:'Una semana completa activa'},
+  {id:'streak_21',emoji:'🏆',title:'Reto 21 días',desc:'21 días de hábito formado'},
+  {id:'sessions_10',emoji:'🌟',title:'10 sesiones',desc:'10 entrenamientos completados'},
+  {id:'sessions_30',emoji:'👑',title:'30 sesiones',desc:'Un mes de constancia'},
+  {id:'first_pr',emoji:'🎯',title:'Primer récord',desc:'Superaste tu marca personal'},
+  {id:'water_week',emoji:'💧',title:'Hidratada',desc:'8 vasos de agua 3 días seguidos'},
+  {id:'protein_week',emoji:'🥩',title:'Proteína perfecta',desc:'Objetivo de proteína 3 días seguidos'},
+  {id:'madrid_rio',emoji:'🌿',title:'Madrid Río',desc:'Primera sesión en Madrid Río registrada'},
+  {id:'full_plan_week',emoji:'📅',title:'Semana perfecta',desc:'Completaste tu plan semanal entero'},
+];
+
+function getAchievements(){ return JSON.parse(localStorage.getItem('nc_achievements')||'[]'); }
+function saveAchievements(a){ localStorage.setItem('nc_achievements',JSON.stringify(a)); }
+
+function unlockAchievement(id){
+  const current=getAchievements();
+  if(current.find(a=>a.id===id))return;
+  const def=ACHIEVEMENTS.find(a=>a.id===id);
+  if(!def)return;
+  current.push({...def,unlockedAt:new Date().toISOString()});
+  saveAchievements(current);
+  showToast('🏆 Logro desbloqueado: '+def.title);
+}
+
+function checkAndUnlockAchievements(){
+  const {streak}=calcStreak();
+  const goals=getGoals();
+
+  // first_workout: any session logged
+  let totalSessions=0;
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k.startsWith('nc_session_')&&JSON.parse(localStorage.getItem(k)||'[]').length>0)totalSessions++;
+  }
+  // Also count activity logs
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k.startsWith('nc_activity_')&&JSON.parse(localStorage.getItem(k)||'{"actividades":[]}').actividades.length>0)totalSessions++;
+  }
+  if(totalSessions>=1)unlockAchievement('first_workout');
+  if(streak>=3)unlockAchievement('streak_3');
+  if(streak>=7)unlockAchievement('streak_7');
+  if(streak>=21)unlockAchievement('streak_21');
+  if(totalSessions>=10)unlockAchievement('sessions_10');
+  if(totalSessions>=30)unlockAchievement('sessions_30');
+
+  // water_week: 8 glasses 3 days in a row
+  let waterStreak=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
+    if(parseInt(localStorage.getItem('water_'+d)||'0')>=8)waterStreak++;
+    else break;
+  }
+  if(waterStreak>=3)unlockAchievement('water_week');
+
+  // protein_week: protein goal 3 days in a row
+  let protStreak=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
+    const meals=JSON.parse(localStorage.getItem('meals_'+d)||'[]');
+    const P=meals.reduce((s,m)=>s+(m.p||0),0);
+    if(P>=goals.p*0.9)protStreak++;
+    else break;
+  }
+  if(protStreak>=3)unlockAchievement('protein_week');
+
+  // madrid_rio
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k.startsWith('nc_madrid_rio_sessions')){
+      const sessions=JSON.parse(localStorage.getItem(k)||'[]');
+      if(sessions.length>0){unlockAchievement('madrid_rio');break;}
+    }
+  }
+
+  // full_plan_week
+  const weekKey=getMondayDate();
+  const plan=getWeeklyPlan(weekKey);
+  if(plan){
+    const trainingDays=plan.filter(d=>d.type&&d.type!=='Descanso'&&d.type!=='Descanso activo');
+    const completedAll=trainingDays.length>0&&trainingDays.every(d=>d.done);
+    if(completedAll)unlockAchievement('full_plan_week');
+  }
+}
+
+function renderLogrosTab(){
+  const earned=getAchievements();
+  const earnedIds=new Set(earned.map(a=>a.id));
+  const countEl=document.getElementById('logros-count');
+  const gridEl=document.getElementById('logros-grid');
+  if(!countEl||!gridEl)return;
+  countEl.textContent=`${earned.length}/${ACHIEVEMENTS.length} logros desbloqueados`;
+  gridEl.innerHTML=ACHIEVEMENTS.map(a=>{
+    const isEarned=earnedIds.has(a.id);
+    const earnedData=earned.find(e=>e.id===a.id);
+    const dateStr=earnedData?new Date(earnedData.unlockedAt).toLocaleDateString('es-ES',{day:'numeric',month:'short'}):'';
+    return `
+      <div class="ach-badge${isEarned?' earned':' locked'}">
+        <div class="ach-emoji">${isEarned?a.emoji:'❓'}</div>
+        <div class="ach-title">${isEarned?esc(a.title):'???'}</div>
+        ${isEarned?`<div class="ach-date">${dateStr}</div>`:''}
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 5: MADRID RÍO WALK-TO-RUN PROGRAM
+// ═══════════════════════════════════════════════════════════
+const MR_PROGRAM=[
+  // week 1-2: 1 min run / 4 min walk × 5
+  {run:1,walk:4,reps:5,label:'Semanas 1-2'},
+  {run:1,walk:4,reps:5,label:'Semanas 1-2'},
+  // week 3-4: 2 min run / 3 min walk × 5
+  {run:2,walk:3,reps:5,label:'Semanas 3-4'},
+  {run:2,walk:3,reps:5,label:'Semanas 3-4'},
+  // week 5-6: 3 min run / 2 min walk × 5
+  {run:3,walk:2,reps:5,label:'Semanas 5-6'},
+  {run:3,walk:2,reps:5,label:'Semanas 5-6'},
+  // week 7-8: 5 min run / 2 min walk × 4
+  {run:5,walk:2,reps:4,label:'Semanas 7-8'},
+  {run:5,walk:2,reps:4,label:'Semanas 7-8'},
+];
+
+function getMRWeek(){ return parseInt(localStorage.getItem('nc_madrid_rio_week')||'1'); }
+function getMRSessions(){ return JSON.parse(localStorage.getItem('nc_madrid_rio_sessions')||'[]'); }
+function saveMRSessions(s){ localStorage.setItem('nc_madrid_rio_sessions',JSON.stringify(s)); }
+
+function renderMadridRioProgram(){
+  const el=document.getElementById('madrid-rio-program');
+  if(!el)return;
+  if(!chipOpciones.has('paseo')){el.style.display='none';return;}
+  el.style.display='block';
+
+  const week=getMRWeek();
+  const sessions=getMRSessions();
+  const prog=MR_PROGRAM[Math.min(week-1,7)];
+  const sessThisWeek=sessions.filter(s=>s.weekKey===getMondayDate()).length;
+  const totalSessions=sessions.length;
+
+  // Build interval visualization
+  const intervals=[];
+  intervals.push({type:'walk',label:'Calentamiento 5 min'});
+  for(let i=0;i<prog.reps;i++){
+    intervals.push({type:'run',label:`Trote ${prog.run} min`});
+    intervals.push({type:'walk',label:`Caminar ${prog.walk} min`});
+  }
+  intervals.push({type:'walk',label:'Vuelta calma 5 min'});
+
+  el.innerHTML=`
+    <div class="card" style="border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.04);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div>
+          <div style="font-weight:800;font-size:0.95rem;">🌿 Madrid Río — ${prog.label}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Semana ${week} de 8 · Sesión ${sessThisWeek+1} de la semana</div>
+        </div>
+        <div style="text-align:right;font-size:0.72rem;color:var(--muted);">${totalSessions}/24<br>completadas</div>
+      </div>
+      <div class="mr-progress-bar"><div class="mr-progress-fill" style="width:${Math.min(100,totalSessions/24*100)}%;"></div></div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:10px;">${totalSessions}/24 sesiones completadas</div>
+      <div style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Hoy: 5 min calentamiento + ${prog.reps}× [${prog.run} min trote / ${prog.walk} min caminar] + 5 min vuelta</div>
+      <div class="mr-interval-row">
+        ${intervals.map(iv=>`<span class="mr-block mr-${iv.type}">${esc(iv.label)}</span>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+        <button onclick="completeMRSession()" style="padding:11px;border-radius:11px;border:none;background:var(--green);color:#0f172a;font-weight:700;cursor:pointer;font-size:0.82rem;">✅ Completar sesión</button>
+        <button onclick="showFreeWalkForm()" style="padding:11px;border-radius:11px;border:none;background:var(--surface2);color:var(--text);font-weight:700;cursor:pointer;font-size:0.82rem;border:1.5px solid var(--border);">🚶 Solo camino</button>
+      </div>
+      <div id="free-walk-form" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+        <div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;">🚶 Paseo libre</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div class="form-group" style="margin:0;"><label>km (opcional)</label><input type="number" id="walk-km" min="0" step="0.1" placeholder="3.5" style="text-align:center;" /></div>
+          <div class="form-group" style="margin:0;"><label>Minutos</label><input type="number" id="walk-min" min="1" placeholder="45" style="text-align:center;" /></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          ${[['😊','genial'],['😐','bien'],['😤','duro']].map(([em,val])=>`<button class="chip" data-mood="${val}" onclick="selectMRMood(this)">${em} ${val}</button>`).join('')}
+        </div>
+        <button onclick="saveFreeWalk()" style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--blue);color:#0f172a;font-weight:700;cursor:pointer;">Guardar paseo</button>
+      </div>
+    </div>`;
+}
+
+function completeMRSession(){
+  const sessions=getMRSessions();
+  const week=getMRWeek();
+  sessions.push({type:'program',week,weekKey:getMondayDate(),date:dk(),completedAt:new Date().toISOString()});
+  saveMRSessions(sessions);
+
+  // advance week after 3 sessions
+  const sessThisWeek=sessions.filter(s=>s.weekKey===getMondayDate()).length;
+  if(sessThisWeek>=3&&week<8){
+    localStorage.setItem('nc_madrid_rio_week',week+1);
+  }
+
+  // Log as activity
+  const act=getActivity();
+  act.actividades.push({tipo:'🏞️ Madrid Río',duracion:35+MR_PROGRAM[Math.min(week-1,7)].reps*(MR_PROGRAM[Math.min(week-1,7)].run+MR_PROGRAM[Math.min(week-1,7)].walk),intensidad:'moderada',nombre:'Trote Madrid Río'});
+  saveActivity(act);
+
+  unlockAchievement('madrid_rio');
+  checkAndUnlockAchievements();
+  showToast('🌿 ¡Sesión completada! Sigue así 💪');
+  renderMadridRioProgram();
+}
+
+function showFreeWalkForm(){
+  const f=document.getElementById('free-walk-form');
+  if(f)f.style.display=f.style.display==='none'?'block':'none';
+}
+
+function selectMRMood(el){
+  el.closest('div').querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function saveFreeWalk(){
+  const km=parseFloat(document.getElementById('walk-km').value)||null;
+  const min=parseInt(document.getElementById('walk-min').value)||0;
+  if(!min){showToast('Indica los minutos');return;}
+  const moodEl=document.querySelector('#free-walk-form .chip.selected');
+  const mood=moodEl?moodEl.dataset.mood:'bien';
+
+  const sessions=getMRSessions();
+  sessions.push({type:'walk',km,min,mood,weekKey:getMondayDate(),date:dk(),completedAt:new Date().toISOString()});
+  saveMRSessions(sessions);
+
+  const act=getActivity();
+  act.actividades.push({tipo:'🏞️ Madrid Río',duracion:min,intensidad:'suave',nombre:'Paseo Madrid Río'});
+  saveActivity(act);
+
+  // Save to activity storage
+  const actD=JSON.parse(localStorage.getItem('nc_activity_'+dk())||'{"pasos":0,"actividades":[]}');
+  actD.actividades.push({tipo:'🏞️ Madrid Río',duracion:min,intensidad:'suave'});
+  localStorage.setItem('nc_activity_'+dk(),JSON.stringify(actD));
+
+  unlockAchievement('madrid_rio');
+  checkAndUnlockAchievements();
+  showToast(`✓ Paseo guardado${km?' — '+km+'km':''}!`);
+  renderMadridRioProgram();
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 6: DELOAD DETECTION
+// ═══════════════════════════════════════════════════════════
+function checkDeloadNeeded(){
+  const el=document.getElementById('deload-banner');
+  if(!el)return;
+
+  // Dismiss check
+  const dismissed=localStorage.getItem('nc_deload_dismissed');
+  if(dismissed){
+    const dismissedDate=new Date(dismissed);
+    const daysSince=Math.round((Date.now()-dismissedDate.getTime())/86400000);
+    if(daysSince<7){el.innerHTML='';return;}
+  }
+
+  // Count sessions in last 28 days
+  let count=0;
+  for(let i=0;i<28;i++){
+    const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
+    if(getSessionExercises(d).length>0)count++;
+    const act=JSON.parse(localStorage.getItem('nc_activity_'+d)||'{"actividades":[]}');
+    if(act.actividades.length>0)count++;
+  }
+
+  // Check last deload
+  const lastDeload=localStorage.getItem('nc_last_deload');
+  const daysSinceDeload=lastDeload?Math.round((Date.now()-new Date(lastDeload).getTime())/86400000):999;
+
+  if(count>=10&&daysSinceDeload>28){
+    el.innerHTML=`
+      <div class="deload-banner">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:1.5rem;">💆</span>
+          <div>
+            <div style="font-weight:800;font-size:0.95rem;margin-bottom:2px;">Semana de descarga recomendada</div>
+            <div style="font-size:0.78rem;opacity:.85;">Llevas ~${count} sesiones en 4 semanas. Tu cuerpo necesita recuperarse para responder mejor.</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button onclick="getDeloadPlan()" style="padding:10px;border-radius:10px;border:none;background:var(--orange);color:#0f172a;font-weight:700;cursor:pointer;font-size:0.8rem;">Semana de descarga</button>
+          <button onclick="dismissDeload()" style="padding:10px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-weight:600;cursor:pointer;font-size:0.8rem;">Continuar normal</button>
+        </div>
+        <div id="deload-plan-result" style="margin-top:10px;"></div>
+      </div>`;
+  } else {
+    el.innerHTML='';
+  }
+}
+
+function dismissDeload(){
+  localStorage.setItem('nc_deload_dismissed',new Date().toISOString());
+  document.getElementById('deload-banner').innerHTML='';
+}
+
+async function getDeloadPlan(){
+  if(!getApiKey()){showToast('Configura tu API Key primero');return;}
+  const btn=event.target;
+  btn.disabled=true;btn.innerHTML='<span style="display:inline-flex;gap:6px;align-items:center;"><span class="spinner" style="width:13px;height:13px;border-top-color:#0f172a;border-color:rgba(0,0,0,.2);"></span></span>';
+  const p=getProfile();
+  try{
+    const res=await callClaude([{role:'user',content:`Eres entrenadora personal. Diseña una semana de descarga (deload) para una mujer de ${p.edad} años, ${p.peso}kg, nivel activo. Equipo disponible: bandas elásticas, kettlebell 6kg, acceso a Madrid Río, YouTube.
+La semana de descarga debe tener: 70% menos volumen, sin HIIT, movimiento suave, recuperación activa.
+Propón el plan de 7 días de forma concreta y breve: qué hacer cada día (3-4 líneas en total). Tono motivador. Sin calorías. Sin markdown, texto corrido.`}]);
+    localStorage.setItem('nc_last_deload',new Date().toISOString());
+    localStorage.setItem('nc_deload_week',getMondayDate());
+    const resultEl=document.getElementById('deload-plan-result');
+    if(resultEl){
+      resultEl.innerHTML=`<div style="font-size:0.8rem;line-height:1.65;color:var(--text);border-top:1px solid rgba(251,146,60,.2);padding-top:10px;margin-top:4px;">${esc(res)}</div>`;
+    }
+  }catch(e){showToast('Error: '+e.message);}
+  btn.disabled=false;btn.innerHTML='Semana de descarga';
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 7: STRENGTH CHALLENGE
+// ═══════════════════════════════════════════════════════════
+const CHALLENGE_DEFS=[
+  {type:'flexiones',emoji:'💪',title:'Reto flexiones',desc:'De 0 a 15 seguidas en 8 semanas',unit:'reps',goal:15,goalLabel:'15 flexiones seguidas'},
+  {type:'kettlebell',emoji:'🏋️',title:'Reto kettlebell',desc:'Dominar los 10 ejercicios básicos en 8 semanas',unit:'exercises',goal:10,goalLabel:'10 ejercicios dominados'},
+  {type:'madrid5k',emoji:'🏃',title:'Reto Madrid Río 5km',desc:'Completar 5km sin parar (walking OK) en 8 semanas',unit:'km',goal:5,goalLabel:'5km continuos'},
+  {type:'plancha',emoji:'🧘',title:'Reto plancha',desc:'De 20 segundos a 2 minutos en 8 semanas',unit:'seconds',goal:120,goalLabel:'2 minutos de plancha'},
+];
+
+function getStrengthChallenge(){ return JSON.parse(localStorage.getItem('nc_strength_challenge')||'null'); }
+function saveStrengthChallenge(c){ localStorage.setItem('nc_strength_challenge',JSON.stringify(c)); }
+
+function renderStrengthChallenge(){
+  const el=document.getElementById('strength-challenge-content');
+  if(!el)return;
+  const challenge=getStrengthChallenge();
+
+  if(!challenge){
+    el.innerHTML=`
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Elige un reto de 8 semanas y sigue tu progreso semana a semana.</div>
+      ${CHALLENGE_DEFS.map(c=>`
+        <div class="challenge-option" onclick="startChallenge('${c.type}')">
+          <div class="challenge-option-title">${c.emoji} ${esc(c.title)}</div>
+          <div class="challenge-option-sub">${esc(c.desc)}</div>
+        </div>`).join('')}`;
+    return;
+  }
+
+  const def=CHALLENGE_DEFS.find(d=>d.type===challenge.type)||CHALLENGE_DEFS[0];
+  const pct=Math.min(100,((challenge.currentBest||0)/def.goal)*100);
+  const startDate=new Date(challenge.startDate);
+  const weeksSince=Math.round((Date.now()-startDate.getTime())/(7*86400000));
+  const weeksLeft=Math.max(0,8-weeksSince);
+  const checkins=challenge.weeklyCheckins||[];
+  const lastCheckin=checkins[checkins.length-1];
+  const lastCheckinDate=lastCheckin?lastCheckin.date:'—';
+  const canCheckin=!lastCheckin||new Date(lastCheckin.date).toISOString().split('T')[0]!==dk();
+
+  // Trajectory estimate
+  const rate=checkins.length>=2?(checkins[checkins.length-1].best-checkins[0].best)/(checkins.length-1):0;
+  const weeksToGoal=rate>0?Math.ceil((def.goal-(challenge.currentBest||0))/rate):null;
+
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="font-size:1.8rem;">${def.emoji}</div>
+      <div style="flex:1;">
+        <div style="font-weight:800;font-size:0.95rem;">${esc(def.title)}</div>
+        <div style="font-size:0.72rem;color:var(--muted);">Semana ${Math.min(8,weeksSince+1)} de 8 · Objetivo: ${esc(def.goalLabel)}</div>
+      </div>
+    </div>
+    <div style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">Mejor marca: <span style="color:var(--green);">${challenge.currentBest||0} ${def.unit==='seconds'?'seg':def.unit==='km'?'km':'reps'}</span> / ${def.goal} ${def.unit==='seconds'?'seg':def.unit==='km'?'km':'reps'}</div>
+    <div class="challenge-progress"><div class="challenge-progress-fill" style="width:${pct}%;"></div></div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:10px;">${Math.round(pct)}% del objetivo${weeksToGoal?` · A este ritmo: ${weeksToGoal} semanas más`:''}${weeksLeft>0?` · ${weeksLeft} semanas restantes`:' · ¡Reto completado!'}</div>
+    ${canCheckin?`
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:10px;">
+      <div style="font-size:0.78rem;font-weight:700;margin-bottom:8px;">📊 Check-in semanal — ¿cuál es tu mejor marca hoy?</div>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="challenge-checkin-val" placeholder="${def.unit==='seconds'?'seg':def.unit==='km'?'km':'reps'}" min="0" step="${def.unit==='km'?'0.1':'1'}" style="flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-size:0.9rem;outline:none;" />
+        <button onclick="saveChallengeCheckin()" style="padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:0.85rem;">Guardar</button>
+      </div>
+      <div id="challenge-ai-msg" style="margin-top:8px;font-size:0.8rem;color:var(--muted);line-height:1.5;"></div>
+    </div>`:`<div style="font-size:0.75rem;color:var(--green);margin-bottom:10px;">✓ Check-in registrado hoy (${lastCheckinDate})</div>`}
+    <div style="display:flex;gap:8px;">
+      <button onclick="abandonChallenge()" style="flex:1;padding:9px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:0.75rem;cursor:pointer;">Cambiar reto</button>
+    </div>`;
+}
+
+function startChallenge(type){
+  const def=CHALLENGE_DEFS.find(d=>d.type===type);
+  if(!def)return;
+  saveStrengthChallenge({type,startDate:new Date().toISOString(),currentBest:0,weeklyCheckins:[]});
+  showToast('🎯 Reto iniciado: '+def.title);
+  renderStrengthChallenge();
+}
+
+function abandonChallenge(){
+  if(confirm('¿Cambiar de reto? Perderás el progreso actual.')){
+    localStorage.removeItem('nc_strength_challenge');
+    renderStrengthChallenge();
+  }
+}
+
+async function saveChallengeCheckin(){
+  const val=parseFloat(document.getElementById('challenge-checkin-val').value);
+  if(!val||val<=0){showToast('Introduce un valor');return;}
+  const challenge=getStrengthChallenge();
+  if(!challenge)return;
+  challenge.weeklyCheckins=challenge.weeklyCheckins||[];
+  challenge.weeklyCheckins.push({date:dk(),best:val});
+  if(val>challenge.currentBest)challenge.currentBest=val;
+  saveStrengthChallenge(challenge);
+
+  // AI encouragement
+  const msgEl=document.getElementById('challenge-ai-msg');
+  if(msgEl&&getApiKey()){
+    const def=CHALLENGE_DEFS.find(d=>d.type===challenge.type)||CHALLENGE_DEFS[0];
+    const prev=challenge.weeklyCheckins.length>=2?challenge.weeklyCheckins[challenge.weeklyCheckins.length-2].best:null;
+    try{
+      const res=await callClaude([{role:'user',content:`Eres coach. Esta persona hace su check-in del reto "${def.title}". Marca actual: ${val} ${def.unit}. Objetivo: ${def.goal} ${def.unit}.${prev?' La semana pasada tenía '+prev+'.':''} Escribe UN mensaje motivador de 1-2 frases. Sin markdown.`}]);
+      msgEl.style.color='var(--green)';msgEl.textContent=res;
+    }catch(e){}
+  }
+  showToast('✓ Check-in guardado');
+  renderStrengthChallenge();
+}
+
+// ═══════════════════════════════════════════════════════════
+// UPDATED showPage + setProgresoTab to wire new features
+// ═══════════════════════════════════════════════════════════
+// Override showPage to add new hooks
+const _origShowPage=showPage;
+showPage=function(name){
+  _origShowPage(name);
+  if(name==='entreno'){
+    renderWeeklyPlan();
+    renderPerformanceLog();
+    checkDeloadNeeded();
+    // Show madrid rio program if paseo selected
+    if(chipOpciones.has('paseo'))renderMadridRioProgram();
+    checkAndUnlockAchievements();
+  }
+  if(name==='home'){
+    checkAndUnlockAchievements();
+  }
+};
+
+// Override setProgresoTab to add logros tab
+const _origSetProgresoTab=setProgresoTab;
+setProgresoTab=function(tab){
+  // Handle logros separately since original doesn't know about it
+  const tabs=['actividad','medidas','semana','retos','plan','logros'];
+  if(tab==='logros'){
+    tabs.forEach(t=>{
+      const pEl=document.getElementById('progreso-'+t);
+      const tEl=document.getElementById('ptab-'+t);
+      if(pEl)pEl.style.display=t===tab?'block':'none';
+      if(tEl)tEl.classList.toggle('active',t===tab);
+    });
+    checkAndUnlockAchievements();
+    renderLogrosTab();
+    renderStrengthChallenge();
+    return;
+  }
+  _origSetProgresoTab(tab);
+  // Make sure logros is hidden
+  const logrosPEl=document.getElementById('progreso-logros');
+  const logrosTEl=document.getElementById('ptab-logros');
+  if(logrosPEl)logrosPEl.style.display='none';
+  if(logrosTEl)logrosTEl.classList.remove('active');
+};
+
+// Wire chipOpciones toggle to show/hide madrid rio
+const _origToggleChip=toggleChip;
+toggleChip=function(el){
+  _origToggleChip(el);
+  if(el.dataset.val==='paseo'){
+    if(chipOpciones.has('paseo'))renderMadridRioProgram();
+    else{const mr=document.getElementById('madrid-rio-program');if(mr)mr.style.display='none';}
+  }
+};
+
+// Improve getEntrenoSuggestion prompt + wire ClassPass rec
+const _origGetEntrenoSuggestion=getEntrenoSuggestion;
+getEntrenoSuggestion=async function(){
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  const btn=document.getElementById('entreno-btn');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Preparando tu entreno...';
+
+  const opMap={paseo:'paseo rápido por Madrid Río',classpass:'ClassPass',youtube:'YouTube en TV',bandas:'bandas elásticas',kettlebell:'kettlebell 6kg',cinta:'cinta de andar'};
+  const opciones=[...chipOpciones].map(o=>opMap[o]).join(', ');
+  const notas=document.getElementById('entreno-notas').value.trim();
+  const meals=getMeals(),p=getProfile();
+  const lastW=getLastWorkout();
+  const {streak}=calcStreak();
+  const lastWDate=getLastWorkoutDate();
+  const daysSinceWorkout=lastWDate?Math.round((Date.now()-new Date(lastWDate+'T12:00:00').getTime())/86400000):99;
+
+  localStorage.setItem('nc_ciclo_hoy',chipState.ciclo||'nodice');
+
+  const prompt=buildCalorieContext(meals)+`Eres entrenadora personal experta en fitness femenino, pérdida de volumen y grasa, y fuerza funcional. Tu enfoque es positivo, sin presión, fomentando la constancia.
+
+Clienta: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Vive junto a Madrid Río. Tiene ClassPass.
+Objetivo: reducir peso y volumen, ganar fuerza, relación sana con el ejercicio.
+Energía mental: ${chipState.energia} | Estado físico: ${chipState.cuerpo} | Tiempo: ${chipState.tiempo} min | Tiempo exterior: ${chipState.weather}
+Fase ciclo menstrual: ${chipState.ciclo==='menstruacion'?'MENSTRUACIÓN (fase 1) — priorizar descanso activo, yoga, estiramientos, nada de alta intensidad, respetar el cuerpo':chipState.ciclo==='folicular'?'FASE FOLICULAR post-regla (fase 2) — energía creciente, buen momento para aumentar intensidad y cargas, el cuerpo responde muy bien al entrenamiento':chipState.ciclo==='ovulacion'?'OVULACIÓN (fase 3) — pico de energía y fuerza, momento ideal para entrenamientos intensos, HIIT, fuerza máxima':chipState.ciclo==='lutea'?'FASE LÚTEA pre-regla (fase 4) — energía bajando, posible retención e hinchazón, preferir fuerza moderada y pilates sobre cardio intenso, escuchar el cuerpo':'No especificada — propón entrenamiento equilibrado'}
+Opciones disponibles: ${opciones||'no especificadas'}
+${notas?'Petición especial: '+notas:''}
+${meals.length>0?'Ha comido hoy: '+meals.map(m=>m.name).join(', '):''}
+${lastW?'Último entreno: '+lastW+' — propón algo diferente o complementario':''}
+${chipState.cuerpo==='agujetas'?'IMPORTANTE: tiene agujetas — evita trabajar los mismos grupos musculares, prioriza movilidad o un grupo diferente.':''}
+${chipState.cuerpo==='molestia'?'IMPORTANTE: tiene alguna molestia física — propón algo de bajo impacto, sin forzar, que le siente bien.':''}
+${chipState.cuerpo==='cansada'?'IMPORTANTE: cuerpo cansado — sesión suave o de recuperación activa, nada intenso hoy.':''}
+${chipState.ciclo==='menstruacion'?'RECUERDA: está con la regla — sé empática, nada de presión, validar que descansar también es entreno.':''}
+${daysSinceWorkout>=5?'IMPORTANTE: lleva '+daysSinceWorkout+' días sin entrenar — propón vuelta gradual y motivadora, que dé ganas de volver mañana.':''}
+${daysSinceWorkout>=3&&daysSinceWorkout<5?'Lleva unos días sin entrenar — propón algo motivador que la enganche de nuevo.':''}
+${streak>=7?'Lleva '+streak+' días de racha activa — puede subir la intensidad, está en modo constancia.':''}
+Racha actual: ${streak} días. Diseña el entrenamiento para que sea PROGRESIVO.
+
+ESTRUCTURA OBLIGATORIA (siempre incluye las 4 partes):
+
+## [Nombre del entreno] — [duración]
+[Por qué es ideal para hoy, 1-2 frases]
+
+### Calentamiento · 5 min
+- [ejercicio específico y duración]
+
+### Bloque principal
+- [ejercicio: SERIES × REPS exactos, descanso concreto entre series]
+(Si ClassPass: nombre exacto de clase a buscar. Si YouTube: término de búsqueda exacto. Si paseo Madrid Río: km y ritmo estimado.)
+
+### Vuelta a la calma · 5 min
+- [estiramiento concreto con duración]
+
+### Consejo técnico
+[1 tip de técnica específico para el ejercicio principal de hoy]
+
+### La próxima vez
+[Progresión concreta: más reps, menos descanso, más peso, etc. — una frase específica]`;
+
+  try{
+    const res=await callClaude([{role:'user',content:prompt}]);
+    document.getElementById('entreno-result').innerHTML=`<div class="card"><div class="card-title">Tu entreno de hoy</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
+    const match=res.match(/^##\s+([^\n—]+)/m);
+    if(match)setLastWorkout(match[1].trim());
+    setLastWorkoutDate(dk());
+    renderYesterdayWorkout();
+
+    // ClassPass rec
+    if(chipOpciones.has('classpass'))getClassPassRec();
+
+    // Madrid Río program card
+    if(chipOpciones.has('paseo'))renderMadridRioProgram();
+
+    // Check achievements after workout generation
+    checkAndUnlockAchievements();
+  }catch(e){
+    document.getElementById('entreno-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
+  }
+  btn.disabled=false;btn.innerHTML='Dame un entrenamiento';
+};
 </script>
 </body>
 </html>
