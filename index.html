@@ -321,6 +321,72 @@
     .weekly-ai-card{background:linear-gradient(135deg,rgba(129,140,248,.12),rgba(99,102,241,.05));border:1px solid rgba(129,140,248,.3);border-radius:16px;padding:16px;margin-bottom:14px;}
     .btn-pulse{animation:pulse-btn 1.8s infinite;}
 
+    /* ── DAILY SCORE ── */
+    .score-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:16px;}
+    .score-num{font-size:3rem;font-weight:900;line-height:1;flex-shrink:0;min-width:72px;text-align:center;}
+    .score-num.red{color:var(--red);}
+    .score-num.orange{color:var(--orange);}
+    .score-num.green{color:var(--green);}
+    .score-info{flex:1;}
+    .score-label{font-weight:800;font-size:0.95rem;margin-bottom:2px;}
+    .score-sub{font-size:0.72rem;color:var(--muted);margin-bottom:8px;}
+    .score-checks{display:flex;flex-wrap:wrap;gap:5px;}
+    .score-check{font-size:0.7rem;padding:3px 8px;border-radius:99px;font-weight:600;}
+    .score-check.ok{background:rgba(52,211,153,.15);color:var(--green);}
+    .score-check.ko{background:rgba(148,163,184,.08);color:var(--muted);}
+
+    /* ── RETO 21 ── */
+    .reto21-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;}
+    .reto21-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .reto21-title{font-weight:800;font-size:0.95rem;}
+    .reto21-counter{font-size:0.75rem;font-weight:700;color:var(--accent);}
+    .reto21-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+    .reto21-dot{width:100%;aspect-ratio:1;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--muted);}
+    .reto21-dot.done{background:var(--green);border-color:var(--green);color:#fff;}
+    .reto21-dot.today{border-color:var(--accent);}
+
+    /* ── RECENT MEALS STRIP ── */
+    .recent-strip-section{margin-bottom:14px;}
+    .recent-strip-title{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+    .recent-strip-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+    .recent-strip-scroll::-webkit-scrollbar{display:none;}
+    .recent-chip{background:var(--surface);border:1.5px solid var(--border);border-radius:99px;padding:7px 13px;cursor:pointer;white-space:nowrap;transition:border-color .15s,transform .1s;flex-shrink:0;}
+    .recent-chip:active{border-color:var(--accent);transform:scale(.96);}
+    .recent-chip-name{font-size:0.78rem;font-weight:600;}
+    .recent-chip-meta{font-size:0.65rem;color:var(--muted);margin-top:1px;}
+
+    /* ── EVENING SUMMARY ── */
+    .evening-card{background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(56,189,248,.06));border:1px solid rgba(99,102,241,.25);border-radius:16px;padding:16px;margin-bottom:14px;}
+    .evening-title{font-weight:800;font-size:0.95rem;margin-bottom:4px;}
+    .evening-sub{font-size:0.75rem;color:var(--muted);margin-bottom:12px;}
+    .evening-text{font-size:0.85rem;line-height:1.7;color:var(--text);}
+
+    /* ── DIA DIFICIL ── */
+    .dia-dificil-btn{width:100%;background:none;border:1.5px solid var(--border);border-radius:12px;color:var(--muted);font-size:0.82rem;font-weight:600;padding:11px 16px;cursor:pointer;margin-bottom:14px;transition:all .15s;}
+    .dia-dificil-btn:hover{border-color:var(--orange);color:var(--orange);}
+    .dia-dificil-result{background:rgba(251,146,60,.06);border:1px solid rgba(251,146,60,.2);border-radius:14px;padding:16px;margin-bottom:14px;font-size:0.855rem;line-height:1.7;}
+
+    /* ── WETACA FAVS ── */
+    .wetaca-fav-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+    .wetaca-fav-card:hover{border-color:var(--accent);}
+    .wetaca-fav-info{flex:1;min-width:0;}
+    .wetaca-fav-name{font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .wetaca-fav-meta{font-size:0.68rem;color:var(--muted);margin-top:2px;}
+    .wetaca-fav-del{font-size:0.85rem;color:var(--muted);padding:4px 6px;cursor:pointer;flex-shrink:0;}
+    .wetaca-fav-del:hover{color:var(--red);}
+
+    /* ── CONSISTENCIA SCORE ── */
+    .consist-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;}
+    .consist-pct{font-size:2.2rem;font-weight:900;line-height:1;}
+    .consist-bars{display:flex;gap:4px;margin-top:10px;margin-bottom:8px;align-items:flex-end;height:40px;}
+    .consist-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+    .consist-bar-col{width:100%;border-radius:4px 4px 0 0;transition:height .4s;}
+    .consist-bar-lbl{font-size:0.55rem;color:var(--muted);text-align:center;}
+
+    /* ── FOTO MENSUAL ── */
+    .foto-mensual-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;}
+    .foto-mensual-card.highlight{border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.04);}
+
     /* ── MEASUREMENTS CHART ── */
     .medidas-chart-wrap{margin-top:16px;}
     .medidas-chart-title{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
@@ -349,11 +415,16 @@
       <div id="hambre-card"></div>
       <div id="status-messages"></div>
       <div id="empujon-card-wrap"></div>
+      <div id="daily-score-card"></div>
+      <div id="recent-meals-strip"></div>
+      <div id="reto21-card"></div>
       <div id="quick-repeat-section"></div>
       <div class="card">
         <div class="card-title">Comidas de hoy</div>
         <div id="meals-list"></div>
       </div>
+      <div id="evening-summary-card"></div>
+      <div id="dia-dificil-wrap"></div>
     </div>
 
     <!-- ═══ ADD ═══ -->
@@ -366,6 +437,7 @@
       </div>
 
       <div id="add-scan-mode">
+        <div id="wetaca-favs-wrap"></div>
         <div class="card">
           <div class="photo-zone" id="photo-zone"
             onclick="document.getElementById('photo-input').click()"
@@ -420,6 +492,7 @@
               </div>
             </div>
             <button class="btn btn-primary" onclick="addMeal('scan')">Guardar comida</button>
+            <button id="save-wetaca-fav-btn" onclick="saveWetacaFav()" style="display:none;width:100%;margin-top:8px;padding:10px;background:rgba(129,140,248,.12);color:var(--accent);border:1.5px solid rgba(129,140,248,.3);border-radius:10px;font-size:0.82rem;font-weight:700;cursor:pointer;">💾 Guardar en favoritos Wetaca</button>
           </div>
         </div>
       </div>
@@ -752,6 +825,7 @@
 
       <!-- Medidas -->
       <div id="progreso-medidas" style="display:none">
+        <div id="foto-mensual-card"></div>
         <div class="card">
           <div class="card-title">📏 Registrar medidas de hoy</div>
           <div style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Tómatelas en ayunas, misma hora siempre. No es obligatorio rellenar todas.</div>
@@ -793,6 +867,7 @@
 
       <!-- Semana -->
       <div id="progreso-semana" style="display:none">
+        <div id="consistencia-score-wrap"></div>
         <div class="weekly-ai-card" id="weekly-ai-card">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
             <div style="font-size:1.8rem;">🧠</div>
@@ -1097,6 +1172,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderTypeChips('s-type-chips','s');
   renderTypeChips('m-type-chips','m');
   renderTypeChips('bc-type-chips','bc');
+  renderWetacaFavs();
   renderHome();
   renderCenaRemaining();
   renderAlmuerzoRemaining();
@@ -1235,11 +1311,26 @@ function renderHome(){
   // ── Daily check ──
   renderDailyCheck(meals,goals,getWater(),energyStatus);
 
+  // ── Daily Score ──
+  renderDailyScore();
+
+  // ── Recent meals strip ──
+  renderRecentMealsStrip();
+
+  // ── Reto 21 días ──
+  renderReto21();
+
   // ── Empujón button ──
   renderEmpujonButton();
 
   // ── Hambre card ──
   renderHambreCard();
+
+  // ── Evening Summary ──
+  renderEveningSummary();
+
+  // ── Día Difícil ──
+  renderDiaDificil();
 
   // ── Status messages ──
   const msgs=[];
@@ -1358,6 +1449,7 @@ function setAddMode(mode){
     document.getElementById('add-'+m+'-mode').style.display=m===mode?'block':'none';
     document.getElementById('tab-'+m).classList.toggle('active',m===mode);
   });
+  if(mode==='scan')renderWetacaFavs();
   if(mode==='ingredientes') renderTypeChips('ing-type-chips','ing');
   if(mode==='barcode'){renderTypeChips('bc-type-chips','bc');initBarcodeScanner();}
 }
@@ -1413,6 +1505,7 @@ function addMeal(mode){
       document.getElementById('scanned-result').style.display='none';
       document.getElementById('scan-form').style.display='none';
       document.getElementById('photo-zone').style.display='block';
+      const sfb=document.getElementById('save-wetaca-fav-btn');if(sfb)sfb.style.display='none';
       scannedMacros=null;
     }
     renderTypeChips(`${pre}-type-chips`,pre);
@@ -1420,6 +1513,8 @@ function addMeal(mode){
 
   const meal={name,type,p,c,f,time:new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})};
   const m=getMeals();m.push(meal);saveMeals(m);
+  // Update recent meals cache
+  updateRecentMealsCache({name,p,c,f});
   showToast('✓ Comida guardada');
   showPage('home');
 }
@@ -1529,6 +1624,9 @@ async function processPhotoFile(file){
     document.getElementById('s-meal-f').value=json.grasas??'';
     document.getElementById('scan-form').style.display='block';
     document.getElementById('photo-zone').style.display='none';
+    const saveFavBtn=document.getElementById('save-wetaca-fav-btn');
+    if(saveFavBtn)saveFavBtn.style.display='block';
+    renderWetacaFavs();
     setTimeout(()=>document.getElementById('scan-form').scrollIntoView({behavior:'smooth',block:'start'}),100);
   }catch(e){
     document.getElementById('scanned-result').style.display='block';
@@ -2275,8 +2373,8 @@ function setProgresoTab(tab){
     document.getElementById('ptab-'+t).classList.toggle('active',t===tab);
   });
   if(tab==='actividad')renderActivityToday();
-  if(tab==='medidas'){renderMeasuresHistory();renderMeasuresChart();}
-  if(tab==='semana'){renderWeeklySummary();renderWeeklyAICard();}
+  if(tab==='medidas'){renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();}
+  if(tab==='semana'){renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();}
   if(tab==='retos')renderRetos();
 }
 
@@ -2878,6 +2976,342 @@ function regenerateWeeklySummary(){
   localStorage.removeItem('nc_weekly_summary_'+weekKey);
   document.getElementById('weekly-ai-result').style.display='none';
   getWeeklyAISummary();
+}
+
+// ═══════════════ FEATURE 1: RECENT MEALS STRIP ═══════════════
+function updateRecentMealsCache(meal){
+  let recent=JSON.parse(localStorage.getItem('nc_recent_meals')||'[]');
+  // deduplicate by name
+  recent=recent.filter(m=>m.name!==meal.name);
+  recent.unshift({name:meal.name,p:meal.p,c:meal.c,f:meal.f});
+  if(recent.length>10)recent=recent.slice(0,10);
+  localStorage.setItem('nc_recent_meals',JSON.stringify(recent));
+}
+
+function renderRecentMealsStrip(){
+  const el=document.getElementById('recent-meals-strip');
+  if(!el)return;
+  const recent=JSON.parse(localStorage.getItem('nc_recent_meals')||'[]');
+  const todayMeals=getMeals();
+  const todayNames=new Set(todayMeals.map(m=>m.name));
+  const filtered=recent.filter(m=>!todayNames.has(m.name)).slice(0,5);
+  if(filtered.length===0){el.innerHTML='';return;}
+  el.innerHTML=`
+    <div class="recent-strip-section">
+      <div class="recent-strip-title">⚡ Repetir comida</div>
+      <div class="recent-strip-scroll">
+        ${filtered.map(m=>`
+          <div class="recent-chip" onclick='repeatMeal(${JSON.stringify(m)})'>
+            <div class="recent-chip-name">${esc(m.name)}</div>
+            <div class="recent-chip-meta">P${m.p}·C${m.c}·G${m.f}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ═══════════════ FEATURE 2: WETACA FAVORITES ═══════════════
+const getWetacaFavs=()=>JSON.parse(localStorage.getItem('nc_wetaca_favs')||'[]');
+const saveWetacaFavs=f=>localStorage.setItem('nc_wetaca_favs',JSON.stringify(f));
+
+function saveWetacaFav(){
+  const name=document.getElementById('s-meal-name').value.trim();
+  const p=parseFloat(document.getElementById('s-meal-p').value)||0;
+  const c=parseFloat(document.getElementById('s-meal-c').value)||0;
+  const f=parseFloat(document.getElementById('s-meal-f').value)||0;
+  if(!name){showToast('Escribe el nombre del plato primero');return;}
+  let favs=getWetacaFavs();
+  if(favs.find(x=>x.name===name)){showToast('Ya está guardado');return;}
+  favs.unshift({name,p,c,f});
+  if(favs.length>10)favs=favs.slice(0,10);
+  saveWetacaFavs(favs);
+  showToast('💾 Guardado en favoritos Wetaca');
+  renderWetacaFavs();
+}
+
+function renderWetacaFavs(){
+  const wrap=document.getElementById('wetaca-favs-wrap');
+  if(!wrap)return;
+  const favs=getWetacaFavs();
+  if(favs.length===0){wrap.innerHTML='';return;}
+  wrap.innerHTML=`
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">💾 Favoritos Wetaca guardados</div>
+      ${favs.map((f,i)=>`
+        <div class="wetaca-fav-card" onclick="loadWetacaFav(${i})">
+          <div class="wetaca-fav-info">
+            <div class="wetaca-fav-name">${esc(f.name)}</div>
+            <div class="wetaca-fav-meta">P${f.p}g · C${f.c}g · G${f.f}g</div>
+          </div>
+          <div class="wetaca-fav-del" onclick="event.stopPropagation();deleteWetacaFav(${i})">✕</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function loadWetacaFav(i){
+  const fav=getWetacaFavs()[i];
+  if(!fav)return;
+  document.getElementById('s-meal-name').value=fav.name;
+  document.getElementById('s-meal-p').value=fav.p;
+  document.getElementById('s-meal-c').value=fav.c;
+  document.getElementById('s-meal-f').value=fav.f;
+  scannedMacros={p:fav.p,c:fav.c,f:fav.f,name:fav.name};
+  scanPortion=1;
+  document.getElementById('scan-form').style.display='block';
+  document.getElementById('photo-zone').style.display='none';
+  document.getElementById('save-wetaca-fav-btn').style.display='block';
+  setTimeout(()=>document.getElementById('scan-form').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function deleteWetacaFav(i){
+  const favs=getWetacaFavs();favs.splice(i,1);saveWetacaFavs(favs);renderWetacaFavs();
+  showToast('Favorito eliminado');
+}
+
+// ═══════════════ FEATURE 3: DAILY SCORE ═══════════════
+function renderDailyScore(){
+  const el=document.getElementById('daily-score-card');
+  if(!el)return;
+  const meals=getMeals(), goals=getGoals(), water=getWater(), act=getActivity();
+  let P=0; meals.forEach(m=>P+=m.p||0);
+  const pctP=goals.p>0?P/goals.p:0;
+  let C=0,F=0; meals.forEach(m=>{C+=m.c||0;F+=m.f||0;});
+  const pctC=goals.c>0?C/goals.c:0;
+  const pctF=goals.f>0?F/goals.f:0;
+  const hasActivity=act.actividades.length>0||(act.pasos||0)>=5000;
+
+  const criteria=[
+    {label:'Proteína ≥70%',ok:pctP>=0.7,pts:25},
+    {label:'Carbos ≤110%',ok:pctC<=1.1,pts:15},
+    {label:'Grasa ≤110%',ok:pctF<=1.1,pts:10},
+    {label:'Movimiento',ok:hasActivity,pts:20},
+    {label:'Agua ≥4',ok:water>=4,pts:15},
+    {label:'≥2 comidas',ok:meals.length>=2,pts:15},
+  ];
+  const score=criteria.filter(c=>c.ok).reduce((s,c)=>s+c.pts,0);
+  const colorClass=score<40?'red':score<70?'orange':'green';
+
+  el.innerHTML=`
+    <div class="score-card">
+      <div class="score-num ${colorClass}">${score}</div>
+      <div class="score-info">
+        <div class="score-label">Nota del día</div>
+        <div class="score-sub">Consistencia · no perfección</div>
+        <div class="score-checks">
+          ${criteria.map(c=>`<span class="score-check ${c.ok?'ok':'ko'}">${c.ok?'✓':'·'} ${c.label}</span>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════ FEATURE 4: RETO 21 DÍAS ═══════════════
+function renderReto21(){
+  const el=document.getElementById('reto21-card');
+  if(!el)return;
+  const today=dk();
+  const dots=[];
+  let completed=0;
+  for(let i=20;i>=0;i--){
+    const d=new Date(Date.now()-i*86400000);
+    const key=d.toISOString().split('T')[0];
+    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
+    const done=meals.length>=2;
+    if(done)completed++;
+    const isToday=key===today;
+    dots.push({done,isToday,day:d.getDate()});
+  }
+  el.innerHTML=`
+    <div class="reto21-card">
+      <div class="reto21-header">
+        <div class="reto21-title">🎯 Reto 21 días</div>
+        <div class="reto21-counter">${completed}/21 días</div>
+      </div>
+      <div class="reto21-grid">
+        ${dots.map(d=>`<div class="reto21-dot${d.done?' done':''}${d.isToday?' today':''}">${d.done?'✓':d.isToday?'·':''}</div>`).join('')}
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">≥2 comidas registradas = día completado</div>
+    </div>`;
+}
+
+// ═══════════════ FEATURE 5: EVENING SUMMARY ═══════════════
+function renderEveningSummary(){
+  const el=document.getElementById('evening-summary-card');
+  if(!el)return;
+  const h=new Date().getHours();
+  if(h<20){el.innerHTML='';return;}
+  const cacheKey='nc_evening_'+dk();
+  const cached=localStorage.getItem(cacheKey);
+  el.innerHTML=`
+    <div class="evening-card">
+      <div class="evening-title">🌙 Resumen del día</div>
+      <div class="evening-sub">Un balance rápido de cómo ha ido hoy</div>
+      ${cached
+        ?`<div class="evening-text">${esc(cached)}</div>`
+        :`<button id="evening-btn" onclick="generateEveningSummary()" style="width:100%;padding:10px;border-radius:10px;border:none;background:rgba(129,140,248,.15);color:var(--accent);font-weight:700;cursor:pointer;font-size:0.85rem;">Ver resumen del día</button>`}
+    </div>`;
+}
+
+async function generateEveningSummary(){
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  const btn=document.getElementById('evening-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<span style="display:inline-flex;gap:6px;align-items:center;"><span class="spinner spinner-accent" style="width:14px;height:14px;"></span> Generando...</span>';}
+  const meals=getMeals(),goals=getGoals(),water=getWater(),act=getActivity();
+  let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  const hasActivity=act.actividades.length>0||(act.pasos||0)>=3000;
+  const prompt=`Eres una coach cercana. Escribe UN resumen cálido y breve del día de esta persona en exactamente 3 frases. Sin markdown, sin asteriscos, sin mencionar calorías. Texto corrido.
+
+Datos del día: ${meals.length} comidas registradas, proteína ${Math.round(P)}g/${goals.p}g objetivo, carbos ${Math.round(C)}g/${goals.c}g, grasa ${Math.round(F)}g/${goals.f}g, agua ${water}/8 vasos, actividad: ${hasActivity?act.actividades.map(a=>a.tipo).join(', ')||'pasos'  :'sin actividad'}.
+Tono: cálido, breve, sin juicio. Menciona 1 cosa buena concreta y 1 pequeño aprendizaje.`;
+  try{
+    const res=await callClaude([{role:'user',content:prompt}]);
+    localStorage.setItem('nc_evening_'+dk(),res);
+    renderEveningSummary();
+  }catch(e){showToast('Error: '+e.message);}
+}
+
+// ═══════════════ FEATURE 6: DÍA DIFÍCIL ═══════════════
+function renderDiaDificil(){
+  const el=document.getElementById('dia-dificil-wrap');
+  if(!el)return;
+  const cacheKey='nc_dia_dificil_'+dk();
+  const cached=localStorage.getItem(cacheKey);
+  if(cached){
+    el.innerHTML=`<div class="dia-dificil-result">${esc(cached)}<button onclick="localStorage.removeItem('nc_dia_dificil_${dk()}');renderDiaDificil();" style="display:block;margin-top:10px;background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;">✕ Cerrar</button></div>`;
+    return;
+  }
+  el.innerHTML=`<button class="dia-dificil-btn" onclick="generateDiaDificil()">🆘 Hoy es un día difícil</button>`;
+}
+
+async function generateDiaDificil(){
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  const el=document.getElementById('dia-dificil-wrap');
+  el.innerHTML=`<div style="text-align:center;padding:12px;color:var(--muted);font-size:0.82rem;display:flex;gap:8px;align-items:center;justify-content:center;"><div class="spinner spinner-accent" style="width:14px;height:14px;"></div> Buscando opciones fáciles...</div>`;
+  const p=getProfile();
+  const prompt=`Eres una coach empática. La persona está teniendo un día difícil y necesita comer de forma simple, sin cocinar y sin estrés. Cero juicio.
+Mujer, ${p.edad} años, ${p.peso}kg, objetivo ${p.pesoObj||69}kg.
+Dame un plan ultra simple: 2-3 opciones de comida sin cocinar (con macros aproximados) + UNA acción pequeña que la haga sentir mejor hoy.
+Sin calorías, sin presión, sin markdown. Texto corrido, máximo 5-6 frases en total. Tono amable y sin culpa.`;
+  try{
+    const res=await callClaude([{role:'user',content:prompt}]);
+    localStorage.setItem('nc_dia_dificil_'+dk(),res);
+    renderDiaDificil();
+  }catch(e){
+    el.innerHTML=`<button class="dia-dificil-btn" onclick="generateDiaDificil()">🆘 Hoy es un día difícil</button>`;
+    showToast('Error: '+e.message);
+  }
+}
+
+// ═══════════════ FEATURE 7: CONSISTENCIA SEMANAL ═══════════════
+function renderConsistenciaScore(){
+  const el=document.getElementById('consistencia-score-wrap');
+  if(!el)return;
+  const goals=getGoals();
+  // Current week
+  const curDays=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(Date.now()-i*86400000);
+    const key=d.toISOString().split('T')[0];
+    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
+    const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    const water=parseInt(localStorage.getItem('water_'+key)||'0');
+    curDays.push({
+      label:d.toLocaleDateString('es-ES',{weekday:'short'}),
+      mealDone:meals.length>=2,
+      actDone:act.actividades.length>0||(act.pasos||0)>=3000,
+      waterDone:water>=4
+    });
+  }
+  // Previous week
+  const prevDays=[];
+  for(let i=13;i>=7;i--){
+    const key=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
+    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
+    const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    const water=parseInt(localStorage.getItem('water_'+key)||'0');
+    prevDays.push({mealDone:meals.length>=2,actDone:act.actividades.length>0||(act.pasos||0)>=3000,waterDone:water>=4});
+  }
+  function score(days){
+    const m=days.filter(d=>d.mealDone).length/7*40;
+    const a=days.filter(d=>d.actDone).length/7*30;
+    const w=days.filter(d=>d.waterDone).length/7*30;
+    return Math.round(m+a+w);
+  }
+  const cur=score(curDays);
+  const prev=score(prevDays);
+  const colorCur=cur<40?'var(--red)':cur<70?'var(--orange)':'var(--green)';
+  const trend=cur-prev;
+  const trendHtml=trend>0?`<span style="color:var(--green);font-size:0.75rem;font-weight:700;">▲ +${trend}% vs semana anterior</span>`
+    :trend<0?`<span style="color:var(--orange);font-size:0.75rem;font-weight:700;">▼ ${trend}% vs semana anterior</span>`
+    :`<span style="color:var(--muted);font-size:0.75rem;">= igual que la semana anterior</span>`;
+
+  // Mini bars: one per day
+  const barH=40;
+  const barsHtml=curDays.map(d=>{
+    const pct=((d.mealDone?40:0)+(d.actDone?30:0)+(d.waterDone?30:0));
+    const col=pct<40?'var(--red)':pct<70?'var(--orange)':'var(--green)';
+    return `<div class="consist-bar-wrap">
+      <div class="consist-bar-col" style="height:${Math.max(4,pct/100*barH)}px;background:${col};"></div>
+      <div class="consist-bar-lbl">${d.label.slice(0,2)}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="consist-card">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div>
+          <div class="consist-pct" style="color:${colorCur}">${cur}%</div>
+          <div style="font-size:0.72rem;color:var(--muted);">Consistencia semanal</div>
+          <div style="margin-top:4px;">${trendHtml}</div>
+        </div>
+        <div style="flex:1;font-size:0.72rem;color:var(--muted);line-height:1.6;">
+          Comidas 40% · Actividad 30% · Agua 30%
+        </div>
+      </div>
+      <div class="consist-bars">${barsHtml}</div>
+    </div>`;
+}
+
+// ═══════════════ FEATURE 8: FOTO MENSUAL ═══════════════
+function renderFotoMensual(){
+  const el=document.getElementById('foto-mensual-card');
+  if(!el)return;
+  const today=new Date();
+  const dayOfMonth=today.getDate();
+  const isHighlight=dayOfMonth>=1&&dayOfMonth<=3;
+  const lastReminderSet=localStorage.getItem('nc_foto_mensual_notif');
+
+  el.innerHTML=`
+    <div class="foto-mensual-card${isHighlight?' highlight':''}">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:1.8rem;flex-shrink:0;">📸</div>
+        <div style="flex:1;">
+          <div style="font-weight:800;font-size:0.95rem;">Foto de progreso mensual</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;line-height:1.5;">
+            ${isHighlight
+              ?'<span style="color:var(--yellow);font-weight:700;">¡Ahora es buen momento! Es el día '+dayOfMonth+' del mes</span>'
+              :'El día 1 de cada mes — misma ropa, misma luz, mismo sitio'}
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button onclick="setFotoMensualReminder()" style="flex:1;padding:9px;border-radius:10px;border:1.5px solid ${lastReminderSet?'rgba(52,211,153,.4)':'var(--border)'};background:${lastReminderSet?'rgba(52,211,153,.08)':'transparent'};color:${lastReminderSet?'var(--green)':'var(--muted)'};font-weight:600;cursor:pointer;font-size:0.78rem;">
+          ${lastReminderSet?'✓ Recordatorio activado':'🔔 Recordar cada mes'}
+        </button>
+        ${isHighlight?`<button onclick="showToast('Haz la foto ahora: misma ropa, misma posición, luz natural 📸')" style="flex:1;padding:9px;border-radius:10px;border:none;background:var(--yellow);color:#0f172a;font-weight:700;cursor:pointer;font-size:0.78rem;">Hacer ahora</button>`:''}
+      </div>
+    </div>`;
+}
+
+function setFotoMensualReminder(){
+  if(!('Notification' in window)){showToast('Tu navegador no soporta notificaciones');return;}
+  Notification.requestPermission().then(perm=>{
+    if(perm==='granted'){
+      localStorage.setItem('nc_foto_mensual_notif','1');
+      showToast('🔔 Recordatorio mensual activado');
+      renderFotoMensual();
+    } else {
+      showToast('Activa las notificaciones en ajustes del navegador');
+    }
+  });
 }
 
 // ═══════════════ SERVICE WORKER ═══════════════
