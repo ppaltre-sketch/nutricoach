@@ -152,6 +152,12 @@
     .macro-input-wrap.p input:focus{border-color:var(--green);}
     .macro-input-wrap.c input:focus{border-color:var(--accent);}
     .macro-input-wrap.f input:focus{border-color:var(--orange);}
+    .macro-input-wrap.fib input:focus{border-color:var(--blue);}
+    .macros-row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;}
+    .alcohol-toggle-wrap{background:rgba(248,113,113,.06);border:1.5px solid rgba(248,113,113,.2);border-radius:12px;padding:10px 13px;margin-bottom:13px;}
+    .alcohol-drinks{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+    .alcohol-drink-chip{padding:7px 13px;border-radius:99px;border:1.5px solid var(--border);font-size:0.78rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
+    .alcohol-drink-chip.active{background:rgba(248,113,113,.2);border-color:rgba(248,113,113,.5);color:var(--red);}
 
     /* TYPE CHIPS */
     .type-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px;}
@@ -470,7 +476,7 @@
               <label>Tipo de comida</label>
               <div class="type-chips" id="s-type-chips"></div>
             </div>
-            <div class="macros-row" style="margin-bottom:13px;">
+            <div class="macros-row-4" style="margin-bottom:13px;">
               <div class="macro-input-wrap p">
                 <div class="macro-input-lbl" style="color:var(--green)">Proteína g</div>
                 <input type="number" id="s-meal-p" min="0" />
@@ -482,6 +488,10 @@
               <div class="macro-input-wrap f">
                 <div class="macro-input-lbl" style="color:var(--orange)">Grasa g</div>
                 <input type="number" id="s-meal-f" min="0" />
+              </div>
+              <div class="macro-input-wrap fib">
+                <div class="macro-input-lbl" style="color:var(--blue)">Fibra g</div>
+                <input type="number" id="s-meal-fib" min="0" placeholder="0" />
               </div>
             </div>
             <div class="form-group" style="margin-bottom:10px;">
@@ -521,7 +531,7 @@
           <div class="card">
             <div class="card-title">Macros calculados — confirma y guarda</div>
             <div id="ing-resultado-inner"></div>
-            <div class="macros-row" style="margin:14px 0 13px;">
+            <div class="macros-row-4" style="margin:14px 0 13px;">
               <div class="macro-input-wrap p">
                 <div class="macro-input-lbl" style="color:var(--green)">Proteína g</div>
                 <input type="number" id="ing-meal-p" min="0" />
@@ -533,6 +543,10 @@
               <div class="macro-input-wrap f">
                 <div class="macro-input-lbl" style="color:var(--orange)">Grasa g</div>
                 <input type="number" id="ing-meal-f" min="0" />
+              </div>
+              <div class="macro-input-wrap fib">
+                <div class="macro-input-lbl" style="color:var(--blue)">Fibra g</div>
+                <input type="number" id="ing-meal-fib" min="0" placeholder="0" />
               </div>
             </div>
             <div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">Puedes ajustar los valores si algo no cuadra</div>
@@ -569,10 +583,11 @@
               <div class="type-chips" id="bc-type-chips"></div>
             </div>
             <div style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;">Valores por porción consumida (ajusta si hace falta)</div>
-            <div class="macros-row" style="margin-bottom:13px;">
+            <div class="macros-row-4" style="margin-bottom:13px;">
               <div class="macro-input-wrap p"><div class="macro-input-lbl" style="color:var(--green)">Proteína g</div><input type="number" id="bc-meal-p" min="0"/></div>
               <div class="macro-input-wrap c"><div class="macro-input-lbl" style="color:var(--accent)">Carbos g</div><input type="number" id="bc-meal-c" min="0"/></div>
               <div class="macro-input-wrap f"><div class="macro-input-lbl" style="color:var(--orange)">Grasa g</div><input type="number" id="bc-meal-f" min="0"/></div>
+              <div class="macro-input-wrap fib"><div class="macro-input-lbl" style="color:var(--blue)">Fibra g</div><input type="number" id="b-meal-fib" min="0" placeholder="0"/></div>
             </div>
             <button class="btn btn-primary" onclick="addMeal('barcode')">Guardar comida</button>
           </div>
@@ -581,26 +596,65 @@
 
       <div id="add-manual-mode" style="display:none">
         <div class="card">
-          <div class="form-group">
-            <label>Nombre del plato</label>
-            <input type="text" id="m-meal-name" placeholder="Ej: Pollo con verduras Wetaca" />
+          <!-- Alcohol toggle -->
+          <div class="alcohol-toggle-wrap">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0;">
+              <input type="checkbox" id="m-is-alcohol" onchange="toggleAlcoholMode()" style="width:18px;height:18px;accent-color:var(--red);flex-shrink:0;" />
+              <span style="font-size:0.85rem;font-weight:600;color:var(--muted);">🍷 Es una bebida alcohólica</span>
+            </label>
           </div>
-          <div class="form-group">
-            <label>Tipo de comida</label>
-            <div class="type-chips" id="m-type-chips"></div>
+          <!-- Normal fields -->
+          <div id="m-normal-fields">
+            <div class="form-group">
+              <label>Nombre del plato</label>
+              <input type="text" id="m-meal-name" placeholder="Ej: Pollo con verduras Wetaca" />
+            </div>
+            <div class="form-group">
+              <label>Tipo de comida</label>
+              <div class="type-chips" id="m-type-chips"></div>
+            </div>
+            <div class="macros-row-4" style="margin-bottom:8px;">
+              <div class="macro-input-wrap p">
+                <div class="macro-input-lbl" style="color:var(--green)">Proteína g</div>
+                <input type="number" id="m-meal-p" min="0" placeholder="0" />
+              </div>
+              <div class="macro-input-wrap c">
+                <div class="macro-input-lbl" style="color:var(--accent)">Carbos g</div>
+                <input type="number" id="m-meal-c" min="0" placeholder="0" />
+              </div>
+              <div class="macro-input-wrap f">
+                <div class="macro-input-lbl" style="color:var(--orange)">Grasa g</div>
+                <input type="number" id="m-meal-f" min="0" placeholder="0" />
+              </div>
+              <div class="macro-input-wrap fib">
+                <div class="macro-input-lbl" style="color:var(--blue)">Fibra g</div>
+                <input type="number" id="m-meal-fib" min="0" placeholder="0" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:13px;">
+              <label>Tipo de grasa (opcional)</label>
+              <select id="m-fat-quality">
+                <option value="">No especificado</option>
+                <option value="saludable">✅ Saludable (aguacate, aceite oliva, nueces, pescado)</option>
+                <option value="neutra">⚪ Neutra (lácteos, huevo)</option>
+                <option value="saturada">⚠️ Saturada (mantequilla, embutido, fritos)</option>
+              </select>
+            </div>
           </div>
-          <div class="macros-row" style="margin-bottom:13px;">
-            <div class="macro-input-wrap p">
-              <div class="macro-input-lbl" style="color:var(--green)">Proteína g</div>
-              <input type="number" id="m-meal-p" min="0" placeholder="0" />
+          <!-- Alcohol fields -->
+          <div id="m-alcohol-fields" style="display:none;">
+            <div class="form-group">
+              <label>Nombre de la bebida</label>
+              <input type="text" id="m-alcohol-name" placeholder="Ej: Caña en el bar, Copa de vino..." />
             </div>
-            <div class="macro-input-wrap c">
-              <div class="macro-input-lbl" style="color:var(--accent)">Carbos g</div>
-              <input type="number" id="m-meal-c" min="0" placeholder="0" />
-            </div>
-            <div class="macro-input-wrap f">
-              <div class="macro-input-lbl" style="color:var(--orange)">Grasa g</div>
-              <input type="number" id="m-meal-f" min="0" placeholder="0" />
+            <div class="form-group">
+              <label>Tipo de bebida</label>
+              <div class="alcohol-drinks" id="alcohol-drinks-chips">
+                <div class="alcohol-drink-chip" data-drink="caña" onclick="selectAlcoholDrink(this)">🍺 Caña (330ml)</div>
+                <div class="alcohol-drink-chip" data-drink="vino" onclick="selectAlcoholDrink(this)">🍷 Copa vino (150ml)</div>
+                <div class="alcohol-drink-chip" data-drink="combinado" onclick="selectAlcoholDrink(this)">🥃 Combinado</div>
+                <div class="alcohol-drink-chip" data-drink="cerveza" onclick="selectAlcoholDrink(this)">🍺 Cerveza (500ml)</div>
+              </div>
             </div>
           </div>
           <button class="btn btn-primary" onclick="addMeal('manual')">Guardar comida</button>
@@ -963,7 +1017,7 @@
       <div class="card">
         <div class="setting-group-title">Objetivos diarios de macros</div>
         <div id="goals-hint" style="font-size:0.75rem;margin-bottom:12px;line-height:1.5;"></div>
-        <div class="macros-row" style="margin-bottom:12px;">
+        <div class="macros-row-4" style="margin-bottom:12px;">
           <div class="macro-input-wrap p">
             <div class="macro-input-lbl" style="color:var(--green)">Proteína g</div>
             <input type="number" id="cfg-goal-p" value="120" oninput="saveGoals()" />
@@ -975,6 +1029,10 @@
           <div class="macro-input-wrap f">
             <div class="macro-input-lbl" style="color:var(--orange)">Grasa g</div>
             <input type="number" id="cfg-goal-f" value="55" oninput="saveGoals()" />
+          </div>
+          <div class="macro-input-wrap fib">
+            <div class="macro-input-lbl" style="color:var(--blue)">Fibra g</div>
+            <input type="number" id="cfg-goal-fib" value="25" oninput="saveGoals()" />
           </div>
         </div>
         <button class="btn btn-secondary" onclick="recalcGoals()" id="recalc-btn">✨ Calcular con IA mis objetivos</button>
@@ -1075,6 +1133,7 @@ function setPortionScan(portion){
     document.getElementById('s-meal-p').value = Math.round(scannedMacros.p * portion * 10)/10;
     document.getElementById('s-meal-c').value = Math.round(scannedMacros.c * portion * 10)/10;
     document.getElementById('s-meal-f').value = Math.round(scannedMacros.f * portion * 10)/10;
+    const fibEl=document.getElementById('s-meal-fib');if(fibEl&&scannedMacros.fib)fibEl.value=Math.round(scannedMacros.fib*portion*10)/10;
     document.getElementById('s-meal-name').value = scannedMacros.name + (portion===0.5 ? ' (½ ración)' : '');
   }
 }
@@ -1109,12 +1168,53 @@ const getMeals = () => JSON.parse(localStorage.getItem('meals_'+dk())||'[]');
 const saveMeals = m => localStorage.setItem('meals_'+dk(), JSON.stringify(m));
 const getApiKey = () => localStorage.getItem('anthropic_key')||'';
 const getProfile = () => { const d=JSON.parse(localStorage.getItem('nc_profile')||'{"peso":90,"altura":174,"edad":37,"sexo":"mujer","actividad":"bajo","pesoObj":69}'); if(!d.pesoObj)d.pesoObj=69; return d; };
-const getGoalsBase = () => JSON.parse(localStorage.getItem('nc_goals')||'{"p":120,"c":150,"f":55}');
+const getGoalsBase = () => { const d=JSON.parse(localStorage.getItem('nc_goals')||'{"p":120,"c":150,"f":55}'); if(!d.fib)d.fib=25; return d; };
 function getGoals(){
   const base=getGoalsBase();
   const boost=getMacroBoost();
   if(!boost)return base;
-  return{p:Math.round(base.p*(1+boost.p/100)),c:Math.round(base.c*(1+boost.c/100)),f:base.f};
+  return{p:Math.round(base.p*(1+boost.p/100)),c:Math.round(base.c*(1+boost.c/100)),f:base.f,fib:base.fib};
+}
+
+// ═══════════════ INTERNAL CALORIE HELPERS ═══════════════
+function getInternalKcal(meals){
+  return meals.reduce((s,m)=>s+(m.p||0)*4+(m.c||0)*4+(m.f||0)*9,0);
+}
+function getInternalTDEE(){
+  const p=getProfile();
+  const bmr=10*p.peso+6.25*p.altura-5*p.edad-161;
+  const mult={sedentario:1.2,bajo:1.375,medio:1.55,alto:1.725};
+  return Math.round(bmr*(mult[p.actividad]||1.375));
+}
+function getInternalDeficitStatus(meals){
+  const kcal=getInternalKcal(meals);
+  const tdee=getInternalTDEE();
+  const target=tdee-450;
+  if(kcal===0)return'sin_datos';
+  if(kcal<1200)return'peligrosamente_bajo';
+  if(kcal<target*0.75)return'muy_bajo';
+  if(kcal<target*0.90)return'bajo';
+  if(kcal<=tdee)return'optimo';
+  return'exceso';
+}
+function buildCalorieContext(meals){
+  const kcal=getInternalKcal(meals);
+  const tdee=getInternalTDEE();
+  const target=tdee-450;
+  const status=getInternalDeficitStatus(meals);
+  const instrMap={
+    sin_datos:'Aún sin datos de ingesta. Sugiere comidas equilibradas y nutritivas.',
+    peligrosamente_bajo:'ALERTA: ingesta muy baja, riesgo para la salud. Sugiere comidas densas en nutrientes sin restricción adicional. No sugerir nada ligero.',
+    muy_bajo:'Ingesta demasiado baja. Aumenta un poco las porciones en la sugerencia para no crear un déficit excesivo.',
+    bajo:'Ligeramente por debajo del objetivo. Mantén porciones normales.',
+    optimo:'Déficit óptimo. Mantén el plan actual.',
+    exceso:'Ha superado el TDEE. Sugiere cena/almuerzo muy ligero pero saciante, rico en proteína y fibra, bajo en carbos y grasa.'
+  };
+  return `[CONTEXTO INTERNO - NO MENCIONAR AL USUARIO]
+Estado déficit: ${status}
+TDEE estimado: ${tdee}kcal. Ingesta hoy: ${Math.round(kcal)}kcal. Objetivo déficit: ${Math.round(target)}kcal.
+Instrucción: ${instrMap[status]||instrMap.optimo}
+[FIN CONTEXTO INTERNO]\n\n`;
 }
 const getWater = () => parseInt(localStorage.getItem('water_'+dk())||'0');
 const setWater = n => localStorage.setItem('water_'+dk(), n);
@@ -1166,6 +1266,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('cfg-goal-p').value=g.p;
   document.getElementById('cfg-goal-c').value=g.c;
   document.getElementById('cfg-goal-f').value=g.f;
+  document.getElementById('cfg-goal-fib').value=g.fib||25;
   renderGoalsHint();
 
   checkSetupFromURL();
@@ -1205,9 +1306,9 @@ function showPage(name){
 function renderHome(){
   renderReminderBanners();
   const meals=getMeals(), goals=getGoals();
-  let P=0,C=0,F=0;
-  meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
-  P=Math.round(P*10)/10; C=Math.round(C*10)/10; F=Math.round(F*10)/10;
+  let P=0,C=0,F=0,Fib=0;
+  meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;Fib+=m.fib||0;});
+  P=Math.round(P*10)/10; C=Math.round(C*10)/10; F=Math.round(F*10)/10; Fib=Math.round(Fib*10)/10;
   const p=getProfile();
   const energyStatus=computeEnergyStatus(meals);
 
@@ -1298,6 +1399,14 @@ function renderHome(){
               <span class="legend-pct">${pBar(F,goals.f)}% de ${goals.f}g</span>
             </div>
           </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:var(--blue)"></div>
+            <span class="legend-name">Fibra</span>
+            <div class="legend-vals">
+              <span class="legend-val">${Fib}g</span>
+              <span class="legend-pct">${pBar(Fib,goals.fib||25)}% de ${goals.fib||25}g</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>`;
@@ -1344,11 +1453,47 @@ function renderHome(){
     else if(P<goals.p*0.4&&energyStatus!=='very_low'&&energyStatus!=='low') msgs.push(`<div class="status-strip low">↓ Poca proteína hasta ahora — priorízala en la cena para mantener músculo</div>`);
     if(C>goals.c*1.2) msgs.push(`<div class="status-strip warn">⚠️ Carbohidratos altos hoy — cena sin féculas o muy poca cantidad</div>`);
     if(F>goals.f*1.2) msgs.push(`<div class="status-strip warn">⚠️ Grasa alta hoy — cena muy ligera en grasas</div>`);
+    // Feature 2: Protein distribution alert
+    if(meals.length>=2 && P>30){
+      const maxMealP=Math.max(...meals.map(m=>m.p||0));
+      if(maxMealP/P>0.6) msgs.push(`<div class="status-strip warn">⚠️ Toda la proteína en una comida — repártela en 2-3 comidas para aprovecharla mejor</div>`);
+    }
+    // Feature 7: Fat quality alert (saturada)
+    const hasSatFat=meals.some(m=>m.fatQuality==='saturada');
+    if(hasSatFat) msgs.push(`<div class="status-strip warn" style="border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.06);color:var(--red);">🔴 Hoy has tomado grasas saturadas — en la siguiente comida prioriza grasas antiinflamatorias (aceite de oliva, aguacate, pescado)</div>`);
+    // Feature 8: Alcohol alert
+    const hasAlcohol=meals.some(m=>m.alcohol);
+    if(hasAlcohol && !sessionStorage.getItem('alcohol_msg_dismissed_'+dk())) msgs.push(`<div class="status-strip warn" style="border-color:rgba(248,113,113,.25);background:rgba(248,113,113,.05);color:var(--red);">🍷 Día con alcohol registrado — hidrátate bien y prioriza proteína mañana <button onclick="sessionStorage.setItem('alcohol_msg_dismissed_${dk()}','1');renderHome();" style="margin-left:auto;background:none;border:none;color:inherit;cursor:pointer;font-size:0.9rem;flex-shrink:0;opacity:.7;">✕</button></div>`);
     if(msgs.length===0&&meals.length>=2&&energyStatus==='ok') msgs.push(`<div class="status-strip ok">✓ Macros equilibrados hoy — vas muy bien</div>`);
   }
+
+  // Feature 3: Meal timing warning
+  const nowH=new Date().getHours(), nowM=new Date().getMinutes();
+  const nowMins=nowH*60+nowM;
+  if(nowH>=8 && nowH<22){
+    const timingKey='meal_timing_dismissed_'+dk();
+    if(!sessionStorage.getItem(timingKey)){
+      if(meals.length===0 && nowH>=12){
+        msgs.push(`<div class="status-strip low">🍽️ Aún sin registrar nada hoy — come algo para mantener tu metabolismo activo <button onclick="sessionStorage.setItem('${timingKey}','1');renderHome();" style="margin-left:auto;background:none;border:none;color:inherit;cursor:pointer;font-size:0.9rem;opacity:.7;">✕</button></div>`);
+      } else if(meals.length>0){
+        // Get last meal time
+        const lastMeal=meals.filter(m=>m.time).sort((a,b)=>b.time.localeCompare(a.time))[0];
+        if(lastMeal&&lastMeal.time){
+          const [lh,lm]=lastMeal.time.split(':').map(Number);
+          const lastMins=lh*60+(lm||0);
+          const diffH=Math.floor((nowMins-lastMins)/60);
+          if(diffH>=5) msgs.push(`<div class="status-strip low">⏰ Llevas más de ${diffH} horas sin comer — tu cuerpo necesita combustible para preservar músculo <button onclick="sessionStorage.setItem('${timingKey}','1');renderHome();" style="margin-left:auto;background:none;border:none;color:inherit;cursor:pointer;font-size:0.9rem;opacity:.7;">✕</button></div>`);
+        }
+      }
+    }
+  }
+
   const boost=getMacroBoost();
   if(boost) msgs.unshift(`<div class="status-strip ok">⚡ Macros de hoy ajustados por tu entreno (+${boost.p}% proteína, +${boost.c}% carbos) — ¡come bien para recuperarte!</div>`);
   document.getElementById('status-messages').innerHTML=msgs.join('');
+
+  // Feature 6: Plateau detection (add at end of renderHome)
+  checkPlateauDetection();
 
   // ── Favorites ──
   const favs2=getFavorites();
@@ -1467,7 +1612,7 @@ function getSelectedType(prefix){
   return el?el.dataset.val:guessCurrentMealType();
 }
 function addMeal(mode){
-  let name,type,p,c,f;
+  let name,type,p,c,f,fib=0,fatQuality='',alcohol=false,mealType='';
 
   if(mode==='ingredientes'){
     name=document.getElementById('ing-nombre').value.trim()||document.getElementById('ing-nombre').getAttribute('data-generated')||'Comida';
@@ -1475,10 +1620,12 @@ function addMeal(mode){
     p=parseFloat(document.getElementById('ing-meal-p').value)||0;
     c=parseFloat(document.getElementById('ing-meal-c').value)||0;
     f=parseFloat(document.getElementById('ing-meal-f').value)||0;
+    fib=parseFloat(document.getElementById('ing-meal-fib').value)||0;
     // reset
     document.getElementById('ing-texto').value='';
     document.getElementById('ing-nombre').value='';
     document.getElementById('ing-resultado').style.display='none';
+    document.getElementById('ing-meal-fib').value='';
     renderTypeChips('ing-type-chips','ing');
   } else if(mode==='barcode'){
     name=document.getElementById('bc-meal-name').value.trim();
@@ -1487,10 +1634,42 @@ function addMeal(mode){
     p=parseFloat(document.getElementById('bc-meal-p').value)||0;
     c=parseFloat(document.getElementById('bc-meal-c').value)||0;
     f=parseFloat(document.getElementById('bc-meal-f').value)||0;
-    ['bc-meal-name','bc-meal-p','bc-meal-c','bc-meal-f'].forEach(id=>document.getElementById(id).value='');
+    fib=parseFloat(document.getElementById('b-meal-fib').value)||0;
+    ['bc-meal-name','bc-meal-p','bc-meal-c','bc-meal-f','b-meal-fib'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('barcode-result').style.display='none';
     stopBarcodeScanner();
     renderTypeChips('bc-type-chips','bc');
+  } else if(mode==='manual'){
+    const isAlcohol=document.getElementById('m-is-alcohol').checked;
+    if(isAlcohol){
+      // Alcohol mode
+      const selected=document.querySelector('#alcohol-drinks-chips .alcohol-drink-chip.active');
+      if(!selected){showToast('Selecciona el tipo de bebida');return;}
+      const drinkMacros={caña:{p:1,c:10,f:0,fib:0},vino:{p:0,c:4,f:0,fib:0},combinado:{p:0,c:15,f:0,fib:0},cerveza:{p:1,c:15,f:0,fib:0}};
+      const drink=selected.dataset.drink;
+      const dm=drinkMacros[drink]||{p:0,c:10,f:0,fib:0};
+      name=document.getElementById('m-alcohol-name').value.trim()||selected.textContent.trim();
+      type='snack';
+      p=dm.p; c=dm.c; f=dm.f; fib=dm.fib; alcohol=true;
+      mealType='alcohol';
+      // reset
+      document.getElementById('m-alcohol-name').value='';
+      document.querySelectorAll('#alcohol-drinks-chips .alcohol-drink-chip').forEach(ch=>ch.classList.remove('active'));
+      document.getElementById('m-is-alcohol').checked=false;
+      toggleAlcoholMode();
+    } else {
+      name=document.getElementById('m-meal-name').value.trim();
+      if(!name){showToast('Escribe el nombre del plato');return;}
+      type=getSelectedType('m');
+      p=parseFloat(document.getElementById('m-meal-p').value)||0;
+      c=parseFloat(document.getElementById('m-meal-c').value)||0;
+      f=parseFloat(document.getElementById('m-meal-f').value)||0;
+      fib=parseFloat(document.getElementById('m-meal-fib').value)||0;
+      fatQuality=document.getElementById('m-fat-quality').value||'';
+      ['m-meal-name','m-meal-p','m-meal-c','m-meal-f','m-meal-fib'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('m-fat-quality').value='';
+    }
+    renderTypeChips('m-type-chips','m');
   } else {
     const pre=mode==='scan'?'s':'m';
     name=document.getElementById(`${pre}-meal-name`).value.trim();
@@ -1499,7 +1678,9 @@ function addMeal(mode){
     p=parseFloat(document.getElementById(`${pre}-meal-p`).value)||0;
     c=parseFloat(document.getElementById(`${pre}-meal-c`).value)||0;
     f=parseFloat(document.getElementById(`${pre}-meal-f`).value)||0;
+    fib=parseFloat(document.getElementById(`${pre}-meal-fib`)?.value)||0;
     [`${pre}-meal-name`,`${pre}-meal-p`,`${pre}-meal-c`,`${pre}-meal-f`].forEach(id=>document.getElementById(id).value='');
+    const fibEl=document.getElementById(`${pre}-meal-fib`);if(fibEl)fibEl.value='';
     if(mode==='scan'){
       document.getElementById('photo-preview-img').style.display='none';
       document.getElementById('scanned-result').style.display='none';
@@ -1511,10 +1692,12 @@ function addMeal(mode){
     renderTypeChips(`${pre}-type-chips`,pre);
   }
 
-  const meal={name,type,p,c,f,time:new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})};
+  const meal={name,type:mealType||type,p,c,f,fib,time:new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})};
+  if(fatQuality)meal.fatQuality=fatQuality;
+  if(alcohol)meal.alcohol=true;
   const m=getMeals();m.push(meal);saveMeals(m);
   // Update recent meals cache
-  updateRecentMealsCache({name,p,c,f});
+  updateRecentMealsCache({name,p,c,f,fib});
   showToast('✓ Comida guardada');
   showPage('home');
 }
@@ -1533,7 +1716,7 @@ async function calcularMacrosIA(){
 INGREDIENTES: ${texto}
 
 Responde SOLO en este JSON exacto, sin texto adicional:
-{"nombre":"nombre corto del plato","proteinas":0,"carbohidratos":0,"grasas":0,"desglose":[{"ingrediente":"nombre","p":0,"c":0,"f":0}]}
+{"nombre":"nombre corto del plato","proteinas":0,"carbohidratos":0,"grasas":0,"fibra":0,"desglose":[{"ingrediente":"nombre","p":0,"c":0,"f":0}]}
 
 Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima razonablemente. Redondea a 1 decimal.`;
 
@@ -1549,6 +1732,7 @@ Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima
     document.getElementById('ing-meal-p').value=json.proteinas??0;
     document.getElementById('ing-meal-c').value=json.carbohidratos??0;
     document.getElementById('ing-meal-f').value=json.grasas??0;
+    document.getElementById('ing-meal-fib').value=json.fibra??0;
 
     // Desglose visual
     const desglose=json.desglose||[];
@@ -1680,18 +1864,26 @@ async function getCenaSuggestion(){
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Analizando tu día...';
 
   const energyStatus=computeEnergyStatus(meals);
-  const kcalTodayNote = energyStatus==='very_low'?'IMPORTANTE: ha comido muy poco hoy, la cena debe ser suficientemente nutritiva para cubrir las necesidades básicas del cuerpo.'
-    : energyStatus==='low'?'Ha comido poco hoy, la cena debe ser completa y satisfactoria.'
-    : energyStatus==='over'?'Ha comido bastante hoy, propón una cena ligera pero que cubra los macros que faltan.'
-    : '';
+  const cicloHoy=localStorage.getItem('nc_ciclo_hoy')||chipState.ciclo||'nodice';
+  const cicloNutricion={
+    menstruacion:'Prioriza hierro (lentejas, espinacas, carne roja, mejillones), magnesio (chocolate negro 85%+, frutos secos), reduce alimentos inflamatorios.',
+    folicular:'Buena respuesta a proteína y carbos, momento de cargar bien para recuperación.',
+    ovulacion:'Metabolismo alto, proteína extra bien aprovechada. Buena tolerancia a carbos.',
+    lutea:'Más carbos complejos para reducir antojos (avena, boniato, arroz integral), magnesio contra retención de líquidos.',
+    nodice:'Plan equilibrado estándar.'
+  };
+  const hasAlcohToday=meals.some(m=>m.alcohol);
+  const hasSatFatToday=meals.some(m=>m.fatQuality==='saturada');
 
-  const prompt=`Eres endocrinóloga y nutricionista con enfoque en pérdida de grasa saludable, fuerza y relación positiva con la comida. NUNCA menciones calorías en tu respuesta.
+  const prompt=buildCalorieContext(meals)+`Eres endocrinóloga y nutricionista con enfoque en pérdida de grasa saludable, fuerza y relación positiva con la comida. NUNCA menciones calorías en tu respuesta.
 
 Paciente: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Peso objetivo: ${p.pesoObj||69}kg.
 Objetivo: llegar a ${p.pesoObj||69}kg reduciendo grasa y preservando músculo. Gestiona internamente el déficit calórico necesario — NUNCA menciones calorías al paciente.
-${kcalTodayNote}
+${hasAlcohToday?'[INTERNO: Ha consumido alcohol hoy — la oxidación de grasa estará inhibida ~24h. Sugiere comidas limpias y aumenta proteína ligeramente para compensar. No mencionar esto directamente.]':''}
+${hasSatFatToday?'[INTERNO: Ha tomado grasas saturadas hoy — prioriza grasas antiinflamatorias en la cena.]':''}
+Fase ciclo: ${cicloHoy}. Ajuste nutricional: ${cicloNutricion[cicloHoy]||cicloNutricion.nodice}
 
-COMIDO HOY: ${meals.length===0?'Nada':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g G${m.f}g`).join(' | ')}
+COMIDO HOY: ${meals.length===0?'Nada':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g G${m.f}g${m.fib?' Fib'+m.fib+'g':''}`).join(' | ')}
 MACROS ACUMULADOS: P${P}g C${C}g G${F}g
 OBJETIVOS DIARIOS: P${goals.p}g C${goals.c}g G${goals.f}g
 MACROS QUE FALTAN (adapta la cena a esto exactamente): P${rP}g C${rC}g G${rF}g
@@ -1770,7 +1962,10 @@ async function getEntrenoSuggestion(){
   const lastWDate=getLastWorkoutDate();
   const daysSinceWorkout=lastWDate?Math.round((Date.now()-new Date(lastWDate+'T12:00:00').getTime())/86400000):99;
 
-  const prompt=`Eres entrenadora personal experta en fitness femenino, pérdida de volumen y grasa, y fuerza funcional. Tu enfoque es positivo, sin presión, fomentando la constancia.
+  // Save ciclo to localStorage so other AI prompts can read it
+  localStorage.setItem('nc_ciclo_hoy',chipState.ciclo||'nodice');
+
+  const prompt=buildCalorieContext(meals)+`Eres entrenadora personal experta en fitness femenino, pérdida de volumen y grasa, y fuerza funcional. Tu enfoque es positivo, sin presión, fomentando la constancia.
 
 Clienta: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Vive junto a Madrid Río. Tiene ClassPass.
 Objetivo: reducir peso y volumen, ganar fuerza, relación sana con el ejercicio.
@@ -1827,6 +2022,8 @@ Adapta la intensidad a energía ${chipState.energia}. Sé concreta y práctica.`
 function selectChip(el,group){
   document.querySelectorAll(`#chips-${group} .chip`).forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected');chipState[group]=el.dataset.val;
+  // Feature 5: persist ciclo selection for use in nutrition AI prompts
+  if(group==='ciclo') localStorage.setItem('nc_ciclo_hoy',el.dataset.val);
 }
 function toggleChip(el){
   const v=el.dataset.val;
@@ -1910,7 +2107,8 @@ function saveGoals(){
   localStorage.setItem('nc_goals',JSON.stringify({
     p:parseFloat(document.getElementById('cfg-goal-p').value)||120,
     c:parseFloat(document.getElementById('cfg-goal-c').value)||150,
-    f:parseFloat(document.getElementById('cfg-goal-f').value)||55
+    f:parseFloat(document.getElementById('cfg-goal-f').value)||55,
+    fib:parseFloat(document.getElementById('cfg-goal-fib').value)||25
   }));
   renderHome();
 }
@@ -2103,7 +2301,7 @@ async function getEmpujon(){
     :'';
   const contextoCiclo=localStorage.getItem('nc_ciclo_hoy')||'';
 
-  const prompt=`Eres una coach de salud directa, cercana y sin rollos. Hablas de tú, en español de España. Conoces bien a esta persona.
+  const prompt=buildCalorieContext(meals)+`Eres una coach de salud directa, cercana y sin rollos. Hablas de tú, en español de España. Conoces bien a esta persona.
 
 Datos de hoy (${momentoDia}):
 - Racha: ${streak} días seguidos. Días activos esta semana: ${activeDays}/7
@@ -2276,11 +2474,13 @@ async function lookupBarcode(code){
     const p100=parseFloat(n['proteins_100g']||n['proteins']||0);
     const c100=parseFloat(n['carbohydrates_100g']||n['carbohydrates']||0);
     const f100=parseFloat(n['fat_100g']||n['fat']||0);
+    const fib100=parseFloat(n['fiber_100g']||n['fibers_100g']||n['fiber']||0);
     // Default to 100g serving
     document.getElementById('bc-meal-name').value=pr.product_name||'Producto escaneado';
     document.getElementById('bc-meal-p').value=Math.round(p100*10)/10;
     document.getElementById('bc-meal-c').value=Math.round(c100*10)/10;
     document.getElementById('bc-meal-f').value=Math.round(f100*10)/10;
+    document.getElementById('b-meal-fib').value=Math.round(fib100*10)/10||'';
     document.getElementById('barcode-result').style.display='block';
     showToast('✓ Producto encontrado');
     setTimeout(()=>document.getElementById('barcode-result').scrollIntoView({behavior:'smooth',block:'start'}),100);
@@ -2330,10 +2530,21 @@ async function getAlmuerzoSuggestion(){
   const tP=Math.round(rP*0.45),tC=Math.round(rC*0.45),tF=Math.round(rF*0.45);
   const btn=document.getElementById('almuerzo-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Pensando...';
-  const prompt=`Eres nutricionista experta. Objetivo paciente: reducción de grasa y volumen, preservar músculo, relación positiva con la comida. NUNCA menciones calorías.
+  const cicloHoyA=localStorage.getItem('nc_ciclo_hoy')||chipState.ciclo||'nodice';
+  const cicloNutricionA={
+    menstruacion:'Prioriza hierro y magnesio. Reduce inflamación. Lentejas, espinacas, frutos secos, chocolate negro.',
+    folicular:'Carga bien de proteína y carbos. Buen momento para subir volumen del almuerzo.',
+    ovulacion:'Proteína extra bien aprovechada. Carbos de calidad.',
+    lutea:'Más carbos complejos (avena, boniato, arroz integral). Magnesio contra retención.',
+    nodice:'Plan equilibrado estándar.'
+  };
+  const hasAlcohTodayA=meals.some(m=>m.alcohol);
+  const prompt=buildCalorieContext(meals)+`Eres nutricionista experta. Objetivo paciente: reducción de grasa y volumen, preservar músculo, relación positiva con la comida. NUNCA menciones calorías.
 
 Paciente: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Peso objetivo: ${p.pesoObj||69}kg.
 Objetivo: llegar a ${p.pesoObj||69}kg reduciendo grasa y preservando músculo. Gestiona internamente el déficit calórico — NUNCA menciones calorías.
+${hasAlcohTodayA?'[INTERNO: Ha consumido alcohol hoy — sugiere comidas limpias y aumenta proteína ligeramente. No mencionar directamente.]':''}
+Fase ciclo: ${cicloHoyA}. Ajuste nutricional: ${cicloNutricionA[cicloHoyA]||cicloNutricionA.nodice}
 Comido hoy (desayuno/snack): ${meals.length===0?'Nada todavía':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g G${m.f}g`).join(' | ')}
 Macros disponibles para el RESTO del día: P${rP}g C${rC}g G${rF}g
 TARGET para el ALMUERZO (dejando margen para cena): P${tP}g C${tC}g G${tF}g
@@ -2373,7 +2584,7 @@ function setProgresoTab(tab){
     document.getElementById('ptab-'+t).classList.toggle('active',t===tab);
   });
   if(tab==='actividad')renderActivityToday();
-  if(tab==='medidas'){renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();}
+  if(tab==='medidas'){renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
   if(tab==='semana'){renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();}
   if(tab==='retos')renderRetos();
 }
@@ -3079,6 +3290,7 @@ function renderDailyScore(){
   const pctF=goals.f>0?F/goals.f:0;
   const hasActivity=act.actividades.length>0||(act.pasos||0)>=5000;
 
+  let Fib2=0; meals.forEach(m=>Fib2+=m.fib||0);
   const criteria=[
     {label:'Proteína ≥70%',ok:pctP>=0.7,pts:25},
     {label:'Carbos ≤110%',ok:pctC<=1.1,pts:15},
@@ -3086,8 +3298,9 @@ function renderDailyScore(){
     {label:'Movimiento',ok:hasActivity,pts:20},
     {label:'Agua ≥4',ok:water>=4,pts:15},
     {label:'≥2 comidas',ok:meals.length>=2,pts:15},
+    {label:'Fibra ≥15g',ok:Fib2>=15,pts:10},
   ];
-  const score=criteria.filter(c=>c.ok).reduce((s,c)=>s+c.pts,0);
+  const score=Math.min(100,criteria.filter(c=>c.ok).reduce((s,c)=>s+c.pts,0));
   const colorClass=score<40?'red':score<70?'orange':'green';
 
   el.innerHTML=`
@@ -3157,7 +3370,7 @@ async function generateEveningSummary(){
   const meals=getMeals(),goals=getGoals(),water=getWater(),act=getActivity();
   let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
   const hasActivity=act.actividades.length>0||(act.pasos||0)>=3000;
-  const prompt=`Eres una coach cercana. Escribe UN resumen cálido y breve del día de esta persona en exactamente 3 frases. Sin markdown, sin asteriscos, sin mencionar calorías. Texto corrido.
+  const prompt=buildCalorieContext(meals)+`Eres una coach cercana. Escribe UN resumen cálido y breve del día de esta persona en exactamente 3 frases. Sin markdown, sin asteriscos, sin mencionar calorías. Texto corrido.
 
 Datos del día: ${meals.length} comidas registradas, proteína ${Math.round(P)}g/${goals.p}g objetivo, carbos ${Math.round(C)}g/${goals.c}g, grasa ${Math.round(F)}g/${goals.f}g, agua ${water}/8 vasos, actividad: ${hasActivity?act.actividades.map(a=>a.tipo).join(', ')||'pasos'  :'sin actividad'}.
 Tono: cálido, breve, sin juicio. Menciona 1 cosa buena concreta y 1 pequeño aprendizaje.`;
@@ -3312,6 +3525,69 @@ function setFotoMensualReminder(){
       showToast('Activa las notificaciones en ajustes del navegador');
     }
   });
+}
+
+// ═══════════════ ALCOHOL TOGGLE ═══════════════
+function toggleAlcoholMode(){
+  const isAlcohol=document.getElementById('m-is-alcohol').checked;
+  document.getElementById('m-normal-fields').style.display=isAlcohol?'none':'block';
+  document.getElementById('m-alcohol-fields').style.display=isAlcohol?'block':'none';
+}
+function selectAlcoholDrink(el){
+  document.querySelectorAll('#alcohol-drinks-chips .alcohol-drink-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ═══════════════ FEATURE 6: PLATEAU DETECTION ═══════════════
+function checkPlateauDetection(){
+  const ackKey='nc_plateau_ack_'+dk();
+  if(localStorage.getItem(ackKey))return;
+  const measures=getMeasures();
+  if(measures.length<2)return;
+  // Find measurements spanning ≥3 weeks
+  const now=new Date();
+  const threeWeeksAgo=new Date(now.getTime()-21*86400000);
+  const oldM=measures.filter(m=>new Date(m.date+'T12:00:00')<=threeWeeksAgo&&m.cintura);
+  const recentM=measures.filter(m=>new Date(m.date+'T12:00:00')>threeWeeksAgo&&m.cintura);
+  if(oldM.length===0||recentM.length===0)return;
+  const oldCintura=oldM[oldM.length-1].cintura;
+  const recentCintura=recentM[recentM.length-1].cintura;
+  if(Math.abs(recentCintura-oldCintura)>1)return;
+  // Check that meals are being logged (at least 4 of the last 7 days)
+  let daysWithMeals=0;
+  for(let i=1;i<=7;i++){
+    const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
+    if(JSON.parse(localStorage.getItem('meals_'+d)||'[]').length>0)daysWithMeals++;
+  }
+  if(daysWithMeals<3)return;
+  // Show plateau card
+  const el=document.getElementById('status-messages');
+  if(!el)return;
+  const plateauHtml=`<div class="status-strip low" style="flex-direction:column;gap:10px;align-items:stretch;" id="plateau-card">
+    <div style="display:flex;gap:8px;align-items:flex-start;">
+      <span>📊</span>
+      <div>Tu cintura lleva 3 semanas estable — es normal, el cuerpo se adapta. La IA puede ajustar tu plan.</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="adjustPlateauPlan()" style="flex:1;padding:8px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:0.8rem;">Ajustar mi plan</button>
+      <button onclick="localStorage.setItem('nc_plateau_ack_${dk()}','1');document.getElementById('plateau-card')?.remove();" style="flex:1;padding:8px;border-radius:9px;border:none;background:var(--surface2);color:var(--muted);font-weight:600;cursor:pointer;font-size:0.8rem;">Cerrar</button>
+    </div>
+  </div>`;
+  el.insertAdjacentHTML('afterbegin',plateauHtml);
+}
+
+async function adjustPlateauPlan(){
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  const btn=document.querySelector('#plateau-card button');
+  if(btn){btn.disabled=true;btn.innerHTML='<span style="display:inline-flex;gap:6px;align-items:center;"><span class="spinner" style="width:13px;height:13px;"></span></span>';}
+  const goals=getGoalsBase(), p=getProfile();
+  try{
+    const res=await callClaude([{role:'user',content:`Eres nutricionista experta. Esta paciente lleva 3 semanas sin cambios en cintura a pesar de seguir su plan. Propón 2-3 ajustes concretos al plan (ej: reducir carbos 10-15g, añadir 1 sesión de fuerza semanal, cambiar distribución de macros). Mujer, ${p.edad} años, ${p.peso}kg, objetivo ${p.pesoObj||69}kg. Objetivos actuales: P${goals.p}g C${goals.c}g G${goals.f}g Fibra${goals.fib||25}g. NUNCA menciones calorías. Tono directo y motivador. Máximo 4-5 líneas.`}]);
+    const card=document.getElementById('plateau-card');
+    if(card){
+      card.innerHTML=`<div style="display:flex;gap:8px;align-items:flex-start;"><span>📊</span><div style="font-size:0.82rem;line-height:1.6;">${esc(res)}<br><button onclick="localStorage.setItem('nc_plateau_ack_${dk()}','1');document.getElementById('plateau-card')?.remove();" style="margin-top:8px;background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;">Cerrar ✕</button></div></div>`;
+    }
+  }catch(e){showToast('Error: '+e.message);if(btn){btn.disabled=false;btn.innerHTML='Ajustar mi plan';}}
 }
 
 // ═══════════════ SERVICE WORKER ═══════════════
