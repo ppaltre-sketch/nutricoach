@@ -1983,20 +1983,44 @@ async function getEmpujon(){
     const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
     if(JSON.parse(localStorage.getItem('meals_'+d)||'[]').length>0)activeDays++;
   }
-  const prompt=`Eres una coach de salud directa, cálida y sin rodeos. Hablas de tú, en español de España.
+  // Ayer
+  const ayer=new Date(Date.now()-86400000).toISOString().split('T')[0];
+  const ayerMeals=JSON.parse(localStorage.getItem('meals_'+ayer)||'[]');
+  const ayerAct=JSON.parse(localStorage.getItem('nc_activity_'+ayer)||'{"pasos":0,"actividades":[]}');
+  const ayerP=Math.round(ayerMeals.reduce((s,m)=>s+(m.p||0),0)*10)/10;
+  const ayerActDesc=ayerAct.actividades.length>0?ayerAct.actividades.map(a=>a.nombre).join(', '):(ayerAct.pasos>3000?`${ayerAct.pasos} pasos`:'sin actividad');
+  const checkin=getCheckin();
+  const hora=new Date().getHours();
+  const momentoDia=hora<12?'mañana':hora<17?'tarde':'noche';
 
-Contexto de la usuaria:
-- Mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm
-- Objetivo: reducir peso y volumen, ganar fuerza, mejorar relación con la comida y con ella misma
-- Racha actual: ${streak} días
-- Días activos últimos 7 días: ${activeDays}/7
-- Hoy: ${meals.length} comidas registradas, P${P}g/${goals.p}g, ejercicio: ${totalMin>0?totalMin+' min':'ninguno registrado'}
-- Se vio en fotos y no le gusta cómo está — quiere cambiar de verdad
+  // Construir contexto rico del día
+  const contextoHoy=meals.length===0
+    ?'Todavía no ha registrado nada hoy'
+    :`Ha registrado ${meals.length} comida${meals.length>1?'s':''}: ${meals.map(m=>m.name).join(', ')}. Proteína: ${P}g de ${goals.p}g objetivo`;
+  const contextoAyer=ayerMeals.length>0
+    ?`Ayer registró ${ayerMeals.length} comidas (${ayerP}g proteína) y su actividad fue: ${ayerActDesc}`
+    :'Ayer no registró comidas';
+  const contextoCheckin=checkin
+    ?`Esta mañana dijo que durmió ${checkin.sueno}, hambre ${checkin.hambre}, cuerpo ${checkin.cuerpo}`
+    :'';
+  const contextoCiclo=localStorage.getItem('nc_ciclo_hoy')||'';
 
-Dame un mensaje de motivación PERSONAL y DIRECTO. Máximo 4-5 frases. No genérico, que sienta que la conoces.
-Reconoce exactamente dónde está (no finjas que va perfecta si no va), valida que es difícil, y dale un empujón concreto para HOY.
-Tono: como una amiga que dice las cosas claras pero con cariño. Sin frases de Pinterest. Sin mencionar calorías.
-Sin asteriscos ni formato — texto corrido.`;
+  const prompt=`Eres una coach de salud directa, cercana y sin rollos. Hablas de tú, en español de España. Conoces bien a esta persona.
+
+Datos de hoy (${momentoDia}):
+- Racha: ${streak} días seguidos. Días activos esta semana: ${activeDays}/7
+- ${contextoHoy}
+- Ejercicio hoy: ${totalMin>0?totalMin+' min ('+act.actividades.map(a=>a.nombre).join(', ')+')':'ninguno aún'}
+- ${contextoAyer}
+${contextoCheckin?'- '+contextoCheckin:''}
+
+Escríbele UN mensaje corto (3-4 frases máximo). Varía el enfoque según el momento:
+- Si va bien: reconócelo con detalle específico (menciona qué hizo ayer o hoy concretamente), súbele el listón un poco
+- Si flojea: sé directa sin castigar, una cosa concreta que puede hacer AHORA en esta ${momentoDia}
+- Si lleva racha: hazle sentir que cada día suma, que el proceso se nota aunque no se vea aún
+- Nunca menciones calorías, fotos, ni digas frases de Instagram
+- Tono: amiga lista que dice la verdad con cariño. Texto corrido, sin asteriscos ni listas.`;
+
   try{
     const res=await callClaude([{role:'user',content:prompt}]);
     const el=document.getElementById('empujon-result');
