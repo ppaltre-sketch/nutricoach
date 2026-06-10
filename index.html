@@ -2923,9 +2923,11 @@ Usa ingredientes de supermercado español o tuppers Wetaca. Práctico para entre
 
 // ═══════════════ PROGRESO PAGE ═══════════════
 function setProgresoTab(tab){
-  ['actividad','medidas','semana','retos'].forEach(t=>{
-    document.getElementById('progreso-'+t).style.display=t===tab?'block':'none';
-    document.getElementById('ptab-'+t).classList.toggle('active',t===tab);
+  ['actividad','medidas','semana','retos','plan'].forEach(t=>{
+    const pEl=document.getElementById('progreso-'+t);
+    const tEl=document.getElementById('ptab-'+t);
+    if(pEl)pEl.style.display=t===tab?'block':'none';
+    if(tEl)tEl.classList.toggle('active',t===tab);
   });
   if(tab==='actividad')renderActivityToday();
   if(tab==='medidas'){renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
@@ -2936,12 +2938,12 @@ function setProgresoTab(tab){
     const weekScoreEl = document.getElementById('weekly-score-card');
     if(isSunday && weekScoreEl && weekScoreEl.querySelector('button')) renderWeeklyScoreAI();
     else if(weekScoreEl && weekScoreEl.innerHTML.trim()==='<button class="btn btn-primary" onclick="renderWeeklyScoreAI()" style="margin-bottom:0;">Generar resumen</button>'){
-      // show cached if available
       const cached = localStorage.getItem('nc_weekly_score_'+getWeekKey());
       if(cached) weekScoreEl.innerHTML = cached;
     }
   }
   if(tab==='retos')renderRetos();
+  if(tab==='plan')renderWeeklyPlan();
 }
 
 function renderProgreso(){
@@ -5105,10 +5107,16 @@ function renderMacroAlerts(meals, goals) {
       msg:'🔴 <strong>Energía</strong> — hoy has comido bastante. Para la cena opta por algo ligero: proteína + verduras',
       color:'var(--red)'
     });
+  } else if (defStatus === 'muy_bajo') {
+    alerts.push({
+      level:'warn',
+      msg:'⚡ Llevas poca energía hoy — asegúrate de comer bien, tu cuerpo lo necesita para progresar',
+      color:'var(--orange)'
+    });
   } else if (defStatus === 'peligrosamente_bajo') {
     alerts.push({
       level:'warn',
-      msg:'⚡ Llevas poca energía hoy — come algo aunque sea pequeño para no perjudicar tu metabolismo',
+      msg:'🚨 Llevas muy poca energía hoy — come algo aunque sea pequeño, saltarte comidas frena la pérdida de peso',
       color:'var(--yellow)'
     });
   }
@@ -5227,15 +5235,17 @@ Formato exacto de respuesta:
 // FEATURE: CLASSPASS TYPE MODAL
 // ═══════════════════════════════════════════════════════════
 const CLASS_TYPES = [
+  {id:'crossfit', label:'CrossFit / WOD', emoji:'🏋️‍♀️', muscles:'fuerza + cardio, cuerpo completo, potencia', survivor:true},
+  {id:'hiit', label:'HIIT / Funcional', emoji:'⚡', muscles:'cuerpo completo, cardio, fuerza', survivor:true},
+  {id:'boxeo', label:'Boxeo / Kickboxing', emoji:'🥊', muscles:'brazos, core, cardio', survivor:true},
+  {id:'escalada', label:'Escalada / Boulder', emoji:'🧗', muscles:'brazos, espalda, agarre, dedos', survivor:true},
+  {id:'spinning', label:'Spinning / Cycling', emoji:'🚴', muscles:'cardio, piernas, resistencia'},
+  {id:'fuerza', label:'Sala de pesas', emoji:'🏋️', muscles:'fuerza general'},
   {id:'pilates', label:'Pilates', emoji:'🧘', muscles:'core, estabilidad, flexibilidad'},
   {id:'yoga', label:'Yoga', emoji:'🕉️', muscles:'flexibilidad, respiración, core'},
-  {id:'spinning', label:'Spinning / Cycling', emoji:'🚴', muscles:'cardio, piernas, resistencia'},
-  {id:'hiit', label:'HIIT / Funcional', emoji:'⚡', muscles:'cuerpo completo, cardio, fuerza'},
-  {id:'boxeo', label:'Boxeo / Kickboxing', emoji:'🥊', muscles:'brazos, core, cardio'},
   {id:'barre', label:'Barre / Ballet Fit', emoji:'🩰', muscles:'piernas, glúteos, core'},
-  {id:'natacion', label:'Natación', emoji:'🏊', muscles:'brazos, cardio, cuerpo completo'},
-  {id:'escalada', label:'Escalada', emoji:'🧗', muscles:'brazos, espalda, agarre'},
-  {id:'fuerza', label:'Sala de pesas', emoji:'🏋️', muscles:'fuerza general'},
+  {id:'natacion', label:'Natación', emoji:'🏊', muscles:'brazos, cardio, cuerpo completo', survivor:true},
+  {id:'casa', label:'Entrenamiento en casa', emoji:'🏠', muscles:'peso corporal, bandas, core'},
   {id:'otro', label:'Otro', emoji:'💪', muscles:'varios'},
 ];
 
@@ -5244,12 +5254,14 @@ function showClassPassTypeModal(callback) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;';
   overlay.innerHTML = `
     <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;">
-      <h3 style="margin:0 0 4px;font-size:1rem;">¿Qué tipo de clase hiciste?</h3>
-      <p style="color:var(--muted);font-size:0.78rem;margin:0 0 16px;">Esto ayuda a personalizar tus entrenamientos futuros</p>
+      <h3 style="margin:0 0 4px;font-size:1rem;">¿Qué tipo de actividad hiciste?</h3>
+      <p style="color:var(--muted);font-size:0.78rem;margin:0 0 4px;">Esto personaliza tus entrenamientos futuros</p>
+      <p style="color:var(--orange);font-size:0.72rem;margin:0 0 14px;">🏃 Las marcadas con <strong>★ Survivor</strong> están especialmente recomendadas para octubre</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         ${CLASS_TYPES.map(t => `
           <button onclick="selectClassType('${t.id}','${t.label}','${t.muscles}',this)"
-            style="padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;text-align:left;font-size:0.82rem;line-height:1.4;">
+            style="padding:12px;border-radius:12px;border:1px solid ${t.survivor ? 'rgba(251,146,60,.4)' : 'var(--border)'};background:${t.survivor ? 'rgba(251,146,60,.08)' : 'var(--surface2)'};color:var(--text);cursor:pointer;text-align:left;font-size:0.82rem;line-height:1.4;position:relative;">
+            ${t.survivor ? '<span style="position:absolute;top:6px;right:8px;font-size:0.62rem;color:var(--orange);font-weight:800;">★ Survivor</span>' : ''}
             <div style="font-size:1.2rem;margin-bottom:4px;">${t.emoji}</div>
             <div style="font-weight:700;">${t.label}</div>
             <div style="font-size:0.72rem;color:var(--muted);">${t.muscles}</div>
@@ -5266,7 +5278,121 @@ function showClassPassTypeModal(callback) {
 function selectClassType(id, label, muscles, btn) {
   const overlay = btn.closest('[style*="position:fixed"]');
   overlay.remove();
+  if (id === 'casa') {
+    // Home workout: show generator instead of just logging
+    showHomeWorkoutModal(window._classPassCallback);
+    return;
+  }
   if (window._classPassCallback) window._classPassCallback({id, label, muscles});
+}
+
+async function showHomeWorkoutModal(callback) {
+  const overlay = document.createElement('div');
+  overlay.id = 'home-workout-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:600;display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;">
+      <h3 style="margin:0 0 4px;font-size:1rem;">🏠 Entrenamiento en casa</h3>
+      <p style="color:var(--muted);font-size:0.78rem;margin:0 0 14px;">¿Cuánto tiempo tienes y en qué quieres enfocarte?</p>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">⏱️ Tiempo disponible</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${['15 min','20 min','30 min','45 min'].map(t=>`<button class="hw-time-chip" onclick="selectHWChip(this,'hw-time')" data-val="${t}" style="padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.8rem;cursor:pointer;">${t}</button>`).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">🎯 Foco</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${[{v:'brazos_espalda',l:'💪 Brazos y espalda',s:true},{v:'core',l:'🔥 Core y abdomen'},{v:'piernas',l:'🦵 Piernas y glúteos'},{v:'cardio',l:'🏃 Cardio',s:true},{v:'fullbody',l:'⚡ Cuerpo completo',s:true},{v:'movilidad',l:'🧘 Movilidad y stretching'}].map(f=>`<button class="hw-focus-chip" onclick="selectHWChip(this,'hw-focus')" data-val="${f.v}" style="padding:7px 14px;border-radius:20px;border:1px solid ${f.s?'rgba(251,146,60,.4)':'var(--border)'};background:${f.s?'rgba(251,146,60,.08)':'var(--surface2)'};color:var(--text);font-size:0.8rem;cursor:pointer;">${f.l}${f.s?' <span style="font-size:0.65rem;color:var(--orange);">★</span>':''}</button>`).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">🛠️ Material disponible (opcional)</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${['Sin material','Esterilla','Bandas elásticas','Mancuernas / Kettlebell','Silla o banco','Barra dominadas'].map(m=>`<button class="hw-mat-chip" onclick="toggleHWChip(this)" data-val="${m}" style="padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.8rem;cursor:pointer;">${m}</button>`).join('')}
+        </div>
+      </div>
+      <div id="hw-result" style="display:none;background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:12px;font-size:0.82rem;line-height:1.6;"></div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="generateHomeWorkout()" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;">✨ Generar rutina</button>
+        <button onclick="document.getElementById('home-workout-overlay').remove()" style="padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">✕</button>
+      </div>
+      <button id="hw-log-btn" onclick="logHomeWorkout()" style="display:none;width:100%;margin-top:8px;padding:12px;border-radius:12px;border:none;background:var(--green);color:#0f172a;font-weight:700;cursor:pointer;">✓ Registrar como entrenamiento completado</button>
+    </div>`;
+  window._hwCallback = callback;
+  document.body.appendChild(overlay);
+}
+
+function selectHWChip(btn, group) {
+  document.querySelectorAll('.'+group+'-chip').forEach(b => b.style.background = b.dataset.val && b.dataset.val.includes('brazos') || document.querySelectorAll('.hw-focus-chip[data-val="'+b.dataset.val+'"]').length ? 'rgba(251,146,60,.08)' : 'var(--surface2)');
+  document.querySelectorAll('.'+btn.className.split(' ')[0]).forEach(b => {
+    b.style.background = 'var(--surface2)';
+    b.style.borderColor = 'var(--border)';
+    b.classList.remove('selected');
+  });
+  btn.style.background = 'var(--accent)';
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.color = '#fff';
+  btn.classList.add('selected');
+}
+
+function toggleHWChip(btn) {
+  const sel = btn.classList.toggle('selected');
+  btn.style.background = sel ? 'rgba(129,140,248,.2)' : 'var(--surface2)';
+  btn.style.borderColor = sel ? 'var(--accent)' : 'var(--border)';
+}
+
+async function generateHomeWorkout() {
+  const timeChip = document.querySelector('.hw-time-chip.selected');
+  const focusChip = document.querySelector('.hw-focus-chip.selected');
+  const matChips = [...document.querySelectorAll('.hw-mat-chip.selected')].map(b=>b.dataset.val);
+
+  if (!timeChip || !focusChip) { showToast('Selecciona tiempo y foco primero'); return; }
+
+  const resEl = document.getElementById('hw-result');
+  resEl.style.display = 'block';
+  resEl.innerHTML = '<div style="text-align:center;padding:8px;color:var(--muted);">Generando tu rutina... 💪</div>';
+
+  const profile = getProfile();
+  const survivor = getSurvivorContext();
+  const material = matChips.length ? matChips.join(', ') : 'sin material especial';
+
+  try {
+    const res = await callClaude([{role:'user', content:`Genera una rutina de entrenamiento en casa para:
+- Tiempo: ${timeChip.dataset.val}
+- Foco: ${focusChip.dataset.val}
+- Material: ${material}
+- Perfil: mujer ${profile.edad} años, ${profile.peso}kg, objetivo bajar a ${profile.pesoObj||69}kg
+${survivor}
+
+FORMATO:
+**Calentamiento (3 min)**
+- ejercicio: X repeticiones/segundos
+
+**Bloque principal**
+- ejercicio: sets x reps — cómo hacerlo bien en una frase
+
+**Vuelta a la calma (2 min)**
+- estiramiento
+
+Añade al final: ⭐ Ejercicios clave para Survivor si aplica.
+Máximo 250 palabras. En español.`}]);
+    resEl.innerHTML = formatAI(res);
+    document.getElementById('hw-log-btn').style.display = 'block';
+    window._hwGeneratedFocus = focusChip.dataset.val;
+    window._hwGeneratedTime = timeChip.dataset.val;
+  } catch(e) {
+    resEl.innerHTML = '<span style="color:var(--red);">Error al generar. Inténtalo de nuevo.</span>';
+  }
+}
+
+function logHomeWorkout() {
+  const focus = window._hwGeneratedFocus || 'casa';
+  const time = window._hwGeneratedTime || '30 min';
+  document.getElementById('home-workout-overlay').remove();
+  if (window._hwCallback) window._hwCallback({id:'casa', label:`Casa — ${focus} (${time})`, muscles:'peso corporal'});
+  showToast('✓ Entrenamiento en casa registrado');
+  vibrate([30,20,30]);
 }
 
 // ═══════════════════════════════════════════════════════════
