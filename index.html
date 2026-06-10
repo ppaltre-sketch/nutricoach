@@ -538,8 +538,10 @@
       <div id="hoy-plan-card"></div>
       <div id="nutrition-period-card" style="margin-bottom:10px;"></div>
       <div id="streak-card"></div>
+      <div id="recovery-card" style="margin-bottom:10px;"></div>
       <div id="macro-ring-card"></div>
       <div id="water-tracker-wrap"></div>
+      <div id="sleep-card" style="margin-bottom:10px;"></div>
       <div id="daily-check-card"></div>
       <div id="hambre-card"></div>
       <div id="status-messages"></div>
@@ -960,8 +962,15 @@
       <div class="card" id="upper-progress-card" style="margin-top:12px;">
         <div class="card-title">💪 Progresión tren superior</div>
         <p style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">Sin barra de dominadas — estos son tus ejercicios clave:</p>
+        <div id="overload-prescription"></div>
         <div id="upper-progress-list"></div>
         <button class="btn btn-secondary" style="margin-top:10px;" onclick="logUpperProgress()">+ Registrar sesión</button>
+      </div>
+
+      <!-- Zone 2 cardio guidance -->
+      <div class="card" id="zone2-card" style="margin-top:12px;">
+        <div class="card-title">🫀 Cardio inteligente</div>
+        <div id="zone2-status"></div>
       </div>
 
       <!-- Feature: Running Plan -->
@@ -1065,6 +1074,11 @@
 
       <!-- Medidas -->
       <div id="progreso-medidas" style="display:none">
+        <div class="card" id="weekly-measures-ritual">
+          <div class="card-title">📏 Ritual del domingo</div>
+          <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Cintura y cadera en ayunas, misma hora cada semana. Esto es tu brújula real hacia la talla 40.</p>
+          <div id="weekly-ritual-content"></div>
+        </div>
         <div id="body-comp-section" style="margin-bottom:12px;"></div>
         <div id="foto-mensual-card"></div>
         <div class="card">
@@ -1535,10 +1549,20 @@ function buildCalorieContext(meals){
     optimo:'Déficit óptimo. Mantén el plan actual.',
     exceso:'Ha superado el TDEE. Sugiere cena/almuerzo muy ligero pero saciante, rico en proteína y fibra, bajo en carbos y grasa.'
   };
+  // Sleep alert injection
+  let sleepAlert = '';
+  let badSleepDays = 0;
+  for (let i = 0; i < 3; i++) {
+    const sd = new Date(); sd.setDate(sd.getDate() - i);
+    const sh = parseFloat(localStorage.getItem('nc_sleep_' + sd.toISOString().split('T')[0]) || '8');
+    if (sh < 6.5) badSleepDays++;
+  }
+  if (badSleepDays >= 2) sleepAlert = '\nALERTA: usuaria con sueño insuficiente varios días. No sugerir restricción adicional. Priorizar densidad nutricional.';
+
   return `[CONTEXTO INTERNO - NO MENCIONAR AL USUARIO]
 Estado déficit: ${status}
 TDEE estimado: ${tdee}kcal. Ingesta hoy: ${Math.round(kcal)}kcal. Objetivo déficit: ${Math.round(target)}kcal.
-Instrucción: ${instrMap[status]||instrMap.optimo}
+Instrucción: ${instrMap[status]||instrMap.optimo}${sleepAlert}
 [FIN CONTEXTO INTERNO]\n\n`;
 }
 const getWater = () => parseInt(localStorage.getItem('water_'+dk())||'0');
@@ -1640,7 +1664,7 @@ function showPage(name){
   document.getElementById('scroll-container').scrollTop=0;
   if(name==='home')renderHome();
   if(name==='cena'){renderCenaRemaining();renderAlmuerzoRemaining();}
-  if(name==='entreno')renderYesterdayWorkout();
+  if(name==='entreno'){renderYesterdayWorkout();renderZone2Status();renderOverloadPrescription();}
   if(name==='progreso')renderProgreso();
 }
 
@@ -1757,8 +1781,14 @@ function renderHome(){
   // ── Streak ──
   renderStreak();
 
+  // ── Recovery card ──
+  renderRecoveryCard();
+
   // ── Water tracker ──
   renderWaterTracker();
+
+  // ── Sleep card ──
+  renderSleepCard();
 
   // ── Daily check ──
   renderDailyCheck(meals,goals,getWater(),energyStatus);
@@ -3002,7 +3032,7 @@ function setProgresoTab(tab){
     if(tEl)tEl.classList.toggle('active',t===tab);
   });
   if(tab==='actividad')renderActivityToday();
-  if(tab==='medidas'){renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
+  if(tab==='medidas'){renderWeeklyRitual();renderBodyComposition();renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
   if(tab==='semana'){
     renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();
     // Auto-load weekly score on Sundays
@@ -3081,16 +3111,31 @@ function logActivity(){
     return;
   }
 
-  const act=getActivity();
-  act.actividades.push({tipo,duracion,intensidad});
-  saveActivity(act);
-  document.getElementById('act-duracion').value='';
-  renderActivityToday();showToast('✓ Actividad registrada');
-  checkAndUnlockAchievements();
-  // Offer macro boost for intense/long workouts
-  const esIntensa=intensidad==='intensa'||(intensidad==='moderada'&&duracion>=45);
-  if(esIntensa&&!getMacroBoost()){
-    setTimeout(()=>offerMacroBoost(tipo,duracion,intensidad),300);
+  const isCardioType = ['🏃 Carrera','🏞️ Madrid Río','🚴 Bici','🤸 Cardio en casa'].some(t => tipo.includes(t.replace(/[🏃🏞️🚴🤸]/g,'').trim())) || tipo.includes('Carrera') || tipo.includes('Madrid') || tipo.includes('Bici') || tipo.includes('Cardio en casa') || tipo.includes('cinta') || tipo.includes('Cinta');
+
+  function finishLogActivity(zonaIntensidad) {
+    const act=getActivity();
+    const entry = {tipo,duracion,intensidad};
+    if (zonaIntensidad) entry.intensidad_zona = zonaIntensidad;
+    act.actividades.push(entry);
+    saveActivity(act);
+    document.getElementById('act-duracion').value='';
+    renderActivityToday();showToast('✓ Actividad registrada');
+    checkAndUnlockAchievements();
+    // Post-workout nutrition nudge
+    const tipoKey = zonaIntensidad || (intensidad==='intensa' ? 'hiit' : 'moderada');
+    setTimeout(()=>showPostWorkoutNutrition(tipoKey),400);
+    // Offer macro boost for intense/long workouts
+    const esIntensa=intensidad==='intensa'||(intensidad==='moderada'&&duracion>=45);
+    if(esIntensa&&!getMacroBoost()){
+      setTimeout(()=>offerMacroBoost(tipo,duracion,intensidad),1200);
+    }
+  }
+
+  if (isCardioType) {
+    showCardioIntensityPicker(zona => finishLogActivity(zona));
+  } else {
+    finishLogActivity(null);
   }
 }
 
@@ -5379,6 +5424,7 @@ function saveBenchmarkResult(values){
   document.body.appendChild(resultOverlay);
   showToast('🏁 Test Survivor guardado');
   vibrate([30,20,30,20,50]);
+  checkNonScaleVictories();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -5522,6 +5568,7 @@ function saveUpperProgressEntry(){
   showToast('✓ Progresión guardada');
   vibrate([20,10,20]);
   checkAndUnlockAchievements();
+  checkNonScaleVictories();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -6025,7 +6072,7 @@ INSTRUCCIONES:
 - Puntúa del 1 al 10 la semana en: deporte, alimentación, progreso hacia el objetivo
 - NUNCA menciones calorías, déficit, kcal, ni números de energía
 - Si fue una semana difícil: mensaje empático, motivador, sin culpa ("esta semana no fue perfecta, la siguiente lo será")
-- Calcula estimación de semanas hasta 69kg SOLO si hay suficientes datos (sin mencionar déficit)
+- Si hay tendencia positiva en medidas (cintura bajando), menciona el progreso hacia talla 40 de forma motivadora
 - Máximo 200 palabras, tono de coach cercano y motivador
 
 Formato exacto de respuesta:
@@ -6485,25 +6532,27 @@ function computeSurvivorReadiness() {
   else if (proteinDaysOk >= daysWithData * 0.4) { nutriStatus = 'orange'; nutriMsg = `Proteína baja ${proteinDaysOk}/${daysWithData} días`; }
   else { nutriStatus = 'red'; nutriMsg = 'Proteína muy inconsistente'; }
 
-  // PILLAR 4: PESO
+  // PILLAR 4: MEDIDAS (measurement trend toward talla 40)
   const measures = JSON.parse(localStorage.getItem('nc_measures') || '[]');
-  const profile = getProfile();
-  let pesoStatus, pesoMsg;
+  let medidasStatus, medidasMsg;
   if (measures.length < 2) {
-    pesoStatus = 'grey';
-    pesoMsg = profile.peso ? `Actual: ${profile.peso}kg → Obj: 69kg` : 'Sin datos de peso';
+    medidasStatus = 'grey';
+    medidasMsg = 'Registra medidas para ver progreso';
   } else {
-    const recent = measures.slice(-4).map(m => parseFloat(m.peso || m.weight || 0)).filter(Boolean);
-    const trend = recent.length >= 2 ? recent[recent.length-1] - recent[0] : 0;
-    const current = recent[recent.length-1] || profile.peso;
-    const toGoal = current - 69;
-    if (toGoal <= 0) { pesoStatus = 'green'; pesoMsg = `¡Objetivo alcanzado! ${current}kg`; }
-    else if (trend < -0.2) { pesoStatus = 'green'; pesoMsg = `Bajando bien — ${toGoal.toFixed(1)}kg hasta obj.`; }
-    else if (trend <= 0.2) { pesoStatus = 'orange'; pesoMsg = `Estable — ${toGoal.toFixed(1)}kg hasta obj.`; }
-    else { pesoStatus = 'red'; pesoMsg = 'Subiendo — revisa esta semana'; }
+    // Focus on waist (cintura) as primary indicator for clothing size
+    const recent = measures.filter(m => m.cintura).slice(-4);
+    if (recent.length < 2) {
+      medidasStatus = 'grey';
+      medidasMsg = 'Registra cintura para ver tendencia';
+    } else {
+      const trend = recent[recent.length-1].cintura - recent[0].cintura;
+      if (trend < -1) { medidasStatus = 'green'; medidasMsg = `Cintura bajando — vas camino a la 40 💪`; }
+      else if (trend <= 0.5) { medidasStatus = 'orange'; medidasMsg = 'Cintura estable — ajusta esta semana'; }
+      else { medidasStatus = 'red'; medidasMsg = 'Cintura subiendo — revisemos'; }
+    }
   }
 
-  return { fuerzaStatus, fuerzaMsg, cardioStatus, cardioMsg, nutriStatus, nutriMsg, pesoStatus, pesoMsg, weeksLeft, progressPct };
+  return { fuerzaStatus, fuerzaMsg, cardioStatus, cardioMsg, nutriStatus, nutriMsg, medidasStatus, medidasMsg, weeksLeft, progressPct };
 }
 
 function renderSurvivorSemaforo() {
@@ -6519,7 +6568,7 @@ function renderSurvivorSemaforo() {
     { label: 'Fuerza', status: r.fuerzaStatus, msg: r.fuerzaMsg, icon: '💪' },
     { label: 'Cardio', status: r.cardioStatus, msg: r.cardioMsg, icon: '🏃' },
     { label: 'Nutrición', status: r.nutriStatus, msg: r.nutriMsg, icon: '🥗' },
-    { label: 'Peso', status: r.pesoStatus, msg: r.pesoMsg, icon: '⚖️' },
+    { label: 'Medidas', status: r.medidasStatus, msg: r.medidasMsg, icon: '📏' },
   ];
 
   const statuses = pillars.map(p => p.status).filter(s => s !== 'grey');
@@ -6553,7 +6602,7 @@ function showSurvivorDetail() {
     { label: 'Fuerza', status: r.fuerzaStatus, msg: r.fuerzaMsg, icon: '💪', detail: 'Objetivo: 4+ sesiones de tren superior cada 2 semanas' },
     { label: 'Cardio', status: r.cardioStatus, msg: r.cardioMsg, icon: '🏃', detail: 'Objetivo: 3+ sesiones cardio cada 2 semanas' },
     { label: 'Nutrición', status: r.nutriStatus, msg: r.nutriMsg, icon: '🥗', detail: 'Objetivo: proteína ≥85% en 5+ días / semana' },
-    { label: 'Peso', status: r.pesoStatus, msg: r.pesoMsg, icon: '⚖️', detail: 'Objetivo: 69kg para el día de la carrera' },
+    { label: 'Medidas', status: r.medidasStatus, msg: r.medidasMsg, icon: '📏', detail: 'Objetivo: cintura bajando → talla 40' },
   ];
 
   const overlay = document.createElement('div');
@@ -6590,7 +6639,7 @@ Estado actual:
 - Fuerza: ${r.fuerzaStatus} — ${r.fuerzaMsg}
 - Cardio: ${r.cardioStatus} — ${r.cardioMsg}
 - Nutrición: ${r.nutriStatus} — ${r.nutriMsg}
-- Peso: ${r.pesoStatus} — ${r.pesoMsg}
+- Medidas: ${r.medidasStatus} — ${r.medidasMsg}
 
 ${survivor}
 
@@ -6642,7 +6691,7 @@ SEMÁFORO ACTUAL:
 - Fuerza: ${readiness.fuerzaStatus} — ${readiness.fuerzaMsg}
 - Cardio: ${readiness.cardioStatus} — ${readiness.cardioMsg}
 - Nutrición: ${readiness.nutriStatus} — ${readiness.nutriMsg}
-- Peso: ${readiness.pesoStatus} — ${readiness.pesoMsg}
+- Medidas: ${readiness.medidasStatus} — ${readiness.medidasMsg}
 
 SEMANA PASADA:
 - Días con comida registrada: ${lastWeekMeals.length}
@@ -6722,8 +6771,8 @@ async function checkRaceReadinessAlert() {
   }
 
   const readiness = computeSurvivorReadiness();
-  const redCount = [readiness.fuerzaStatus, readiness.cardioStatus, readiness.nutriStatus, readiness.pesoStatus].filter(s => s === 'red').length;
-  const orangeCount = [readiness.fuerzaStatus, readiness.cardioStatus, readiness.nutriStatus, readiness.pesoStatus].filter(s => s === 'orange').length;
+  const redCount = [readiness.fuerzaStatus, readiness.cardioStatus, readiness.nutriStatus, readiness.medidasStatus].filter(s => s === 'red').length;
+  const orangeCount = [readiness.fuerzaStatus, readiness.cardioStatus, readiness.nutriStatus, readiness.medidasStatus].filter(s => s === 'orange').length;
 
   if (redCount < 2 && !(orangeCount >= 3)) return;
 
@@ -6731,7 +6780,7 @@ async function checkRaceReadinessAlert() {
 
   try {
     const res = await callClaude([{role:'user', content:`Genera un mensaje motivador pero honesto para una usuaria que lleva ${readiness.weeksLeft} semanas hasta su carrera Survivor y está retrasada en:
-${readiness.fuerzaStatus === 'red' ? '- Fuerza: ' + readiness.fuerzaMsg + '\n' : ''}${readiness.cardioStatus === 'red' ? '- Cardio: ' + readiness.cardioMsg + '\n' : ''}${readiness.nutriStatus === 'red' ? '- Nutrición: ' + readiness.nutriMsg + '\n' : ''}${readiness.pesoStatus === 'red' ? '- Peso: ' + readiness.pesoMsg + '\n' : ''}
+${readiness.fuerzaStatus === 'red' ? '- Fuerza: ' + readiness.fuerzaMsg + '\n' : ''}${readiness.cardioStatus === 'red' ? '- Cardio: ' + readiness.cardioMsg + '\n' : ''}${readiness.nutriStatus === 'red' ? '- Nutrición: ' + readiness.nutriMsg + '\n' : ''}${readiness.medidasStatus === 'red' ? '- Medidas: ' + readiness.medidasMsg + '\n' : ''}
 
 El mensaje debe:
 - Ser empático, no acusatorio
@@ -6850,6 +6899,403 @@ function renderStreaks() {
       <div style="font-size:0.7rem;color:var(--muted);">días proteína ok</div>
     </div>` : ''}
   </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 1: SLEEP TRACKING
+// ═══════════════════════════════════════════════════════
+function renderSleepCard() {
+  const el = document.getElementById('sleep-card');
+  if (!el) return;
+  const saved = localStorage.getItem('nc_sleep_' + dk());
+
+  if (saved) {
+    const h = parseFloat(saved);
+    const quality = h >= 7.5 ? {icon:'😴', msg:'Buen descanso — recuperación óptima', color:'var(--green)'}
+                  : h >= 6 ? {icon:'😐', msg:'Descanso justo — intenta dormir más esta noche', color:'var(--orange)'}
+                  : {icon:'⚠️', msg:'Poco sueño — el cuerpo retiene más grasa sin descanso', color:'var(--red)'};
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--surface2);border-radius:12px;border:1px solid ${quality.color}33;">
+      <span style="font-size:1.1rem;">${quality.icon}</span>
+      <div style="flex:1;font-size:0.78rem;color:var(--text);">${quality.msg}</div>
+      <button onclick="localStorage.removeItem('nc_sleep_${dk()}');renderSleepCard()" style="font-size:0.72rem;color:var(--muted);background:none;border:none;cursor:pointer;">✕</button>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
+    <span style="font-size:1rem;">😴</span>
+    <div style="font-size:0.78rem;color:var(--muted);flex:1;">¿Cuánto dormiste anoche?</div>
+    <div style="display:flex;gap:4px;">
+      ${['<6h','6h','7h','8h','+9h'].map((l,i) => {
+        const val = [5.5,6,7,8,9][i];
+        return `<button onclick="saveSleep(${val})" style="padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface3);color:var(--text);font-size:0.72rem;cursor:pointer;">${l}</button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function saveSleep(hours) {
+  localStorage.setItem('nc_sleep_' + dk(), hours);
+  renderSleepCard();
+  checkSleepAlert();
+}
+
+function checkSleepAlert() {
+  let badNights = 0;
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const h = parseFloat(localStorage.getItem('nc_sleep_' + d.toISOString().split('T')[0]) || '8');
+    if (h < 6.5) badNights++;
+  }
+  if (badNights >= 3) {
+    showToast('⚠️ Llevas varios días durmiendo poco — prioriza el sueño, impacta directamente en la pérdida de grasa');
+  }
+}
+
+function getSleepContext() {
+  const h = parseFloat(localStorage.getItem('nc_sleep_' + dk()) || '0');
+  if (!h) return '';
+  if (h < 6) return 'Nota: durmió menos de 6h — sugiere comidas antiinflamatorias (omega-3, magnesio) y entreno suave si es el caso.';
+  if (h < 7) return 'Nota: sueño justo — no sobrecargar con entreno muy intenso hoy.';
+  return '';
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 2: PROGRESSIVE OVERLOAD PRESCRIPTION
+// ═══════════════════════════════════════════════════════
+function getOverloadPlan() {
+  const weekKey = getWeekKey();
+  const stored = JSON.parse(localStorage.getItem('nc_overload_plan') || 'null');
+  if (stored && stored.week === weekKey) return stored.exercises;
+
+  const upperLog = getUpperLog();
+  const exercises = [
+    { id:'remo_silla', label:'Remo silla', emoji:'🪑' },
+    { id:'remo_mancuerna', label:'Remo mancuerna', emoji:'💧' },
+    { id:'fondos_silla', label:'Fondos silla', emoji:'🏋️' },
+    { id:'flexiones', label:'Flexiones', emoji:'💪' },
+    { id:'jalon_banda', label:'Jalón banda', emoji:'🎽' },
+  ];
+
+  const plan = exercises.map(ex => {
+    const logs = upperLog.filter(l => l.exerciseId === ex.id).slice(-3);
+    const lastValue = logs.length ? logs[logs.length-1].value : null;
+
+    let sets = 3, reps, note;
+    if (!lastValue) {
+      reps = '8-10'; note = 'Semana de aprendizaje — técnica perfecta';
+    } else if (lastValue < 6) {
+      reps = lastValue + '-' + (lastValue + 2); note = 'Progresa despacio — añade 1-2 reps';
+    } else if (lastValue < 12) {
+      reps = (lastValue + 1) + '-' + (lastValue + 3); note = 'Buen nivel — sube 2 reps esta semana';
+    } else {
+      reps = '12-15'; note = '¡Fuerte! Añade resistencia o dificultad';
+    }
+
+    return { id: ex.id, label: ex.label, emoji: ex.emoji, sets, reps, note };
+  });
+
+  localStorage.setItem('nc_overload_plan', JSON.stringify({ week: weekKey, exercises: plan }));
+  return plan;
+}
+
+function renderOverloadPrescription() {
+  const el = document.getElementById('overload-prescription');
+  if (!el) return;
+  const plan = getOverloadPlan();
+
+  el.innerHTML = `
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;">📋 Prescripción esta semana</div>
+    ${plan.map(ex => `
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:1.1rem;">${ex.emoji}</span>
+        <div style="flex:1;">
+          <div style="font-size:0.82rem;font-weight:700;">${ex.label}</div>
+          <div style="font-size:0.72rem;color:var(--muted);">${ex.note}</div>
+        </div>
+        <div style="text-align:right;font-size:0.82rem;font-weight:700;color:var(--accent);">${ex.sets}×${ex.reps}</div>
+      </div>`).join('')}
+    <p style="font-size:0.72rem;color:var(--muted);margin-top:8px;line-height:1.4;">Haz 2-3 series de estas prescripciones y registra el resultado para que la próxima semana suba.</p>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 3: ZONE 2 CARDIO TRACKING
+// ═══════════════════════════════════════════════════════
+function renderZone2Status() {
+  const el = document.getElementById('zone2-status');
+  if (!el) return;
+
+  let z2Count = 0, hiitCount = 0;
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const act = JSON.parse(localStorage.getItem('nc_activity_' + d.toISOString().split('T')[0]) || '{"actividades":[]}');
+    act.actividades.forEach(a => {
+      if (a.intensidad_zona === 'z2') z2Count++;
+      else if (a.intensidad_zona === 'hiit' || a.intensidad === 'intensa' || (a.clase && ['crossfit','hiit','boxeo'].includes(a.clase.id))) hiitCount++;
+    });
+  }
+
+  const total = z2Count + hiitCount;
+  let advice, color;
+  if (total === 0) {
+    advice = 'Sin sesiones de cardio en 2 semanas — necesitas empezar. Objetivo: 2-3 sesiones suaves esta semana.';
+    color = 'var(--red)';
+  } else if (z2Count === 0) {
+    advice = '⚠️ Todo tu cardio es intenso — añade sesiones suaves (zona 2) para quemar más grasa. Ritmo: puedes hablar mientras corres.';
+    color = 'var(--orange)';
+  } else if (hiitCount > z2Count * 2) {
+    advice = 'Demasiado cardio intenso — equilibra con más zona 2. Ratio ideal: 2 suaves por cada 1 intenso.';
+    color = 'var(--orange)';
+  } else {
+    advice = `✅ Buen equilibrio: ${z2Count} sesiones suaves + ${hiitCount} intensas. La zona 2 quema grasa directamente.`;
+    color = 'var(--green)';
+  }
+
+  el.innerHTML = `
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;line-height:1.5;">La <strong>zona 2</strong> (ritmo que puedes hablar) es la más eficiente para quemar grasa. 60-70% del cardio debería ser así.</p>
+    <div style="font-size:0.82rem;color:${color};line-height:1.5;">${advice}</div>
+    <div style="margin-top:10px;padding:8px 12px;background:var(--surface2);border-radius:8px;font-size:0.75rem;color:var(--muted);line-height:1.4;">
+      <strong>Zona 2 =</strong> ritmo conversacional, 30-60 min<br>
+      <strong>Zona 3/HIIT =</strong> intervalos cortos, máximo 2x/semana
+    </div>`;
+}
+
+function showCardioIntensityPicker(callback) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;">
+      <h3 style="margin:0 0 4px;font-size:1rem;">¿A qué intensidad?</h3>
+      <p style="color:var(--muted);font-size:0.78rem;margin:0 0 14px;">Esto optimiza tu estrategia de quema de grasa</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button onclick="selectCardioIntensity('z2',this)" style="padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);text-align:left;cursor:pointer;">
+          <div style="font-weight:700;font-size:0.88rem;">🟢 Zona 2 — Suave</div>
+          <div style="font-size:0.75rem;color:var(--muted);">Puedo hablar sin cortarme — quema grasa máxima</div>
+        </button>
+        <button onclick="selectCardioIntensity('z3',this)" style="padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);text-align:left;cursor:pointer;">
+          <div style="font-weight:700;font-size:0.88rem;">🟡 Zona 3 — Moderado</div>
+          <div style="font-size:0.75rem;color:var(--muted);">Cuesta hablar frases largas — ritmo medio</div>
+        </button>
+        <button onclick="selectCardioIntensity('hiit',this)" style="padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);text-align:left;cursor:pointer;">
+          <div style="font-weight:700;font-size:0.88rem;">🔴 Intervalos / HIIT</div>
+          <div style="font-size:0.75rem;color:var(--muted);">No puedo hablar — sprints o circuitos intensos</div>
+        </button>
+      </div>
+      <button onclick="this.closest('[style*=fixed]').remove();if(window._cardioCallback)window._cardioCallback(null)" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">Saltar</button>
+    </div>`;
+  window._cardioCallback = callback;
+  document.body.appendChild(overlay);
+}
+
+function selectCardioIntensity(zone, btn) {
+  btn.closest('[style*=fixed]').remove();
+  if (window._cardioCallback) window._cardioCallback(zone);
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 4: POST-WORKOUT NUTRITION NUDGE
+// ═══════════════════════════════════════════════════════
+function showPostWorkoutNutrition(workoutType) {
+  const isHard = ['crossfit','hiit','boxeo','survivor_circuit','intensa','hiit'].includes(workoutType);
+  const isCardioSoft = ['z2','z3'].includes(workoutType);
+
+  let msg;
+  if (isHard) {
+    msg = '💪 Post-entreno intenso: come proteína + carbos en las próximas 2h. Ej: pollo + arroz, o huevos + tostada, o batido proteína + plátano.';
+  } else if (isCardioSoft) {
+    msg = '🏃 Post-cardio suave: proteína en la próxima comida. No hace falta carga de carbos ahora. Ej: yogur griego, huevos, pechuga.';
+  } else {
+    msg = '🥗 Después de entrenar: prioriza proteína en tu siguiente comida para la recuperación muscular.';
+  }
+
+  const card = document.createElement('div');
+  card.style.cssText = 'position:fixed;bottom:calc(var(--nav-h)+70px);left:16px;right:16px;background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;padding:12px 16px;z-index:300;font-size:0.8rem;line-height:1.5;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.3);';
+  card.innerHTML = `${msg}<button onclick="this.parentElement.remove()" style="float:right;background:none;border:none;color:var(--muted);cursor:pointer;margin-left:8px;font-size:1rem;">✕</button>`;
+  document.body.appendChild(card);
+  setTimeout(() => card.remove(), 8000);
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 5: RECOVERY SCORE
+// ═══════════════════════════════════════════════════════
+function renderRecoveryCard() {
+  const el = document.getElementById('recovery-card');
+  if (!el) return;
+  const h = new Date().getHours();
+  const saved = localStorage.getItem('nc_recovery_' + dk());
+
+  if (saved) {
+    const scores = {'1':'😣 Muy cansada','2':'😐 Cansada','3':'🙂 Normal','4':'💪 Bien','5':'🔥 A tope'};
+    const sc = parseInt(saved);
+    const color = sc >= 4 ? 'var(--green)' : sc >= 3 ? 'var(--muted)' : 'var(--orange)';
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:10px;font-size:0.78rem;color:${color};">${scores[saved] || saved} <span style="color:var(--muted);margin-left:auto;font-size:0.7rem;">Recuperación</span></div>`;
+    return;
+  }
+
+  if (h < 6 || h > 14) { el.innerHTML = ''; return; }
+
+  el.innerHTML = `<div style="padding:10px 13px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;">¿Cómo te has levantado hoy?</div>
+    <div style="display:flex;gap:6px;">
+      ${[['1','😣'],['2','😐'],['3','🙂'],['4','💪'],['5','🔥']].map(([v,e]) =>
+        `<button onclick="saveRecovery('${v}')" style="flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);font-size:1rem;cursor:pointer;">${e}</button>`
+      ).join('')}
+    </div>
+  </div>`;
+}
+
+function saveRecovery(val) {
+  localStorage.setItem('nc_recovery_' + dk(), val);
+  renderRecoveryCard();
+  vibrate(20);
+  let lowDays = 0;
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const r = parseInt(localStorage.getItem('nc_recovery_' + d.toISOString().split('T')[0]) || '3');
+    if (r <= 2) lowDays++;
+  }
+  if (lowDays >= 2) showToast('💤 Llevas varios días con baja energía — considera un entreno suave o descanso activo hoy');
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE 6: NON-SCALE VICTORIES
+// ═══════════════════════════════════════════════════════
+function checkNonScaleVictories() {
+  const upperLog = getUpperLog();
+  const benchmarks = JSON.parse(localStorage.getItem('nc_benchmarks') || '[]');
+  const victories = JSON.parse(localStorage.getItem('nc_nsv') || '[]');
+
+  const today = dk();
+  upperLog.filter(l => l.date === today).forEach(log => {
+    const prev = upperLog.filter(l => l.exerciseId === log.exerciseId && l.date !== today);
+    const prevBest = prev.length ? Math.max(...prev.map(l => l.value)) : 0;
+    if (log.value > prevBest && prevBest > 0) {
+      const key = 'nsv_pr_' + log.exerciseId + '_' + today;
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, '1');
+        const nsv = { date: today, type: 'pr', text: `🏋️ Nuevo récord en ${log.exerciseId.replace(/_/g,' ')}: ${log.value} reps!` };
+        victories.push(nsv);
+        localStorage.setItem('nc_nsv', JSON.stringify(victories.slice(-20)));
+        showVictoryToast(nsv.text);
+      }
+    }
+  });
+
+  if (benchmarks.length >= 2) {
+    const last = benchmarks[benchmarks.length-1];
+    const prev = benchmarks[benchmarks.length-2];
+    const key = 'nsv_bench_' + last.date;
+    if (!localStorage.getItem(key) && last.date === today) {
+      localStorage.setItem(key, '1');
+      const improvements = [];
+      if (last.flexiones > prev.flexiones) improvements.push(`flexiones: ${prev.flexiones}→${last.flexiones}`);
+      if (last.remo_reps > prev.remo_reps) improvements.push(`remo: ${prev.remo_reps}→${last.remo_reps}`);
+      if (last.fondos_reps > prev.fondos_reps) improvements.push(`fondos: ${prev.fondos_reps}→${last.fondos_reps}`);
+      if (last.km_tiempo_seg && prev.km_tiempo_seg && last.km_tiempo_seg < prev.km_tiempo_seg) improvements.push(`1km más rápido 🏃`);
+      if (improvements.length) {
+        showVictoryToast('💪 ¡Mejoraste en ' + improvements.join(', ') + '! Eso es pérdida de grasa real.');
+        showConfetti();
+      }
+    }
+  }
+}
+
+function showVictoryToast(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#818cf8,#34d399);color:#fff;padding:12px 20px;border-radius:14px;font-size:0.85rem;font-weight:700;z-index:900;text-align:center;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:opacity .5s;';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  vibrate([50,30,50,30,100]);
+  setTimeout(() => el.style.opacity = '0', 3500);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ═══════════════════════════════════════════════════════
+// CHANGE 2: WEEKLY RITUAL CARD
+// ═══════════════════════════════════════════════════════
+function renderWeeklyRitual() {
+  const el = document.getElementById('weekly-ritual-content');
+  if (!el) return;
+  const weekKey = getWeekKey();
+  const ritualKey = 'nc_ritual_' + weekKey;
+  const done = JSON.parse(localStorage.getItem(ritualKey) || 'null');
+
+  if (done) {
+    const measures = JSON.parse(localStorage.getItem('nc_measures') || '[]');
+    const prev = measures.length >= 2 ? measures[measures.length - 2] : null;
+    const curr = measures[measures.length - 1];
+
+    let comparison = '';
+    if (prev && curr && prev.cintura && curr.cintura) {
+      const diff = (curr.cintura - prev.cintura).toFixed(1);
+      const arrow = diff < 0 ? '↓' : diff > 0 ? '↑' : '→';
+      const color = diff < 0 ? 'var(--green)' : diff > 0 ? 'var(--red)' : 'var(--muted)';
+      comparison = `<div style="font-size:0.82rem;color:${color};font-weight:700;margin-top:8px;">${arrow} Cintura: ${diff > 0 ? '+' : ''}${diff} cm vs semana anterior</div>`;
+    }
+
+    el.innerHTML = `<div style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 12px;">
+      <div style="font-size:0.82rem;font-weight:700;color:var(--green);">✓ Ritual completado esta semana</div>
+      ${comparison}
+      <button onclick="localStorage.removeItem('${ritualKey}');renderWeeklyRitual()" style="margin-top:8px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;">Corregir</button>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="margin-bottom:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Cintura (cm)</div>
+          <input type="number" inputmode="decimal" id="ritual-cintura" placeholder="ej. 78" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Cadera (cm)</div>
+          <input type="number" inputmode="decimal" id="ritual-cadera" placeholder="ej. 98" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">¿Cómo te sienta la ropa esta semana?</div>
+        <div style="display:flex;gap:6px;">
+          ${[['1','😣','Igual'],['2','😐','Algo mejor'],['3','🙂','Mejor'],['4','😊','Bien'],['5','🔥','¡Genial!']].map(([v,e,l]) =>
+            `<button onclick="selectRitualFeel('${v}')" id="rf-${v}" style="flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:0.9rem;" title="${l}">${e}</button>`
+          ).join('')}
+        </div>
+      </div>
+    </div>
+    <button onclick="saveWeeklyRitual()" class="btn btn-primary" style="width:100%;">Guardar ritual</button>`;
+}
+
+let _ritualFeel = null;
+function selectRitualFeel(v) {
+  _ritualFeel = v;
+  ['1','2','3','4','5'].forEach(n => {
+    const btn = document.getElementById('rf-' + n);
+    if (btn) {
+      btn.style.border = `1px solid ${n===v?'var(--accent)':'var(--border)'}`;
+      btn.style.background = n===v?'rgba(129,140,248,.2)':'var(--surface2)';
+    }
+  });
+}
+
+function saveWeeklyRitual() {
+  const cintura = parseFloat(document.getElementById('ritual-cintura')?.value);
+  const cadera = parseFloat(document.getElementById('ritual-cadera')?.value);
+  if (!cintura) { showToast('Introduce al menos la cintura'); return; }
+
+  const measures = JSON.parse(localStorage.getItem('nc_measures') || '[]');
+  const entry = { date: dk(), cintura, cadera: cadera || null, feel: _ritualFeel };
+  // Replace today's entry if exists
+  const filtered = measures.filter(m => m.date !== dk());
+  filtered.push(entry);
+  filtered.sort((a,b) => a.date.localeCompare(b.date));
+  localStorage.setItem('nc_measures', JSON.stringify(filtered));
+
+  localStorage.setItem('nc_ritual_' + getWeekKey(), JSON.stringify({done:true, date:dk()}));
+  _ritualFeel = null;
+  renderWeeklyRitual();
+  renderBodyComposition();
+  showToast('📏 Ritual guardado — ¡un paso más hacia la 40!');
+  vibrate([30,20,30]);
 }
 </script>
 </body>
