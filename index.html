@@ -530,6 +530,8 @@
     <!-- ═══ HOME ═══ -->
     <div class="page active" id="page-home">
       <div id="time-context-card"></div>
+      <div id="survivor-semaforo"></div>
+      <div id="streaks-bar"></div>
       <div id="home-onboard"></div>
       <div id="race-week-banner" style="display:none;margin-bottom:14px;"></div>
       <div id="reminder-banners"></div>
@@ -1138,6 +1140,17 @@
       <div id="progreso-semana" style="display:none">
         <div id="consistencia-score-wrap"></div>
         <div class="card" style="margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="card-title" style="margin:0;">🎯 Objetivos de esta semana</div>
+            <button onclick="regenerateMicroObjectives()" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;">↺ Regenerar</button>
+          </div>
+          <div id="micro-obj-list"></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">📅 Hoja de ruta — Octubre</div>
+          <div id="milestone-timeline"></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
           <div class="card-title">📊 Resumen de la semana</div>
           <div id="weekly-score-card">
             <button class="btn btn-primary" onclick="renderWeeklyScoreAI()" style="margin-bottom:0;">Generar resumen</button>
@@ -1600,6 +1613,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   checkMorningCheckin();
   checkOnboarding();
   updateOnlineStatus();
+  // Survivor race readiness alert (max once per 3 days)
+  checkRaceReadinessAlert();
+  // Auto-generate micro-objectives on new week
+  if(localStorage.getItem('nc_last_microobj_week') !== getWeekKey()){
+    localStorage.removeItem('nc_microobj_' + getWeekKey());
+    localStorage.setItem('nc_last_microobj_week', getWeekKey());
+    generateMicroObjectives();
+  }
   // Notification status
   const notifEl = document.getElementById('notif-status');
   if(notifEl && 'Notification' in window){
@@ -1898,6 +1919,8 @@ function renderHome(){
     const inner = document.getElementById('meal-inner-'+i);
     if(inner) initSwipeDelete(inner, ()=>deleteMeal(i));
   });
+  renderSurvivorSemaforo();
+  renderStreaks();
   renderNutritionPeriodCard();
   checkRaceWeekProtocol();
   updateNavDots();
@@ -5069,6 +5092,7 @@ setProgresoTab=function(tab){
   if(tab==='logros'){tab='objetivos';setProgresoTab(tab);return;}
   _origSetProgresoTab(tab);
   if(tab==='medidas')renderBodyComposition();
+  if(tab==='semana'){generateMicroObjectives();renderMilestoneTimeline();}
   // hide objetivos
   const objPEl=document.getElementById('progreso-objetivos');
   const objTEl=document.getElementById('ptab-objetivos');
@@ -6398,6 +6422,435 @@ ESTRUCTURA OBLIGATORIA (siempre incluye las 4 partes):
   }
   btn.disabled=false;btn.innerHTML='Dame un entrenamiento';
 };
+
+// ═══════════════════════════════════════════════════════
+// ══ SURVIVOR RACE READINESS SYSTEM ═════════════════════
+// ═══════════════════════════════════════════════════════
+
+function computeSurvivorReadiness() {
+  const today = new Date();
+  const race = new Date('2026-10-24');
+  const weeksLeft = Math.floor((race - today) / (1000*60*60*24*7));
+  const totalWeeks = Math.floor((race - new Date('2026-06-10')) / (1000*60*60*24*7));
+  const progressPct = (totalWeeks - weeksLeft) / totalWeeks;
+
+  // PILLAR 1: FUERZA
+  let recentUpperSessions = 0;
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const act = JSON.parse(localStorage.getItem('nc_activity_' + d.toISOString().split('T')[0]) || '{"actividades":[]}');
+    act.actividades.forEach(a => {
+      const clase = a.clase ? a.clase.id : '';
+      if (['crossfit','hiit','boxeo','escalada','fuerza','casa'].includes(clase) || (a.tipo||'').toLowerCase().includes('fuerza') || (a.tipo||'').toLowerCase().includes('crossfit')) recentUpperSessions++;
+    });
+  }
+  let fuerzaStatus, fuerzaMsg;
+  if (recentUpperSessions >= 4) { fuerzaStatus = 'green'; fuerzaMsg = `${recentUpperSessions} sesiones / 2 semanas`; }
+  else if (recentUpperSessions >= 2) { fuerzaStatus = 'orange'; fuerzaMsg = `Solo ${recentUpperSessions} sesiones — necesitas más`; }
+  else { fuerzaStatus = 'red'; fuerzaMsg = 'Sin entrenar fuerza — riesgo alto'; }
+
+  // PILLAR 2: CARDIO
+  let recentCardioSessions = 0;
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const act = JSON.parse(localStorage.getItem('nc_activity_' + d.toISOString().split('T')[0]) || '{"actividades":[],"pasos":0}');
+    act.actividades.forEach(a => {
+      const tipo = (a.tipo||'').toLowerCase();
+      const clase = a.clase ? a.clase.id : '';
+      if (tipo.includes('correr') || tipo.includes('carrera') || tipo.includes('run') || tipo.includes('madrid') || clase === 'spinning' || tipo.includes('cardio')) recentCardioSessions++;
+    });
+    if (act.pasos > 8000) recentCardioSessions += 0.5;
+  }
+  recentCardioSessions = Math.floor(recentCardioSessions);
+  let cardioStatus, cardioMsg;
+  if (recentCardioSessions >= 3) { cardioStatus = 'green'; cardioMsg = `${recentCardioSessions} sesiones cardio / 2 sem`; }
+  else if (recentCardioSessions >= 1) { cardioStatus = 'orange'; cardioMsg = `Solo ${recentCardioSessions} sesión cardio — aumenta`; }
+  else { cardioStatus = 'red'; cardioMsg = 'Sin cardio — el 10km requiere base'; }
+
+  // PILLAR 3: NUTRICIÓN
+  const goals = getGoals();
+  let proteinDaysOk = 0, daysWithData = 0;
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const meals = JSON.parse(localStorage.getItem('meals_' + d.toISOString().split('T')[0]) || '[]');
+    if (meals.length > 0) {
+      daysWithData++;
+      let P = 0; meals.forEach(m => P += m.p || 0);
+      if (P >= goals.p * 0.85) proteinDaysOk++;
+    }
+  }
+  let nutriStatus, nutriMsg;
+  if (daysWithData < 3) { nutriStatus = 'grey'; nutriMsg = 'Registra más días para analizar'; }
+  else if (proteinDaysOk >= daysWithData * 0.7) { nutriStatus = 'green'; nutriMsg = `Proteína OK ${proteinDaysOk}/${daysWithData} días`; }
+  else if (proteinDaysOk >= daysWithData * 0.4) { nutriStatus = 'orange'; nutriMsg = `Proteína baja ${proteinDaysOk}/${daysWithData} días`; }
+  else { nutriStatus = 'red'; nutriMsg = 'Proteína muy inconsistente'; }
+
+  // PILLAR 4: PESO
+  const measures = JSON.parse(localStorage.getItem('nc_measures') || '[]');
+  const profile = getProfile();
+  let pesoStatus, pesoMsg;
+  if (measures.length < 2) {
+    pesoStatus = 'grey';
+    pesoMsg = profile.peso ? `Actual: ${profile.peso}kg → Obj: 69kg` : 'Sin datos de peso';
+  } else {
+    const recent = measures.slice(-4).map(m => parseFloat(m.peso || m.weight || 0)).filter(Boolean);
+    const trend = recent.length >= 2 ? recent[recent.length-1] - recent[0] : 0;
+    const current = recent[recent.length-1] || profile.peso;
+    const toGoal = current - 69;
+    if (toGoal <= 0) { pesoStatus = 'green'; pesoMsg = `¡Objetivo alcanzado! ${current}kg`; }
+    else if (trend < -0.2) { pesoStatus = 'green'; pesoMsg = `Bajando bien — ${toGoal.toFixed(1)}kg hasta obj.`; }
+    else if (trend <= 0.2) { pesoStatus = 'orange'; pesoMsg = `Estable — ${toGoal.toFixed(1)}kg hasta obj.`; }
+    else { pesoStatus = 'red'; pesoMsg = 'Subiendo — revisa esta semana'; }
+  }
+
+  return { fuerzaStatus, fuerzaMsg, cardioStatus, cardioMsg, nutriStatus, nutriMsg, pesoStatus, pesoMsg, weeksLeft, progressPct };
+}
+
+function renderSurvivorSemaforo() {
+  const el = document.getElementById('survivor-semaforo');
+  if (!el) return;
+  const r = computeSurvivorReadiness();
+
+  const colorMap = { green: 'var(--green)', orange: 'var(--orange)', red: 'var(--red)', grey: 'var(--muted)' };
+  const bgMap = { green: 'rgba(52,211,153,.1)', orange: 'rgba(251,146,60,.1)', red: 'rgba(239,68,68,.1)', grey: 'rgba(100,116,139,.08)' };
+  const iconMap = { green: '🟢', orange: '🟡', red: '🔴', grey: '⚪' };
+
+  const pillars = [
+    { label: 'Fuerza', status: r.fuerzaStatus, msg: r.fuerzaMsg, icon: '💪' },
+    { label: 'Cardio', status: r.cardioStatus, msg: r.cardioMsg, icon: '🏃' },
+    { label: 'Nutrición', status: r.nutriStatus, msg: r.nutriMsg, icon: '🥗' },
+    { label: 'Peso', status: r.pesoStatus, msg: r.pesoMsg, icon: '⚖️' },
+  ];
+
+  const statuses = pillars.map(p => p.status).filter(s => s !== 'grey');
+  const overall = statuses.includes('red') ? 'red' : statuses.includes('orange') ? 'orange' : 'green';
+  const overallText = overall === 'green' ? '¡En camino!' : overall === 'orange' ? 'Atención' : 'Hay que activarse';
+
+  el.innerHTML = `
+    <div style="background:var(--surface2);border:1.5px solid ${colorMap[overall]}44;border-radius:16px;padding:14px 16px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div>
+          <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;">🏁 PREPARACIÓN SURVIVOR</div>
+          <div style="font-size:0.9rem;font-weight:800;color:${colorMap[overall]};margin-top:2px;">${iconMap[overall]} ${overallText} — ${r.weeksLeft} semanas</div>
+        </div>
+        <button onclick="showSurvivorDetail()" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;">Detalle</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        ${pillars.map(p => `
+          <div style="background:${bgMap[p.status]};border:1px solid ${colorMap[p.status]}33;border-radius:10px;padding:8px 10px;">
+            <div style="font-size:0.72rem;font-weight:700;color:${colorMap[p.status]};margin-bottom:2px;">${p.icon} ${p.label} ${iconMap[p.status]}</div>
+            <div style="font-size:0.72rem;color:var(--muted);line-height:1.3;">${p.msg}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function showSurvivorDetail() {
+  const r = computeSurvivorReadiness();
+  const colorMap = { green: 'var(--green)', orange: 'var(--orange)', red: 'var(--red)', grey: 'var(--muted)' };
+  const iconMap = { green: '🟢', orange: '🟡', red: '🔴', grey: '⚪' };
+  const pillars = [
+    { label: 'Fuerza', status: r.fuerzaStatus, msg: r.fuerzaMsg, icon: '💪', detail: 'Objetivo: 4+ sesiones de tren superior cada 2 semanas' },
+    { label: 'Cardio', status: r.cardioStatus, msg: r.cardioMsg, icon: '🏃', detail: 'Objetivo: 3+ sesiones cardio cada 2 semanas' },
+    { label: 'Nutrición', status: r.nutriStatus, msg: r.nutriMsg, icon: '🥗', detail: 'Objetivo: proteína ≥85% en 5+ días / semana' },
+    { label: 'Peso', status: r.pesoStatus, msg: r.pesoMsg, icon: '⚖️', detail: 'Objetivo: 69kg para el día de la carrera' },
+  ];
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;padding:24px;max-width:400px;width:100%;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-weight:800;font-size:1rem;">🏁 Preparación Survivor</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;">✕</button>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;">Faltan <strong style="color:var(--text)">${r.weeksLeft} semanas</strong> para el 24 de octubre de 2026</div>
+      ${pillars.map(p => `
+        <div style="background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:10px;border-left:3px solid ${colorMap[p.status]};">
+          <div style="font-weight:700;font-size:0.88rem;color:${colorMap[p.status]};margin-bottom:4px;">${p.icon} ${p.label} ${iconMap[p.status]}</div>
+          <div style="font-size:0.8rem;margin-bottom:4px;">${p.msg}</div>
+          <div style="font-size:0.72rem;color:var(--muted);">${p.detail}</div>
+        </div>`).join('')}
+      <div id="survivor-ai-result" style="margin-top:12px;"></div>
+      <button onclick="getSurvivorAIAssessment()" style="width:100%;margin-top:4px;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;">🤖 Análisis IA de mi preparación</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function getSurvivorAIAssessment() {
+  const el = document.getElementById('survivor-ai-result');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:8px;">Analizando tu preparación...</div>';
+  const r = computeSurvivorReadiness();
+  const survivor = getSurvivorContext ? getSurvivorContext() : '';
+  try {
+    const res = await callClaude([{role:'user', content:`Analiza la preparación de esta usuaria para Survivor 10km obstacles (${r.weeksLeft} semanas hasta la carrera).
+
+Estado actual:
+- Fuerza: ${r.fuerzaStatus} — ${r.fuerzaMsg}
+- Cardio: ${r.cardioStatus} — ${r.cardioMsg}
+- Nutrición: ${r.nutriStatus} — ${r.nutriMsg}
+- Peso: ${r.pesoStatus} — ${r.pesoMsg}
+
+${survivor}
+
+Da un análisis honesto pero motivador (máx 120 palabras). Incluye:
+1. Punto fuerte actual
+2. Área más urgente a mejorar
+3. Un plan de acción para esta semana
+NUNCA menciones calorías ni déficit.`}]);
+    el.innerHTML = `<div class="ai-bubble" style="margin-top:0;">${formatAI(res)}</div>`;
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:0.78rem;">No se pudo generar el análisis. Inténtalo de nuevo.</div>`;
+  }
+}
+
+// ── FEATURE B: Weekly micro-objectives ──
+
+async function generateMicroObjectives() {
+  const weekKey = getWeekKey();
+  const cacheKey = 'nc_microobj_' + weekKey;
+  const cached = localStorage.getItem(cacheKey);
+
+  const el = document.getElementById('micro-obj-list');
+  if (!el) return;
+
+  if (cached) {
+    renderMicroObjectives(JSON.parse(cached));
+    return;
+  }
+
+  el.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:8px;">Generando tus objetivos de la semana...</div>';
+
+  const lastWeekMeals = [], lastWeekAct = [];
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const dk2 = d.toISOString().split('T')[0];
+    const meals = JSON.parse(localStorage.getItem('meals_' + dk2) || '[]');
+    const act = JSON.parse(localStorage.getItem('nc_activity_' + dk2) || '{"pasos":0,"actividades":[]}');
+    if (meals.length) lastWeekMeals.push({date:dk2, meals});
+    if (act.actividades.length || act.pasos > 0) lastWeekAct.push({date:dk2, ...act});
+  }
+
+  const survivor = getSurvivorContext ? getSurvivorContext() : '';
+  const readiness = computeSurvivorReadiness();
+
+  try {
+    const res = await callClaude([{role:'user', content:`Genera 3 micro-objetivos semanales para preparar Survivor 10km.
+
+SEMÁFORO ACTUAL:
+- Fuerza: ${readiness.fuerzaStatus} — ${readiness.fuerzaMsg}
+- Cardio: ${readiness.cardioStatus} — ${readiness.cardioMsg}
+- Nutrición: ${readiness.nutriStatus} — ${readiness.nutriMsg}
+- Peso: ${readiness.pesoStatus} — ${readiness.pesoMsg}
+
+SEMANA PASADA:
+- Días con comida registrada: ${lastWeekMeals.length}
+- Sesiones de entreno: ${lastWeekAct.reduce((s,d)=>s+d.actividades.length,0)}
+- Pasos promedio: ${lastWeekAct.length ? Math.round(lastWeekAct.reduce((s,d)=>s+d.pasos,0)/lastWeekAct.length) : 0}
+
+${survivor}
+
+REGLAS:
+- Los 3 objetivos deben ser ESPECÍFICOS y MEDIBLES
+- Priorizan las áreas en rojo/naranja del semáforo
+- Son alcanzables en 7 días con esfuerzo moderado
+- En español, tono motivador
+- NUNCA menciones calorías, déficit ni kcal
+
+Responde EXACTAMENTE en este formato JSON (sin markdown, sin explicación):
+[
+  {"emoji":"💪","objetivo":"texto objetivo 1","categoria":"fuerza"},
+  {"emoji":"🏃","objetivo":"texto objetivo 2","categoria":"cardio"},
+  {"emoji":"🥗","objetivo":"texto objetivo 3","categoria":"nutricion"}
+]`}]);
+
+    const jsonMatch = res.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error('No JSON');
+    const objectives = JSON.parse(jsonMatch[0]);
+    localStorage.setItem(cacheKey, JSON.stringify(objectives));
+    renderMicroObjectives(objectives);
+  } catch(e) {
+    const fallback = [
+      {emoji:'💪', objetivo:'2 sesiones de tren superior esta semana (remo, fondos o CrossFit)', categoria:'fuerza'},
+      {emoji:'🏃', objetivo:'1 salida de carrera suave de al menos 20 minutos', categoria:'cardio'},
+      {emoji:'🥗', objetivo:'Proteína ≥ 100g en al menos 5 días de 7', categoria:'nutricion'},
+    ];
+    localStorage.setItem(cacheKey, JSON.stringify(fallback));
+    renderMicroObjectives(fallback);
+  }
+}
+
+function renderMicroObjectives(objectives) {
+  const el = document.getElementById('micro-obj-list');
+  if (!el) return;
+  const doneKey = 'nc_microobj_done_' + getWeekKey();
+  const done = JSON.parse(localStorage.getItem(doneKey) || '[]');
+
+  el.innerHTML = objectives.map((obj, i) => `
+    <div onclick="toggleMicroObj(${i})" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:${done.includes(i)?'rgba(52,211,153,.1)':'var(--surface2)'};border:1px solid ${done.includes(i)?'rgba(52,211,153,.3)':'var(--border)'};margin-bottom:6px;cursor:pointer;">
+      <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${done.includes(i)?'var(--green)':'var(--border)'};background:${done.includes(i)?'var(--green)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-size:0.7rem;color:#0f172a;">${done.includes(i)?'✓':''}</div>
+      <div style="font-size:0.82rem;line-height:1.4;color:${done.includes(i)?'var(--muted)':'var(--text)'};${done.includes(i)?'text-decoration:line-through;':''}">${obj.emoji} ${obj.objetivo}</div>
+    </div>`).join('');
+}
+
+function toggleMicroObj(i) {
+  const doneKey = 'nc_microobj_done_' + getWeekKey();
+  const done = JSON.parse(localStorage.getItem(doneKey) || '[]');
+  const idx = done.indexOf(i);
+  if (idx === -1) { done.push(i); vibrate(30); showToast('💪 ¡Objetivo cumplido!'); }
+  else done.splice(idx, 1);
+  localStorage.setItem(doneKey, JSON.stringify(done));
+  const cached = localStorage.getItem('nc_microobj_' + getWeekKey());
+  if (cached) renderMicroObjectives(JSON.parse(cached));
+}
+
+function regenerateMicroObjectives() {
+  localStorage.removeItem('nc_microobj_' + getWeekKey());
+  generateMicroObjectives();
+}
+
+// ── FEATURE C: Race readiness alert ──
+
+async function checkRaceReadinessAlert() {
+  const lastAlert = localStorage.getItem('nc_last_readiness_alert');
+  const today = dk();
+  if (lastAlert === today) return;
+  if (lastAlert) {
+    const daysSince = Math.floor((new Date(today) - new Date(lastAlert)) / (1000*60*60*24));
+    if (daysSince < 3) return;
+  }
+
+  const readiness = computeSurvivorReadiness();
+  const redCount = [readiness.fuerzaStatus, readiness.cardioStatus, readiness.nutriStatus, readiness.pesoStatus].filter(s => s === 'red').length;
+  const orangeCount = [readiness.fuerzaStatus, readiness.cardioStatus, readiness.nutriStatus, readiness.pesoStatus].filter(s => s === 'orange').length;
+
+  if (redCount < 2 && !(orangeCount >= 3)) return;
+
+  localStorage.setItem('nc_last_readiness_alert', today);
+
+  try {
+    const res = await callClaude([{role:'user', content:`Genera un mensaje motivador pero honesto para una usuaria que lleva ${readiness.weeksLeft} semanas hasta su carrera Survivor y está retrasada en:
+${readiness.fuerzaStatus === 'red' ? '- Fuerza: ' + readiness.fuerzaMsg + '\n' : ''}${readiness.cardioStatus === 'red' ? '- Cardio: ' + readiness.cardioMsg + '\n' : ''}${readiness.nutriStatus === 'red' ? '- Nutrición: ' + readiness.nutriMsg + '\n' : ''}${readiness.pesoStatus === 'red' ? '- Peso: ' + readiness.pesoMsg + '\n' : ''}
+
+El mensaje debe:
+- Ser empático, no acusatorio
+- Reconocer que la vida es complicada
+- Dar 1-2 acciones concretas para esta semana
+- Recordarle que aún hay tiempo (${readiness.weeksLeft} semanas)
+- NUNCA mencionar calorías ni déficit
+- Máximo 80 palabras, tono de amiga coach`}]);
+    showReadinessAlert(res);
+  } catch(e) {
+    showReadinessAlert(`⚠️ Llevas un par de semanas sin avanzar en la preparación Survivor. Aún tienes ${readiness.weeksLeft} semanas — tiempo suficiente si empezamos ahora. Esta semana: una sesión de fuerza y una salida de 20 min corriendo. ¿Empezamos?`);
+  }
+}
+
+function showReadinessAlert(msg) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;padding:24px;max-width:380px;width:100%;border:1.5px solid rgba(251,146,60,.3);">
+      <div style="font-size:1.5rem;text-align:center;margin-bottom:12px;">🏁</div>
+      <div style="font-size:0.88rem;line-height:1.6;color:var(--text);margin-bottom:20px;">${formatAI(msg)}</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="this.closest('[style*=fixed]').remove();showPage('entreno')" style="flex:1;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;">💪 Ver mi plan</button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:11px 16px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">Luego</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  vibrate([50, 30, 50]);
+}
+
+// ── FEATURE D: Milestone timeline ──
+
+function renderMilestoneTimeline() {
+  const el = document.getElementById('milestone-timeline');
+  if (!el) return;
+
+  const today = new Date();
+  const milestones = [
+    { date: '2026-06-10', label: 'Inicio preparación', icon: '🚀' },
+    { date: '2026-06-24', label: '1er test mensual Survivor', icon: '📊' },
+    { date: '2026-07-15', label: 'Correr 3km sin parar', icon: '🏃' },
+    { date: '2026-07-28', label: '2º test mensual', icon: '📊' },
+    { date: '2026-08-01', label: 'Fase desarrollo — aumentar cargas', icon: '💪' },
+    { date: '2026-08-25', label: '3er test mensual', icon: '📊' },
+    { date: '2026-09-01', label: 'Correr 5km continuo', icon: '🏃' },
+    { date: '2026-09-24', label: 'FASE INTENSIVA comienza', icon: '🔥' },
+    { date: '2026-09-29', label: '4º test mensual (último)', icon: '📊' },
+    { date: '2026-10-17', label: 'Semana de carrera — tapering', icon: '🎯' },
+    { date: '2026-10-24', label: '🏁 SURVIVOR 10KM', icon: '🏆' },
+  ];
+
+  const benchmarks = JSON.parse(localStorage.getItem('nc_benchmarks') || '[]');
+
+  el.innerHTML = `<div style="position:relative;padding-left:20px;">
+    <div style="position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border);border-radius:2px;"></div>
+    ${milestones.map(m => {
+      const mDate = new Date(m.date);
+      const isPast = mDate < today;
+      const isToday = m.date === today.toISOString().split('T')[0];
+      const isDone = isPast || (m.icon === '📊' && benchmarks.some(b => {
+        const bd = new Date(b.date); const md = new Date(m.date);
+        return Math.abs(bd - md) < 14 * 24 * 60 * 60 * 1000;
+      }));
+      return `<div style="position:relative;margin-bottom:14px;padding-left:16px;">
+        <div style="position:absolute;left:-14px;top:2px;width:14px;height:14px;border-radius:50%;background:${isDone?'var(--green)':isToday?'var(--accent)':'var(--surface3)'};border:2px solid ${isDone?'var(--green)':isToday?'var(--accent)':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:0.6rem;">${isDone?'✓':''}</div>
+        <div style="font-size:0.72rem;color:${isDone?'var(--muted)':isToday?'var(--accent)':'var(--text)'};font-weight:${isToday?800:isDone?400:600};">${m.icon} ${m.label}</div>
+        <div style="font-size:0.65rem;color:var(--muted);">${new Date(m.date).toLocaleDateString('es-ES',{day:'numeric',month:'short'})}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ── FEATURE E: Streak tracking ──
+
+function computeStreaks() {
+  const goals = getGoals();
+  let nutriStreak = 0, trainStreak = 0;
+
+  for (let i = 1; i <= 30; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const dk2 = d.toISOString().split('T')[0];
+    const meals = JSON.parse(localStorage.getItem('meals_' + dk2) || '[]');
+    if (!meals.length) break;
+    let P = 0; meals.forEach(m => P += m.p || 0);
+    if (P >= goals.p * 0.85) nutriStreak++;
+    else break;
+  }
+
+  for (let i = 1; i <= 30; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const dk2 = d.toISOString().split('T')[0];
+    const act = JSON.parse(localStorage.getItem('nc_activity_' + dk2) || '{"actividades":[],"pasos":0}');
+    if (act.actividades.length > 0 || act.pasos >= 6000) trainStreak++;
+    else break;
+  }
+
+  return { nutriStreak, trainStreak };
+}
+
+function renderStreaks() {
+  const el = document.getElementById('streaks-bar');
+  if (!el) return;
+  const { nutriStreak, trainStreak } = computeStreaks();
+
+  if (nutriStreak === 0 && trainStreak === 0) { el.innerHTML = ''; return; }
+
+  el.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:10px;">
+    ${trainStreak > 0 ? `<div style="flex:1;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.25);border-radius:10px;padding:8px 10px;text-align:center;">
+      <div style="font-size:1rem;">🔥</div>
+      <div style="font-size:1rem;font-weight:800;color:var(--orange);">${trainStreak}</div>
+      <div style="font-size:0.65rem;color:var(--muted);">días activa</div>
+    </div>` : ''}
+    ${nutriStreak > 0 ? `<div style="flex:1;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:8px 10px;text-align:center;">
+      <div style="font-size:1rem;">🥗</div>
+      <div style="font-size:1rem;font-weight:800;color:var(--green);">${nutriStreak}</div>
+      <div style="font-size:0.7rem;color:var(--muted);">días proteína ok</div>
+    </div>` : ''}
+  </div>`;
+}
 </script>
 </body>
 </html>
