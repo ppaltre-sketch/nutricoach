@@ -531,8 +531,10 @@
     <div class="page active" id="page-home">
       <div id="time-context-card"></div>
       <div id="home-onboard"></div>
+      <div id="race-week-banner" style="display:none;margin-bottom:14px;"></div>
       <div id="reminder-banners"></div>
       <div id="hoy-plan-card"></div>
+      <div id="nutrition-period-card" style="margin-bottom:10px;"></div>
       <div id="streak-card"></div>
       <div id="macro-ring-card"></div>
       <div id="water-tracker-wrap"></div>
@@ -861,6 +863,7 @@
     <!-- ═══ ENTRENO ═══ -->
     <div class="page" id="page-entreno">
       <div id="race-countdown-wrap"></div>
+      <div id="upper-body-alert"></div>
       <div id="october-tips-wrap"></div>
       <div id="deload-banner"></div>
       <div id="weekly-plan-card-entreno"></div>
@@ -942,6 +945,41 @@
       <div class="card" id="performance-log-card" style="margin-top:12px;">
         <div class="card-title">📝 Registrar mi sesión</div>
         <div id="performance-log-content"></div>
+      </div>
+
+      <!-- Feature: Survivor Circuit Simulation -->
+      <div class="card" style="margin-top:12px;">
+        <div class="card-title">🏁 Circuito simulacro Survivor</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">Entrena exactamente lo que te vas a encontrar el 24 de octubre.</p>
+        <button class="btn btn-primary" onclick="generateSurvivorCircuit()">⚡ Generar circuito de hoy</button>
+        <div id="survivor-circuit-result" style="display:none;margin-top:12px;"></div>
+        <button id="survivor-circuit-log-btn" onclick="logSurvivorCircuit()" style="display:none;width:100%;margin-top:8px;padding:11px;border-radius:12px;border:none;background:var(--green);color:#0f172a;font-weight:700;cursor:pointer;">✓ Registrar como completado</button>
+      </div>
+
+      <!-- Feature: Upper Body Progress Tracker -->
+      <div class="card" id="upper-progress-card" style="margin-top:12px;">
+        <div class="card-title">💪 Progresión tren superior</div>
+        <p style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">Sin barra de dominadas — estos son tus ejercicios clave:</p>
+        <div id="upper-progress-list"></div>
+        <button class="btn btn-secondary" style="margin-top:10px;" onclick="logUpperProgress()">+ Registrar sesión</button>
+      </div>
+
+      <!-- Feature: Running Plan -->
+      <div class="card" id="run-plan-card" style="margin-top:12px;">
+        <div class="card-title">🏃 Plan de carrera — <span id="run-plan-week-label">Semana ?</span></div>
+        <div id="run-plan-week-content"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-secondary" style="flex:1;" onclick="showRunFitnessTest()">🔄 Hacer prueba</button>
+          <button class="btn btn-primary" style="flex:1;" onclick="generateRunPlan()">✨ Generar plan IA</button>
+        </div>
+      </div>
+
+      <!-- Feature: Monthly Benchmark Test -->
+      <div class="card" id="benchmark-card" style="margin-top:12px;">
+        <div class="card-title">📊 Test mensual Survivor</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Una vez al mes mide tu progreso real en los movimientos clave de la carrera.</p>
+        <div id="benchmark-history"></div>
+        <button class="btn btn-primary" onclick="startBenchmarkTest()">🏁 Hacer test ahora</button>
       </div>
     </div>
 
@@ -1025,6 +1063,7 @@
 
       <!-- Medidas -->
       <div id="progreso-medidas" style="display:none">
+        <div id="body-comp-section" style="margin-bottom:12px;"></div>
         <div id="foto-mensual-card"></div>
         <div class="card">
           <div class="card-title">📏 Registrar medidas de hoy</div>
@@ -1853,6 +1892,8 @@ function renderHome(){
     const inner = document.getElementById('meal-inner-'+i);
     if(inner) initSwipeDelete(inner, ()=>deleteMeal(i));
   });
+  renderNutritionPeriodCard();
+  checkRaceWeekProtocol();
   updateNavDots();
 }
 
@@ -2227,6 +2268,7 @@ COMIDO HOY: ${meals.length===0?'Nada':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g
 MACROS ACUMULADOS: P${P}g C${C}g G${F}g
 OBJETIVOS DIARIOS: P${goals.p}g C${goals.c}g G${goals.f}g
 MACROS QUE FALTAN (adapta la cena a esto exactamente): P${rP}g C${rC}g G${rF}g
+${(()=>{const pd=getNutritionPeriodization();return pd.type==='hard'?'[INTERNO — PERIODIZACIÓN: Día de entreno fuerte. Permite carbos extra en la cena para recuperación muscular. No mencionar esto explícitamente.]':pd.type==='rest'?'[INTERNO — PERIODIZACIÓN: Día de descanso. Prioriza proteína y reduce carbos en la cena ligeramente.]':''})()}
 ${prefs?'DISPONIBILIDAD/CONTEXTO: '+prefs+'\n→ Adapta la sugerencia EXACTAMENTE a esto (si menciona ingredientes úsalos, si es delivery indica qué pedir y dónde, si es supermercado qué comprar).':''}
 
 Propón UNA cena que cubra exactamente los macros que faltan. Usa esta estructura:
@@ -2892,6 +2934,7 @@ Fase ciclo: ${cicloHoyA}. Ajuste nutricional: ${cicloNutricionA[cicloHoyA]||cicl
 Comido hoy (desayuno/snack): ${meals.length===0?'Nada todavía':meals.map(m=>`${m.name}: P${m.p}g C${m.c}g G${m.f}g`).join(' | ')}
 Macros disponibles para el RESTO del día: P${rP}g C${rC}g G${rF}g
 TARGET para el ALMUERZO (dejando margen para cena): P${tP}g C${tC}g G${tF}g
+${(()=>{const pd=getNutritionPeriodization();return pd.type==='hard'?'[INTERNO — PERIODIZACIÓN: Día de entreno fuerte. Sube los carbos del almuerzo — es el mejor momento para cargar. No mencionar esto explícitamente.]':pd.type==='rest'?'[INTERNO — PERIODIZACIÓN: Día de descanso. Prioriza proteína y verduras, modera carbos.]':''})()}
 ${prefs?'Disponibilidad/contexto: '+prefs+'\n→ Adapta la sugerencia EXACTAMENTE a esto (si tiene ingredientes concretos úsalos, si es delivery sugiere qué pedir y dónde, si es supermercado qué comprar).':''}
 
 Sugiere UN almuerzo completo y saciante para este target. Usa estructura:
@@ -4988,6 +5031,10 @@ showPage=function(name){
     checkDeloadNeeded();
     // Show madrid rio program if paseo selected
     if(chipOpciones.has('paseo'))renderMadridRioProgram();
+    checkUpperBodyVolume();
+    renderUpperProgressList();
+    renderBenchmarkHistory();
+    renderRunPlanWeek();
     checkAndUnlockAchievements();
   }
   if(name==='home'){
@@ -5015,6 +5062,7 @@ setProgresoTab=function(tab){
   // legacy logros tab redirect → objetivos
   if(tab==='logros'){tab='objetivos';setProgresoTab(tab);return;}
   _origSetProgresoTab(tab);
+  if(tab==='medidas')renderBodyComposition();
   // hide objetivos
   const objPEl=document.getElementById('progreso-objetivos');
   const objTEl=document.getElementById('ptab-objetivos');
@@ -5060,6 +5108,657 @@ function renderStrengthChallengeMerged(){
   if(tempEl) el.innerHTML=tempEl.innerHTML;
 }
 function startChallengeMerged(type){startChallenge(type);renderStrengthChallengeMerged();}
+
+// ═══════════════════════════════════════════════════════════
+// SURVIVOR FEATURE 1: MONTHLY BENCHMARK TESTS
+// ═══════════════════════════════════════════════════════════
+function getBenchmarks(){ return JSON.parse(localStorage.getItem('nc_benchmarks')||'[]'); }
+function saveBenchmarks(b){ localStorage.setItem('nc_benchmarks',JSON.stringify(b)); }
+
+function renderBenchmarkHistory(){
+  const el=document.getElementById('benchmark-history');
+  if(!el)return;
+  const benchmarks=getBenchmarks().slice(-3).reverse();
+  if(benchmarks.length===0){
+    el.innerHTML='<div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Sin tests realizados todavía. Hazlo una vez al mes para ver tu evolución.</div>';
+    return;
+  }
+  el.innerHTML=`<div style="overflow-x:auto;margin-bottom:12px;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
+      <thead>
+        <tr style="color:var(--muted);border-bottom:1px solid var(--border);">
+          <th style="padding:5px 4px;text-align:left;">Fecha</th>
+          <th style="padding:5px 4px;text-align:center;">💪 Flex</th>
+          <th style="padding:5px 4px;text-align:center;">⏱️ Colgada</th>
+          <th style="padding:5px 4px;text-align:center;">🪑 Remo</th>
+          <th style="padding:5px 4px;text-align:center;">🏃 1km</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${benchmarks.map((b,i)=>{
+          const prev=benchmarks[i+1];
+          function delta(cur,prv,lowerBetter){
+            if(!prv||!cur)return'';
+            const d=cur-prv;
+            if(d===0)return'<span style="color:var(--muted);">→</span>';
+            const better=(lowerBetter&&d<0)||(!lowerBetter&&d>0);
+            return `<span style="color:${better?'var(--green)':'var(--red)'};">${d>0?'↑':'↓'}</span>`;
+          }
+          const dateStr=new Date(b.date+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+          const kmFmt=b.km_tiempo_seg?Math.floor(b.km_tiempo_seg/60)+'\''+String(b.km_tiempo_seg%60).padStart(2,'0')+'"':'—';
+          return `<tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:5px 4px;color:var(--muted);">${dateStr}</td>
+            <td style="padding:5px 4px;text-align:center;font-weight:700;">${b.flexiones||'—'} ${delta(b.flexiones,prev?.flexiones,false)}</td>
+            <td style="padding:5px 4px;text-align:center;">${b.colgada_seg||'—'} ${delta(b.colgada_seg,prev?.colgada_seg,false)}</td>
+            <td style="padding:5px 4px;text-align:center;">${b.remo_reps||'—'} ${delta(b.remo_reps,prev?.remo_reps,false)}</td>
+            <td style="padding:5px 4px;text-align:center;">${kmFmt} ${delta(b.km_tiempo_seg,prev?.km_tiempo_seg,true)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function startBenchmarkTest(){
+  const steps=[
+    {id:'flexiones',label:'💪 Flexiones máximas',desc:'Haz todas las flexiones que puedas sin parar. Las de rodilla también cuentan — anota el total.',unit:'repeticiones',type:'number',placeholder:'ej. 12'},
+    {id:'colgada_seg',label:'⏱️ Colgada / Remo invertido',desc:'Si tienes barra: cuántos segundos aguantas colgada. Si no: remo invertido con silla (pies elevados, manos en borde de mesa) — cuántas repeticiones.',unit:'seg o reps',type:'number',placeholder:'ej. 15'},
+    {id:'remo_reps',label:'🪑 Remo con mancuerna/botella',desc:'Con una mancuerna o botella de 2L+, haz remo unilateral. Cuenta las repeticiones limpias con el brazo dominante.',unit:'repeticiones',type:'number',placeholder:'ej. 20'},
+    {id:'km_tiempo_seg',label:'🏃 1km cronometrado',desc:'Corre 1km lo más rápido que puedas. Introduce el tiempo en segundos (ej: 6 min = 360 seg).',unit:'segundos',type:'number',placeholder:'ej. 360'},
+    {id:'notas',label:'📝 Nota libre',desc:'¿Cómo te sentiste? ¿Algo a mejorar?',unit:'',type:'text',placeholder:'ej. Me costaron los remos, bien el cardio...'},
+  ];
+  let currentStep=0;
+  const values={};
+
+  const overlay=document.createElement('div');
+  overlay.id='benchmark-modal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;display:flex;align-items:flex-end;';
+
+  function render(){
+    const s=steps[currentStep];
+    const isLast=currentStep===steps.length-1;
+    overlay.innerHTML=`
+      <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:700;">PASO ${currentStep+1} DE ${steps.length}</div>
+          <button onclick="document.getElementById('benchmark-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;">✕</button>
+        </div>
+        <div style="font-weight:800;font-size:1rem;margin-bottom:8px;">${s.label}</div>
+        <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;margin-bottom:16px;">${s.desc}</div>
+        <div style="margin-bottom:16px;">
+          <input type="${s.type}" inputmode="${s.type==='number'?'decimal':'text'}" id="bench-input" placeholder="${s.placeholder}" value="${values[s.id]||''}"
+            style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:13px;color:var(--text);font-size:1rem;outline:none;" />
+          ${s.unit?`<div style="font-size:0.72rem;color:var(--muted);margin-top:4px;">${s.unit}</div>`:''}
+        </div>
+        <div style="display:flex;gap:8px;">
+          ${currentStep>0?`<button onclick="benchPrev()" class="btn btn-secondary" style="flex:1;">← Anterior</button>`:''}
+          <button onclick="benchNext()" class="btn btn-primary" style="flex:${currentStep>0?1:1};">${isLast?'✓ Guardar test':'Siguiente →'}</button>
+        </div>
+      </div>`;
+  }
+
+  window.benchNext=function(){
+    const inp=document.getElementById('bench-input');
+    const s=steps[currentStep];
+    const val=s.type==='number'?parseFloat(inp.value)||null:inp.value.trim()||null;
+    if(!val&&s.id!=='notas'){showToast('Introduce un valor para continuar');return;}
+    values[s.id]=val;
+    if(currentStep<steps.length-1){currentStep++;render();}
+    else{saveBenchmarkResult(values);}
+  };
+  window.benchPrev=function(){
+    if(currentStep>0){currentStep--;render();}
+  };
+
+  render();
+  document.body.appendChild(overlay);
+}
+
+function saveBenchmarkResult(values){
+  document.getElementById('benchmark-modal')?.remove();
+  const entry={date:dk(),...values};
+  const benchmarks=getBenchmarks();
+  benchmarks.push(entry);
+  saveBenchmarks(benchmarks);
+
+  // Compare with previous
+  const prev=benchmarks.length>=2?benchmarks[benchmarks.length-2]:null;
+  let compHtml='';
+  if(prev){
+    const items=[
+      {label:'Flexiones',key:'flexiones',unit:'reps',lower:false},
+      {label:'Colgada/Remo',key:'colgada_seg',unit:'',lower:false},
+      {label:'Remo reps',key:'remo_reps',unit:'reps',lower:false},
+      {label:'1km',key:'km_tiempo_seg',unit:'seg',lower:true},
+    ];
+    compHtml=`<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:8px;">VS TEST ANTERIOR</div>
+      ${items.map(it=>{
+        const cur=entry[it.key],prv=prev[it.key];
+        if(!cur||!prv)return'';
+        const d=cur-prv;
+        const better=(it.lower&&d<0)||(!it.lower&&d>0);
+        const icon=d===0?'→':better?'↑':'↓';
+        const col=d===0?'var(--muted)':better?'var(--green)':'var(--red)';
+        return `<div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:4px 0;">
+          <span style="color:var(--muted);">${it.label}</span>
+          <span style="font-weight:700;color:${col};">${icon} ${d>0?'+':''}${d} ${it.unit}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  const resultOverlay=document.createElement('div');
+  resultOverlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px;';
+  resultOverlay.innerHTML=`
+    <div style="background:var(--surface);border-radius:20px;padding:24px;max-width:400px;width:100%;">
+      <div style="font-size:2rem;text-align:center;margin-bottom:8px;">🏁</div>
+      <div style="font-weight:800;font-size:1.1rem;text-align:center;margin-bottom:4px;">Test guardado</div>
+      <div style="font-size:0.78rem;color:var(--muted);text-align:center;margin-bottom:16px;">${new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long'})}</div>
+      <div style="background:var(--surface2);border-radius:12px;padding:12px;font-size:0.82rem;">
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>💪 Flexiones</span><strong>${entry.flexiones||'—'}</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>⏱️ Colgada/Remo</span><strong>${entry.colgada_seg||'—'}</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>🪑 Remo reps</span><strong>${entry.remo_reps||'—'}</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>🏃 1km</span><strong>${entry.km_tiempo_seg?Math.floor(entry.km_tiempo_seg/60)+'\''+String(entry.km_tiempo_seg%60).padStart(2,'0')+'"':'—'}</strong></div>
+        ${entry.notas?`<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;color:var(--muted);">${esc(entry.notas)}</div>`:''}
+      </div>
+      ${compHtml}
+      <button onclick="this.closest('[style*=fixed]').remove();renderBenchmarkHistory();" class="btn btn-primary" style="margin-top:16px;">¡Perfecto!</button>
+    </div>`;
+  document.body.appendChild(resultOverlay);
+  showToast('🏁 Test Survivor guardado');
+  vibrate([30,20,30,20,50]);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SURVIVOR FEATURE 2: UPPER BODY VOLUME ALERT
+// ═══════════════════════════════════════════════════════════
+function checkUpperBodyVolume(){
+  let upperSessions=0;
+  for(let i=0;i<7;i++){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const act=JSON.parse(localStorage.getItem('nc_activity_'+d.toISOString().split('T')[0])||'{"actividades":[]}');
+    act.actividades.forEach(a=>{
+      const tipo=(a.tipo||'').toLowerCase();
+      const claseId=a.clase?a.clase.id:'';
+      if(['crossfit','hiit','boxeo','escalada','fuerza'].includes(claseId)||
+         tipo.includes('fuerza')||tipo.includes('crossfit')||tipo.includes('boxeo')||
+         claseId==='survivor_circuit'||tipo.includes('survivor')||
+         (claseId==='casa'&&a.clase&&(a.clase.label||'').toLowerCase().includes('brazos'))){
+        upperSessions++;
+      }
+    });
+  }
+  const el=document.getElementById('upper-body-alert');
+  if(!el)return;
+  if(upperSessions===0){
+    el.innerHTML=`<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:0.82rem;">
+      🚨 <strong>0 sesiones de tren superior esta semana</strong> — es lo más importante para Survivor. Haz aunque sea 20 min hoy.</div>`;
+  } else if(upperSessions<2){
+    el.innerHTML=`<div style="background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.3);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:0.82rem;">
+      ⚠️ Solo <strong>${upperSessions} sesión de tren superior</strong> esta semana — intenta añadir una más antes del domingo.</div>`;
+  } else {
+    el.innerHTML=`<div style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:0.82rem;">
+      ✅ <strong>${upperSessions} sesiones de tren superior</strong> esta semana — ¡perfecto para la preparación Survivor!</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SURVIVOR FEATURE 3: UPPER BODY PROGRESSION TRACKER
+// ═══════════════════════════════════════════════════════════
+const UPPER_EXERCISES=[
+  {id:'remo_silla',label:'Remo invertido (silla+mesa)',emoji:'🪑',desc:'Pies en silla, manos en borde mesa — máximas reps',unit:'reps',survivorKey:true},
+  {id:'remo_mancuerna',label:'Remo mancuerna/botella',emoji:'💧',desc:'Remo unilateral con peso — reps por brazo',unit:'reps x lado',survivorKey:true},
+  {id:'fondos_silla',label:'Fondos en silla',emoji:'🏋️',desc:'Fondos tríceps con silla — máximas reps',unit:'reps',survivorKey:true},
+  {id:'flexiones',label:'Flexiones',emoji:'💪',desc:'Flexiones (o de rodilla) — máximas seguidas',unit:'reps',survivorKey:true},
+  {id:'jalon_banda',label:'Jalón con banda',emoji:'🎽',desc:'Banda anclada en puerta — simula jalón al pecho',unit:'reps',survivorKey:true},
+];
+
+function getUpperLog(){ return JSON.parse(localStorage.getItem('nc_upper_log')||'[]'); }
+function saveUpperLog(l){ localStorage.setItem('nc_upper_log',JSON.stringify(l)); }
+
+function renderUpperProgressList(){
+  const el=document.getElementById('upper-progress-list');
+  if(!el)return;
+  const log=getUpperLog();
+  const today=dk();
+  const todayDate=new Date();
+
+  el.innerHTML=UPPER_EXERCISES.map(ex=>{
+    const exLog=log.filter(e=>e.exerciseId===ex.id).sort((a,b)=>a.date.localeCompare(b.date));
+    const last=exLog[exLog.length-1];
+    const best=exLog.length?Math.max(...exLog.map(e=>e.value)):null;
+    // Trend from last 3
+    let trendIcon='';
+    if(exLog.length>=3){
+      const r=exLog.slice(-3);
+      const diff=r[2].value-r[0].value;
+      trendIcon=diff>0?'↑':diff<0?'↓':'→';
+    }
+    // Days since last
+    let daysSince=null;
+    if(last){
+      daysSince=Math.floor((new Date(today+'T12:00:00')-new Date(last.date+'T12:00:00'))/(86400000));
+    }
+    const stale=daysSince!==null&&daysSince>5;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+      <div style="font-size:1.3rem;flex-shrink:0;">${ex.emoji}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ex.label}</div>
+        <div style="font-size:0.7rem;color:var(--muted);">${ex.unit}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:0.85rem;font-weight:700;">${last?last.value:'—'} <span style="color:var(--green);font-size:0.8rem;">${trendIcon}</span></div>
+        <div style="font-size:0.65rem;color:${stale?'var(--red)':'var(--muted)'};">${best?'Récord: '+best:'Sin datos'}${daysSince!==null?' · '+daysSince+'d':''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function logUpperProgress(){
+  const log=getUpperLog();
+  const overlay=document.createElement('div');
+  overlay.id='upper-progress-modal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;display:flex;align-items:flex-end;';
+  overlay.innerHTML=`
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-weight:800;font-size:1rem;">💪 Registrar tren superior</div>
+        <button onclick="document.getElementById('upper-progress-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;">✕</button>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:0.75rem;color:var(--muted);font-weight:600;display:block;margin-bottom:6px;">Ejercicio</label>
+        <div style="display:flex;flex-direction:column;gap:6px;" id="upper-ex-list">
+          ${UPPER_EXERCISES.map(ex=>`
+            <button class="upper-ex-btn" data-id="${ex.id}" onclick="selectUpperEx(this)"
+              style="padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);text-align:left;cursor:pointer;font-size:0.82rem;">
+              ${ex.emoji} <strong>${ex.label}</strong> — ${ex.desc}
+            </button>`).join('')}
+        </div>
+      </div>
+      <div id="upper-log-form" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div><label style="font-size:0.72rem;color:var(--muted);font-weight:600;display:block;margin-bottom:4px;">Reps / Segundos</label>
+          <input type="number" inputmode="decimal" id="upper-val-input" placeholder="ej. 15" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-size:0.9rem;outline:none;text-align:center;font-weight:700;" /></div>
+          <div><label style="font-size:0.72rem;color:var(--muted);font-weight:600;display:block;margin-bottom:4px;">Peso/banda (opcional)</label>
+          <input type="text" id="upper-weight-input" placeholder="ej. 3kg, banda roja" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-size:0.85rem;outline:none;" /></div>
+        </div>
+        <button onclick="saveUpperProgressEntry()" class="btn btn-primary">Guardar</button>
+      </div>
+    </div>`;
+  window._selectedUpperEx=null;
+  document.body.appendChild(overlay);
+}
+
+function selectUpperEx(btn){
+  document.querySelectorAll('.upper-ex-btn').forEach(b=>{b.style.background='var(--surface2)';b.style.borderColor='var(--border)';});
+  btn.style.background='rgba(129,140,248,.15)';btn.style.borderColor='var(--accent)';
+  window._selectedUpperEx=btn.dataset.id;
+  document.getElementById('upper-log-form').style.display='block';
+}
+
+function saveUpperProgressEntry(){
+  const exId=window._selectedUpperEx;
+  if(!exId){showToast('Selecciona un ejercicio');return;}
+  const val=parseFloat(document.getElementById('upper-val-input').value);
+  if(!val||val<=0){showToast('Introduce un valor');return;}
+  const weight=document.getElementById('upper-weight-input').value.trim();
+  const log=getUpperLog();
+  log.push({date:dk(),exerciseId:exId,value:val,weight:weight||null});
+  saveUpperLog(log);
+  document.getElementById('upper-progress-modal').remove();
+  renderUpperProgressList();
+  showToast('✓ Progresión guardada');
+  vibrate([20,10,20]);
+  checkAndUnlockAchievements();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SURVIVOR FEATURE 4: CIRCUIT SIMULATION
+// ═══════════════════════════════════════════════════════════
+async function generateSurvivorCircuit(){
+  const el=document.getElementById('survivor-circuit-result');
+  if(!el)return;
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  el.style.display='block';
+  el.innerHTML='<div style="text-align:center;padding:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px;"><div class="spinner spinner-accent" style="width:14px;height:14px;"></div> Generando circuito... 🏃</div>';
+  const btn=document.getElementById('survivor-circuit-log-btn');
+  if(btn)btn.style.display='none';
+
+  const survivor=getSurvivorContext();
+  const profile=getProfile();
+  try{
+    const res=await callClaude([{role:'user',content:`Genera un circuito simulacro Survivor de 25 minutos para preparar la carrera.
+
+Restricciones importantes:
+- Sin barra de dominadas (no disponible)
+- Ejercicios en casa o parque
+- Material disponible: silla, mesa, bandas elásticas, mancuernas/botellas, suelo
+- Perfil: mujer ${profile.edad} años, ${profile.peso}kg, objetivo llegar fuerte a Survivor 10km oct 2026
+${survivor}
+
+El circuito debe simular los obstáculos reales:
+1. Rastrera/bajo obstáculo → mountain climbers o burpees
+2. Subida de muro → step-ups explosivos en escalón/banco, saltos verticales
+3. Travesía/argollas → remo silla + fondos + apertura hombros con banda
+4. Carrera entre obstáculos → 45 seg sprint o skipping
+5. Arrastre/carga → sentadillas con botella pesada al pecho, farmer carry
+
+Formato:
+**CALENTAMIENTO (5 min)**
+...
+
+**CIRCUITO x3 rondas (15 min)**
+- Ejercicio: tiempo/reps — técnica en una frase
+...
+
+**VUELTA A LA CALMA (5 min)**
+...
+
+💡 Consejo específico para mejorar en este circuito.
+Máximo 300 palabras.`}]);
+    el.innerHTML=`<div class="ai-bubble">${formatAI(res)}</div>`;
+    if(btn)btn.style.display='block';
+  }catch(e){
+    el.innerHTML=`<div class="status-strip warn">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+function logSurvivorCircuit(){
+  const act=getActivity();
+  act.actividades.push({tipo:'🏁 Circuito Survivor',duracion:25,intensidad:'intensa',clase:{id:'survivor_circuit',label:'Circuito Survivor'}});
+  saveActivity(act);
+  const btn=document.getElementById('survivor-circuit-log-btn');
+  if(btn)btn.style.display='none';
+  showToast('🏁 Circuito Survivor registrado');
+  vibrate([30,20,50]);
+  checkUpperBodyVolume();
+  checkAndUnlockAchievements();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SURVIVOR FEATURE 5: NUTRITION PERIODIZATION
+// ═══════════════════════════════════════════════════════════
+function getNutritionPeriodization(){
+  const act=getActivity();
+  const hasTraining=act.actividades.length>0;
+  const isHardDay=act.actividades.some(a=>{
+    const claseId=a.clase?a.clase.id:'';
+    return ['crossfit','hiit','boxeo','survivor_circuit'].includes(claseId)||(a.tipo||'').toLowerCase().includes('crossfit');
+  });
+  if(isHardDay)return{type:'hard',label:'⚡ Día de entreno fuerte',tip:'Hoy necesitas más carbos para rendir y recuperar. Prioriza: arroz, avena, fruta antes/después del entreno.',carbsBoost:true};
+  if(hasTraining)return{type:'moderate',label:'💪 Día de entreno moderado',tip:'Buena jornada activa. Come normal priorizando proteína para la recuperación muscular.',carbsBoost:false};
+  return{type:'rest',label:'😴 Día de descanso',tip:'En descanso el cuerpo repara músculo. Mantén la proteína alta y reduce un poco los carbos.',carbsBoost:false};
+}
+
+function renderNutritionPeriodCard(){
+  const p=getNutritionPeriodization();
+  const el=document.getElementById('nutrition-period-card');
+  if(!el)return;
+  el.innerHTML=`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:9px 13px;display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">${p.label}</div>
+        <div style="font-size:0.78rem;color:var(--text);margin-top:2px;line-height:1.4;">${p.tip}</div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SURVIVOR FEATURE 6: PRE-RACE WEEK PROTOCOL
+// ═══════════════════════════════════════════════════════════
+function checkRaceWeekProtocol(){
+  const today=new Date();
+  const raceWeekStart=new Date('2026-10-17');
+  const raceDay=new Date('2026-10-24');
+  if(today<raceWeekStart||today>=raceDay)return;
+  const daysToRace=Math.ceil((raceDay-today)/(1000*60*60*24));
+  const protocols={
+    7:{title:'7 días — Carga de carbos',tip:'Esta semana aumenta los carbos un 20%. Reduce el volumen de entrenamiento pero mantén la intensidad. Duerme 8h.'},
+    6:{title:'6 días — Entrenamiento ligero',tip:'Sesión corta de 20 min, técnica sin esfuerzo máximo. Come bien, hidratación al máximo.'},
+    5:{title:'5 días — Activación',tip:'15 min de carrera suave + movilidad. Carbos en cada comida. Sin nada nuevo en la dieta.'},
+    4:{title:'4 días — Descanso activo',tip:'Solo caminar o yoga. El músculo se recupera ahora. Proteína alta, carbos moderados.'},
+    3:{title:'3 días — Última sesión',tip:'20 min muy suave. A partir de mañana solo descanso. Prepara tu ropa y material.'},
+    2:{title:'2 días — Descanso total',tip:'Nada de ejercicio. Come normal con carbos. Revisa el recorrido de la carrera.'},
+    1:{title:'Mañana es el día 🏁',tip:'Cena con carbos hoy (arroz, pasta). Duerme todo lo que puedas. Prepara bolsa.'},
+  };
+  const protocol=protocols[daysToRace]||protocols[1];
+  const banner=document.getElementById('race-week-banner');
+  if(!banner)return;
+  banner.style.display='block';
+  banner.innerHTML=`
+    <div style="background:linear-gradient(135deg,rgba(239,68,68,.2),rgba(251,146,60,.15));border:2px solid rgba(239,68,68,.4);border-radius:16px;padding:16px;text-align:center;">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);font-weight:800;margin-bottom:4px;">🏃 SEMANA DE CARRERA — ${daysToRace} DÍA${daysToRace>1?'S':''}</div>
+      <div style="font-size:1rem;font-weight:800;margin-bottom:6px;">${protocol.title}</div>
+      <div style="font-size:0.82rem;color:var(--text);line-height:1.5;">${protocol.tip}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SURVIVOR FEATURE 7: RUNNING PLAN WITH FITNESS TEST
+// ═══════════════════════════════════════════════════════════
+function getRunTest(){ return JSON.parse(localStorage.getItem('nc_run_test')||'null'); }
+function getRunPlan(){ return JSON.parse(localStorage.getItem('nc_run_plan')||'null'); }
+function saveRunPlan(p){ localStorage.setItem('nc_run_plan',JSON.stringify(p)); }
+
+function renderRunPlanWeek(){
+  const el=document.getElementById('run-plan-week-content');
+  const labelEl=document.getElementById('run-plan-week-label');
+  if(!el)return;
+  const test=getRunTest();
+  const plan=getRunPlan();
+
+  if(!test){
+    el.innerHTML=`<div style="font-size:0.82rem;color:var(--muted);line-height:1.5;padding:8px 0;">Primero haz la prueba de resistencia para que la IA genere tu plan personalizado.</div>`;
+    if(labelEl)labelEl.textContent='Prueba pendiente';
+    return;
+  }
+  if(!plan||!plan.weeks){
+    el.innerHTML=`<div style="font-size:0.82rem;color:var(--muted);line-height:1.5;padding:8px 0;">Prueba completada. Genera tu plan con IA para ver las sesiones de esta semana.</div>`;
+    if(labelEl)labelEl.textContent='Plan no generado';
+    return;
+  }
+
+  // Determine current week number from start date
+  const start=new Date(plan.generated);
+  const now=new Date();
+  const weekNum=Math.min(plan.weeks.length,Math.floor((now-start)/(7*86400000))+1);
+  const week=plan.weeks.find(w=>w.weekNum===weekNum)||plan.weeks[0];
+  if(labelEl)labelEl.textContent=`Semana ${weekNum} de ${plan.weeks.length}`;
+
+  if(!week||!week.sessions){
+    el.innerHTML='<div style="font-size:0.82rem;color:var(--muted);">No hay sesiones para esta semana.</div>';
+    return;
+  }
+
+  const typeColors={
+    'Rodaje suave':'rgba(52,211,153,.15)',
+    'Intervalos':'rgba(251,146,60,.15)',
+    'Fondo largo':'rgba(129,140,248,.15)',
+    'Descanso':'rgba(148,163,184,.08)',
+  };
+  const typeCols={
+    'Rodaje suave':'var(--green)',
+    'Intervalos':'var(--orange)',
+    'Fondo largo':'var(--accent)',
+    'Descanso':'var(--muted)',
+  };
+
+  el.innerHTML=`<div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">${week.focus||''}</div>`+
+    week.sessions.map((s,i)=>{
+      const bg=typeColors[s.type]||'var(--surface2)';
+      const col=typeCols[s.type]||'var(--text)';
+      const logKey=`nc_run_session_${plan.generated}_w${weekNum}_s${i}`;
+      const done=localStorage.getItem(logKey)==='1';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:${bg};margin-bottom:6px;" onclick="toggleRunSession('${logKey}',this)">
+        <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${done?col:'var(--border)'};background:${done?col:'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:${done?'#0f172a':'transparent'};cursor:pointer;">✓</div>
+        <div style="flex:1;">
+          <div style="font-size:0.78rem;font-weight:700;color:${col};">${s.day} — ${s.type}</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:1px;">${s.description}</div>
+        </div>
+        <div style="font-size:0.68rem;color:var(--muted);">${s.duration_min?s.duration_min+'min':''}</div>
+      </div>`;
+    }).join('');
+}
+
+function toggleRunSession(logKey,row){
+  const isDone=localStorage.getItem(logKey)==='1';
+  if(!isDone){
+    localStorage.setItem(logKey,'1');
+    const act=getActivity();
+    act.actividades.push({tipo:'🏃 Carrera',duracion:30,intensidad:'moderada'});
+    saveActivity(act);
+    showToast('✓ Sesión registrada');
+    vibrate([20,10,20]);
+  } else {
+    localStorage.removeItem(logKey);
+  }
+  renderRunPlanWeek();
+}
+
+function showRunFitnessTest(){
+  let testState={duracion:'',ritmo:'',lesiones:'No',dias:'2'};
+  const overlay=document.createElement('div');
+  overlay.id='run-test-modal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML=`
+    <div style="background:var(--surface);border-radius:20px;padding:24px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-weight:800;font-size:1rem;">🏃 Prueba de resistencia</div>
+        <button onclick="document.getElementById('run-test-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;">✕</button>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--muted);margin-bottom:8px;">¿Cuánto puedes correr sin parar?</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;" id="rt-dur">
+          ${['<5min','5-10min','10-20min','20-30min','+30min'].map(v=>`<button class="chip" data-val="${v}" onclick="selectRTChip(this,'rt-dur','duracion')">${v}</button>`).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--muted);margin-bottom:8px;">¿A qué ritmo?</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;" id="rt-ritmo">
+          ${['Muy lento','Lento','Medio','Rápido'].map(v=>`<button class="chip" data-val="${v}" onclick="selectRTChip(this,'rt-ritmo','ritmo')">${v}</button>`).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--muted);margin-bottom:8px;">¿Tienes molestias o lesiones?</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;" id="rt-lesiones">
+          ${['No','Rodillas','Espalda','Otro'].map(v=>`<button class="chip${v==='No'?' selected':''}" data-val="${v}" onclick="selectRTChip(this,'rt-lesiones','lesiones')">${v}</button>`).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--muted);margin-bottom:8px;">¿Días/semana para entrenar carrera?</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;" id="rt-dias">
+          ${['1','2','3','4+'].map(v=>`<button class="chip${v==='2'?' selected':''}" data-val="${v}" onclick="selectRTChip(this,'rt-dias','dias')">${v}</button>`).join('')}
+        </div>
+      </div>
+      <button onclick="saveRunTest()" class="btn btn-primary">Guardar y generar plan</button>
+    </div>`;
+  window._rtState={duracion:'',ritmo:'',lesiones:'No',dias:'2'};
+  document.body.appendChild(overlay);
+}
+
+function selectRTChip(btn,containerId,key){
+  document.querySelectorAll('#'+containerId+' .chip').forEach(c=>c.classList.remove('selected'));
+  btn.classList.add('selected');
+  window._rtState[key]=btn.dataset.val;
+}
+
+function saveRunTest(){
+  const s=window._rtState||{};
+  if(!s.duracion){showToast('Selecciona cuánto puedes correr');return;}
+  localStorage.setItem('nc_run_test',JSON.stringify({...s,date:dk()}));
+  document.getElementById('run-test-modal')?.remove();
+  showToast('✓ Prueba guardada — genera tu plan con IA');
+  renderRunPlanWeek();
+}
+
+async function generateRunPlan(){
+  const test=getRunTest();
+  if(!test){showToast('Haz primero la prueba de resistencia');showRunFitnessTest();return;}
+  if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
+  const el=document.getElementById('run-plan-week-content');
+  if(el){el.innerHTML='<div style="text-align:center;padding:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px;"><div class="spinner spinner-accent" style="width:14px;height:14px;"></div> Generando plan de 12 semanas...</div>';}
+
+  const today=dk();
+  const raceDate='2026-10-24';
+  try{
+    const res=await callClaude([{role:'user',content:`Genera un plan de carrera de 12 semanas para preparar una carrera Survivor 10km el 24 oct 2026.
+
+Nivel actual:
+- Puede correr sin parar: ${test.duracion}
+- Ritmo aproximado: ${test.ritmo||'no especificado'}
+- Días disponibles para carrera: ${test.dias}/semana
+- Lesiones: ${test.lesiones||'No'}
+- Fecha hoy: ${today}
+
+El plan debe:
+- Empezar desde el nivel actual, sin lesiones
+- Progresar gradualmente (no más del 10% semanal)
+- Incluir tipos de sesión: rodaje suave, intervalos, carrera continua, fondo largo
+- Semana 11-12: reducción de volumen (tapering)
+- Formato JSON estricto (sin texto adicional antes o después):
+{"weeks":[{"weekNum":1,"focus":"Base aeróbica","sessions":[{"day":"Martes","type":"Rodaje suave","description":"25 min ritmo conversación","duration_min":25}]}]}`}]);
+    const jsonMatch=res.match(/\{[\s\S]*\}/);
+    if(!jsonMatch)throw new Error('No se pudo parsear el plan');
+    const parsed=JSON.parse(jsonMatch[0]);
+    if(!parsed.weeks||!parsed.weeks.length)throw new Error('Plan vacío');
+    saveRunPlan({generated:today,fitnessLevel:test.duracion,weeksAvailable:test.dias,weeks:parsed.weeks});
+    renderRunPlanWeek();
+    showToast('✓ Plan de 12 semanas generado');
+    vibrate([30,20,30]);
+  }catch(e){
+    if(el)el.innerHTML=`<div class="status-strip warn">Error al generar: ${esc(e.message)}</div>`;
+    showToast('Error al generar plan');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SURVIVOR FEATURE 8: BODY COMPOSITION INDICATOR
+// ═══════════════════════════════════════════════════════════
+function renderBodyComposition(){
+  const measures=getMeasures();
+  const upperLog=getUpperLog();
+  const feelLog=JSON.parse(localStorage.getItem('nc_feel_log')||'{}');
+  const el=document.getElementById('body-comp-section');
+  if(!el)return;
+
+  let signal=null;
+  if(measures.length>=3&&upperLog.length>=4){
+    const recentWeights=measures.slice(-4).map(m=>m.peso||m.weight||0).filter(Boolean);
+    const weightTrend=recentWeights.length>=2?recentWeights[recentWeights.length-1]-recentWeights[0]:0;
+    const recentUpper=upperLog.slice(-6);
+    const strengthUp=recentUpper.length>=2&&recentUpper[recentUpper.length-1].value>recentUpper[0].value;
+    if(strengthUp&&weightTrend<=0.5){
+      signal={icon:'📈',msg:'Recomposición en marcha — ganas fuerza mientras controlas el peso. Proceso ideal para Survivor.',color:'var(--green)'};
+    } else if(Math.abs(weightTrend)<0.5&&strengthUp){
+      signal={icon:'💪',msg:'Báscula estable pero tu fuerza mejora — esto es recomposición corporal, exactamente lo que buscamos.',color:'var(--accent)'};
+    }
+  }
+
+  const weekKey=getWeekKey();
+  const currentFeel=feelLog[weekKey];
+
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">🔬 Composición corporal</div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;">¿Cómo te notas esta semana?</div>
+        <div style="display:flex;gap:8px;">
+          ${[{v:'toned',l:'💪 Más tonificada'},{v:'same',l:'→ Igual'},{v:'soft',l:'🤷 Más blandita'}].map(f=>`
+            <button onclick="saveFeelLog('${f.v}')" style="padding:8px 6px;border-radius:20px;border:1px solid ${currentFeel===f.v?'var(--accent)':'var(--border)'};background:${currentFeel===f.v?'rgba(129,140,248,.2)':'var(--surface2)'};color:var(--text);font-size:0.72rem;cursor:pointer;flex:1;min-height:44px;">${f.l}</button>`).join('')}
+        </div>
+      </div>
+      ${signal?`<div style="background:${signal.color}18;border:1px solid ${signal.color}44;border-radius:12px;padding:10px 14px;font-size:0.82rem;line-height:1.5;">${signal.icon} <strong>${signal.msg}</strong></div>`:''}
+    </div>`;
+}
+
+function saveFeelLog(val){
+  const log=JSON.parse(localStorage.getItem('nc_feel_log')||'{}');
+  log[getWeekKey()]=val;
+  localStorage.setItem('nc_feel_log',JSON.stringify(log));
+  renderBodyComposition();
+  showToast('✓ Anotado');
+}
 
 // Wire chipOpciones toggle to show/hide madrid rio
 const _origToggleChip=toggleChip;
