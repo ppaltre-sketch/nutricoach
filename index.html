@@ -4428,7 +4428,7 @@ function showHistorialModal(){
 // ═══════════════════════════════════════════════════════════
 // FEATURE 2: WEEKLY PLANNER
 // ═══════════════════════════════════════════════════════════
-const PLAN_TYPES=['Fuerza','Cardio','ClassPass','Madrid Río','Yoga/Pilates','Descanso activo','Descanso'];
+const PLAN_TYPES=['Fuerza','CrossFit','Cardio','ClassPass','Madrid Río','Yoga/Pilates','Descanso activo','Descanso'];
 const DAY_NAMES=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
 function getWeeklyPlan(weekKey){ return JSON.parse(localStorage.getItem('nc_weekly_plan_'+(weekKey||getWeekKey()))||'null'); }
@@ -5099,13 +5099,24 @@ function renderMacroAlerts(meals, goals) {
   check(C, goals.c, 'Carbohidratos', '⚠️', '🔴');
   check(F, goals.f, 'Grasas', '💛', '🔴');
 
-  // Internal calorie check (NEVER show numbers)
+  // Internal calorie check (NEVER show numbers to user)
+  const kcal = getInternalKcal(meals);
+  const tdee = getInternalTDEE();
+  const target = tdee - 450; // daily deficit target for fat loss
+  const kcalPct = target > 0 ? kcal / target : 0;
   const defStatus = getInternalDeficitStatus(meals);
+
   if (defStatus === 'exceso') {
     alerts.push({
       level:'over',
-      msg:'🔴 <strong>Energía</strong> — hoy has comido bastante. Para la cena opta por algo ligero: proteína + verduras',
+      msg:'🔴 <strong>Energía del día</strong> — ya has alcanzado tu límite diario. Cena ligera: proteína + verduras, sin salsas',
       color:'var(--red)'
+    });
+  } else if (kcalPct >= 0.75 && kcalPct < 1.0 && defStatus !== 'exceso') {
+    alerts.push({
+      level:'warn',
+      msg:'🟡 Llevas el <strong>75% de tu energía diaria</strong> — te queda margen, pero ten cuidado con la cena',
+      color:'var(--orange)'
     });
   } else if (defStatus === 'muy_bajo') {
     alerts.push({
