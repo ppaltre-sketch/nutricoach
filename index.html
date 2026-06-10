@@ -937,16 +937,6 @@
         </div>
         <button class="btn btn-primary" onclick="getEntrenoSuggestion()" id="entreno-btn">Dame un entrenamiento</button>
       </div>
-      <div id="entreno-result"></div>
-      <div id="madrid-rio-program" style="display:none;margin-top:12px;"></div>
-      <div id="classpass-rec" style="display:none;margin-top:12px;"></div>
-
-      <!-- Performance log card -->
-      <div class="card" id="performance-log-card" style="margin-top:12px;">
-        <div class="card-title">📝 Registrar mi sesión</div>
-        <div id="performance-log-content"></div>
-      </div>
-
       <!-- Feature: Survivor Circuit Simulation -->
       <div class="card" style="margin-top:12px;">
         <div class="card-title">🏁 Circuito simulacro Survivor</div>
@@ -954,6 +944,14 @@
         <button class="btn btn-primary" onclick="generateSurvivorCircuit()">⚡ Generar circuito de hoy</button>
         <div id="survivor-circuit-result" style="display:none;margin-top:12px;"></div>
         <button id="survivor-circuit-log-btn" onclick="logSurvivorCircuit()" style="display:none;width:100%;margin-top:8px;padding:11px;border-radius:12px;border:none;background:var(--green);color:#0f172a;font-weight:700;cursor:pointer;">✓ Registrar como completado</button>
+      </div>
+
+      <!-- Feature: Monthly Benchmark Test -->
+      <div class="card" id="benchmark-card" style="margin-top:12px;">
+        <div class="card-title">📊 Test mensual Survivor</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Una vez al mes mide tu progreso real en los movimientos clave de la carrera.</p>
+        <div id="benchmark-history"></div>
+        <button class="btn btn-primary" onclick="startBenchmarkTest()">🏁 Hacer test ahora</button>
       </div>
 
       <!-- Feature: Upper Body Progress Tracker -->
@@ -974,12 +972,14 @@
         </div>
       </div>
 
-      <!-- Feature: Monthly Benchmark Test -->
-      <div class="card" id="benchmark-card" style="margin-top:12px;">
-        <div class="card-title">📊 Test mensual Survivor</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Una vez al mes mide tu progreso real en los movimientos clave de la carrera.</p>
-        <div id="benchmark-history"></div>
-        <button class="btn btn-primary" onclick="startBenchmarkTest()">🏁 Hacer test ahora</button>
+      <div id="entreno-result"></div>
+      <div id="madrid-rio-program" style="display:none;margin-top:12px;"></div>
+      <div id="classpass-rec" style="display:none;margin-top:12px;"></div>
+
+      <!-- Performance log card -->
+      <div class="card" id="performance-log-card" style="margin-top:12px;">
+        <div class="card-title">📝 Registrar mi sesión</div>
+        <div id="performance-log-content"></div>
       </div>
     </div>
 
@@ -1591,6 +1591,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderCenaRemaining();
   renderAlmuerzoRemaining();
   renderYesterdayWorkout();
+  renderRaceCountdown();
+  renderOctoberTips();
+  checkUpperBodyVolume();
+  renderUpperProgressList();
+  renderBenchmarkHistory();
+  renderRunPlanWeek();
   checkMorningCheckin();
   checkOnboarding();
   updateOnlineStatus();
@@ -5131,6 +5137,7 @@ function renderBenchmarkHistory(){
           <th style="padding:5px 4px;text-align:center;">💪 Flex</th>
           <th style="padding:5px 4px;text-align:center;">⏱️ Colgada</th>
           <th style="padding:5px 4px;text-align:center;">🪑 Remo</th>
+          <th style="padding:5px 4px;text-align:center;">🏋️ Fondos</th>
           <th style="padding:5px 4px;text-align:center;">🏃 1km</th>
         </tr>
       </thead>
@@ -5151,6 +5158,7 @@ function renderBenchmarkHistory(){
             <td style="padding:5px 4px;text-align:center;font-weight:700;">${b.flexiones||'—'} ${delta(b.flexiones,prev?.flexiones,false)}</td>
             <td style="padding:5px 4px;text-align:center;">${b.colgada_seg||'—'} ${delta(b.colgada_seg,prev?.colgada_seg,false)}</td>
             <td style="padding:5px 4px;text-align:center;">${b.remo_reps||'—'} ${delta(b.remo_reps,prev?.remo_reps,false)}</td>
+            <td style="padding:5px 4px;text-align:center;">${b.fondos_reps||'—'} ${delta(b.fondos_reps,prev?.fondos_reps,false)}</td>
             <td style="padding:5px 4px;text-align:center;">${kmFmt} ${delta(b.km_tiempo_seg,prev?.km_tiempo_seg,true)}</td>
           </tr>`;
         }).join('')}
