@@ -987,6 +987,46 @@
       <div id="madrid-rio-program" style="display:none;margin-top:12px;"></div>
       <div id="classpass-rec" style="display:none;margin-top:12px;"></div>
 
+      <!-- ✅ REGISTRO RÁPIDO desde ENTRENA -->
+      <div class="card" id="entreno-log-card" style="border:1.5px solid rgba(129,140,248,.3);background:linear-gradient(135deg,rgba(129,140,248,.07),rgba(99,102,241,.03));">
+        <div class="card-title" style="color:var(--accent);">✅ Registrar lo que hice</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Si elegiste ClassPass te preguntaré qué clase, si fue cardio te preguntaré la intensidad.</p>
+        <div id="entreno-log-today-list" style="margin-bottom:10px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Tipo</div>
+            <select id="elog-tipo" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.82rem;">
+              <option value="🧗 ClassPass">🧗 ClassPass</option>
+              <option value="🏃 Carrera">🏃 Carrera</option>
+              <option value="🏞️ Madrid Río">🏞️ Madrid Río</option>
+              <option value="🏋️ Pesas / Gym">🏋️ Pesas / Gym</option>
+              <option value="🤸 Entrenamiento en casa">🤸 Casa</option>
+              <option value="⚡ CrossFit / WOD">⚡ CrossFit</option>
+              <option value="🏊 Natación">🏊 Natación</option>
+              <option value="🚴 Bici / Spinning">🚴 Spinning</option>
+              <option value="🎯 Bandas / Fuerza">🎯 Fuerza</option>
+              <option value="🧘 Yoga / Pilates">🧘 Yoga / Pilates</option>
+              <option value="🚶 Paseo activo">🚶 Paseo activo</option>
+              <option value="💃 Baile">💃 Baile</option>
+              <option value="⚫ Kettlebell">⚫ Kettlebell</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Duración (min)</div>
+            <input type="number" inputmode="decimal" id="elog-duracion" placeholder="45" min="1" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Intensidad</div>
+          <div style="display:flex;gap:6px;">
+            <button class="elog-int-chip" data-val="suave" onclick="selectElogInt(this)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;">😌 Suave</button>
+            <button class="elog-int-chip selected" data-val="moderada" onclick="selectElogInt(this)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--accent);background:rgba(129,140,248,.15);color:var(--text);font-size:0.78rem;cursor:pointer;font-weight:700;">💪 Moderada</button>
+            <button class="elog-int-chip" data-val="intensa" onclick="selectElogInt(this)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;">🔥 Intensa</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;" onclick="logActivityFromEntreno()">✅ Guardar entreno</button>
+      </div>
+
       <!-- Performance log card -->
       <div class="card" id="performance-log-card" style="margin-top:12px;">
         <div class="card-title">📝 Registrar mi sesión</div>
@@ -5107,8 +5147,11 @@ showPage=function(name){
     if(chipOpciones.has('paseo'))renderMadridRioProgram();
     checkUpperBodyVolume();
     renderUpperProgressList();
+    renderOverloadPrescription();
+    renderZone2Status();
     renderBenchmarkHistory();
     renderRunPlanWeek();
+    renderEntrenoLogToday();
     checkAndUnlockAchievements();
   }
   if(name==='home'){
@@ -5619,6 +5662,70 @@ Máximo 300 palabras.`}]);
     if(btn)btn.style.display='block';
   }catch(e){
     el.innerHTML=`<div class="status-strip warn">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+// ── Registro rápido desde ENTRENA ──
+let _elogInt = 'moderada';
+
+function selectElogInt(btn) {
+  document.querySelectorAll('.elog-int-chip').forEach(b => {
+    b.classList.remove('selected');
+    b.style.border = '1px solid var(--border)';
+    b.style.background = 'var(--surface2)';
+    b.style.fontWeight = '400';
+  });
+  btn.classList.add('selected');
+  btn.style.border = '1px solid var(--accent)';
+  btn.style.background = 'rgba(129,140,248,.15)';
+  btn.style.fontWeight = '700';
+  _elogInt = btn.dataset.val;
+}
+
+function renderEntrenoLogToday() {
+  const el = document.getElementById('entreno-log-today-list');
+  if (!el) return;
+  const act = getActivity();
+  if (!act.actividades.length) { el.innerHTML = ''; return; }
+  el.innerHTML = act.actividades.map((a, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:8px;margin-bottom:5px;font-size:0.8rem;">
+      <span style="flex:1;">${a.tipo}${a.clase ? ' — ' + a.clase.label : ''} · ${a.duracion}min</span>
+      <span style="color:var(--muted);font-size:0.72rem;">${a.intensidad||''}</span>
+    </div>`).join('');
+}
+
+function logActivityFromEntreno() {
+  const tipo = document.getElementById('elog-tipo').value;
+  const duracion = parseInt(document.getElementById('elog-duracion').value) || 0;
+  if (!duracion) { showToast('Indica la duración'); return; }
+
+  const isClassPass = tipo.includes('ClassPass');
+  const isCasa = tipo.includes('casa') || tipo.includes('Casa');
+  const isCardio = ['Carrera','Madrid','Bici','Spinning','Natación'].some(k => tipo.includes(k));
+
+  function saveElog(extra) {
+    const act = getActivity();
+    const entry = { tipo, duracion, intensidad: _elogInt, ...extra };
+    act.actividades.push(entry);
+    saveActivity(act);
+    document.getElementById('elog-duracion').value = '';
+    renderEntrenoLogToday();
+    renderActivityToday();
+    checkAndUnlockAchievements();
+    checkNonScaleVictories();
+    showPostWorkoutNutrition(extra.clase ? extra.clase.id : tipo);
+    showToast('✅ Entreno registrado');
+    vibrate([30, 20, 30]);
+  }
+
+  if (isClassPass) {
+    showClassPassTypeModal(claseInfo => saveElog({ clase: claseInfo }));
+  } else if (isCasa) {
+    showHomeWorkoutModal(claseInfo => saveElog({ clase: claseInfo || { id: 'casa', label: 'Casa' } }));
+  } else if (isCardio) {
+    showCardioIntensityPicker(zona => saveElog(zona ? { intensidad_zona: zona } : {}));
+  } else {
+    saveElog({});
   }
 }
 
