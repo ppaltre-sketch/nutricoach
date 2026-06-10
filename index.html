@@ -866,172 +866,183 @@
 
     <!-- ═══ ENTRENO ═══ -->
     <div class="page" id="page-entreno">
+      <!-- Siempre visible: countdown + alerta -->
       <div id="race-countdown-wrap"></div>
       <div id="upper-body-alert"></div>
-      <div id="october-tips-wrap"></div>
       <div id="deload-banner"></div>
-      <div id="weekly-plan-card-entreno"></div>
-      <div id="classpass-card"></div>
-      <div id="madrid-rio-card"></div>
-      <div id="yesterday-workout"></div>
-      <div class="card">
-        <div class="card-title">💪 Tu entrenamiento de hoy</div>
-        <div class="form-group">
-          <label>¿Cómo estás de energía?</label>
-          <div class="chips" id="chips-energia">
-            <button class="chip" data-val="baja" onclick="selectChip(this,'energia')">🔋 Baja</button>
-            <button class="chip" data-val="media" onclick="selectChip(this,'energia')">⚡ Media</button>
-            <button class="chip selected" data-val="alta" onclick="selectChip(this,'energia')">🚀 Alta</button>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:14px;">
-          <label>Tiempo disponible</label>
-          <div class="chips" id="chips-tiempo">
-            <button class="chip" data-val="20" onclick="selectChip(this,'tiempo')">20 min</button>
-            <button class="chip selected" data-val="30" onclick="selectChip(this,'tiempo')">30 min</button>
-            <button class="chip" data-val="45" onclick="selectChip(this,'tiempo')">45 min</button>
-            <button class="chip" data-val="60" onclick="selectChip(this,'tiempo')">60 min</button>
-            <button class="chip" data-val="90" onclick="selectChip(this,'tiempo')">90 min</button>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:14px;">
-          <label>¿Qué tiempo hace fuera?</label>
-          <div class="chips" id="chips-weather">
-            <button class="chip selected" data-val="soleado" onclick="selectChip(this,'weather')">☀️ Soleado</button>
-            <button class="chip" data-val="nublado" onclick="selectChip(this,'weather')">☁️ Nublado</button>
-            <button class="chip" data-val="lluvia" onclick="selectChip(this,'weather')">🌧️ Lluvia</button>
-            <button class="chip" data-val="calor" onclick="selectChip(this,'weather')">🥵 Mucho calor</button>
-            <button class="chip" data-val="frio" onclick="selectChip(this,'weather')">🥶 Frío</button>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:14px;">
-          <label>¿Qué tienes disponible?</label>
-          <div class="chips" id="chips-opciones">
-            <button class="chip selected" data-val="paseo" onclick="toggleChip(this)">🚶 Madrid Río</button>
-            <button class="chip selected" data-val="classpass" onclick="toggleChip(this)">🏋️ ClassPass</button>
-            <button class="chip selected" data-val="youtube" onclick="toggleChip(this)">📺 YouTube casa</button>
-            <button class="chip selected" data-val="bandas" onclick="toggleChip(this)">🎯 Bandas</button>
-            <button class="chip selected" data-val="kettlebell" onclick="toggleChip(this)">⚫ Kettlebell 6kg</button>
-            <button class="chip selected" data-val="cinta" onclick="toggleChip(this)">🏃 Cinta</button>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:14px;">
-          <label>¿Cómo está tu cuerpo físicamente?</label>
-          <div class="chips" id="chips-cuerpo">
-            <button class="chip selected" data-val="bien" onclick="selectChip(this,'cuerpo')">✅ Bien</button>
-            <button class="chip" data-val="agujetas" onclick="selectChip(this,'cuerpo')">😬 Agujetas</button>
-            <button class="chip" data-val="cansada" onclick="selectChip(this,'cuerpo')">😴 Cansada</button>
-            <button class="chip" data-val="molestia" onclick="selectChip(this,'cuerpo')">🤕 Alguna molestia</button>
-          </div>
-        </div>
 
-        <div class="form-group" style="margin-top:14px;">
-          <label>🌙 ¿En qué fase de tu ciclo estás?</label>
-          <div class="chips" id="chips-ciclo">
-            <button class="chip" data-val="menstruacion" onclick="selectChip(this,'ciclo')">🔴 Regla</button>
-            <button class="chip" data-val="folicular" onclick="selectChip(this,'ciclo')">🌱 Post-regla</button>
-            <button class="chip selected" data-val="ovulacion" onclick="selectChip(this,'ciclo')">✨ Ovulación</button>
-            <button class="chip" data-val="lutea" onclick="selectChip(this,'ciclo')">🌙 Pre-regla</button>
-            <button class="chip" data-val="nodice" onclick="selectChip(this,'ciclo')">🤷 No sé</button>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:14px;">
-          <label>¿Algo especial que trabajar o evitar? (opcional)</label>
-          <input type="text" id="entreno-notas" placeholder="Ej: core, estiramientos, nada de impacto..." />
-        </div>
-        <button class="btn btn-primary" onclick="getEntrenoSuggestion()" id="entreno-btn">Dame un entrenamiento</button>
-      </div>
-      <!-- Feature: Survivor Circuit Simulation -->
-      <div class="card" style="margin-top:12px;">
-        <div class="card-title">🏁 Circuito simulacro Survivor</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">Entrena exactamente lo que te vas a encontrar el 24 de octubre.</p>
-        <button class="btn btn-primary" onclick="generateSurvivorCircuit()">⚡ Generar circuito de hoy</button>
-        <div id="survivor-circuit-result" style="display:none;margin-top:12px;"></div>
-        <button id="survivor-circuit-log-btn" onclick="logSurvivorCircuit()" style="display:none;width:100%;margin-top:8px;padding:11px;border-radius:12px;border:none;background:var(--green);color:#0f172a;font-weight:700;cursor:pointer;">✓ Registrar como completado</button>
+      <!-- Tabs -->
+      <div class="progress-tabs" style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px;">
+        <div class="progress-tab active" id="etab-hoy"      onclick="setEntrenoTab('hoy')"      style="white-space:nowrap;">🏋️ Hoy</div>
+        <div class="progress-tab"        id="etab-progreso" onclick="setEntrenoTab('progreso')" style="white-space:nowrap;">📈 Progreso</div>
+        <div class="progress-tab"        id="etab-planes"   onclick="setEntrenoTab('planes')"   style="white-space:nowrap;">📅 Planes</div>
       </div>
 
-      <!-- Feature: Monthly Benchmark Test -->
-      <div class="card" id="benchmark-card" style="margin-top:12px;">
-        <div class="card-title">📊 Test mensual Survivor</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Una vez al mes mide tu progreso real en los movimientos clave de la carrera.</p>
-        <div id="benchmark-history"></div>
-        <button class="btn btn-primary" onclick="startBenchmarkTest()">🏁 Hacer test ahora</button>
+      <!-- ── TAB HOY ── -->
+      <div id="etab-content-hoy">
+        <!-- 1. Registrar lo que hice (acción principal) -->
+        <div class="card" id="entreno-log-card" style="border:1.5px solid rgba(129,140,248,.3);background:linear-gradient(135deg,rgba(129,140,248,.07),rgba(99,102,241,.03));">
+          <div class="card-title" style="color:var(--accent);">✅ ¿Qué hiciste hoy?</div>
+          <div id="entreno-log-today-list" style="margin-bottom:8px;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Tipo</div>
+              <select id="elog-tipo" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.82rem;">
+                <option value="🧗 ClassPass">🧗 ClassPass</option>
+                <option value="🏃 Carrera">🏃 Carrera</option>
+                <option value="🏞️ Madrid Río">🏞️ Madrid Río</option>
+                <option value="🏋️ Pesas / Gym">🏋️ Pesas / Gym</option>
+                <option value="🤸 Entrenamiento en casa">🤸 Casa</option>
+                <option value="⚡ CrossFit / WOD">⚡ CrossFit</option>
+                <option value="🏊 Natación">🏊 Natación</option>
+                <option value="🚴 Bici / Spinning">🚴 Spinning</option>
+                <option value="🎯 Bandas / Fuerza">🎯 Fuerza</option>
+                <option value="🧘 Yoga / Pilates">🧘 Yoga / Pilates</option>
+                <option value="🚶 Paseo activo">🚶 Paseo activo</option>
+                <option value="💃 Baile">💃 Baile</option>
+                <option value="⚫ Kettlebell">⚫ Kettlebell</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Duración (min)</div>
+              <input type="number" inputmode="decimal" id="elog-duracion" placeholder="45" min="1" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Intensidad</div>
+            <div style="display:flex;gap:6px;">
+              <button class="elog-int-chip" data-val="suave"    onclick="selectElogInt(this)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;">😌 Suave</button>
+              <button class="elog-int-chip selected" data-val="moderada" onclick="selectElogInt(this)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--accent);background:rgba(129,140,248,.15);color:var(--text);font-size:0.78rem;cursor:pointer;font-weight:700;">💪 Moderada</button>
+              <button class="elog-int-chip" data-val="intensa"  onclick="selectElogInt(this)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;">🔥 Intensa</button>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="logActivityFromEntreno()">✅ Guardar entreno</button>
+        </div>
+
+        <!-- 2. Sugerencia de hoy -->
+        <div class="card">
+          <div class="card-title">💪 ¿Qué entreno hago hoy?</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="flex:1;min-width:140px;">
+              <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Energía</div>
+              <div class="chips" id="chips-energia" style="margin:0;">
+                <button class="chip" data-val="baja" onclick="selectChip(this,'energia')">🔋 Baja</button>
+                <button class="chip" data-val="media" onclick="selectChip(this,'energia')">⚡ Media</button>
+                <button class="chip selected" data-val="alta" onclick="selectChip(this,'energia')">🚀 Alta</button>
+              </div>
+            </div>
+            <div style="flex:1;min-width:140px;">
+              <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Tiempo</div>
+              <div class="chips" id="chips-tiempo" style="margin:0;">
+                <button class="chip" data-val="20" onclick="selectChip(this,'tiempo')">20m</button>
+                <button class="chip selected" data-val="30" onclick="selectChip(this,'tiempo')">30m</button>
+                <button class="chip" data-val="45" onclick="selectChip(this,'tiempo')">45m</button>
+                <button class="chip" data-val="60" onclick="selectChip(this,'tiempo')">60m</button>
+              </div>
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Cuerpo hoy</div>
+            <div class="chips" id="chips-cuerpo" style="margin:0;">
+              <button class="chip selected" data-val="bien" onclick="selectChip(this,'cuerpo')">✅ Bien</button>
+              <button class="chip" data-val="agujetas" onclick="selectChip(this,'cuerpo')">😬 Agujetas</button>
+              <button class="chip" data-val="cansada" onclick="selectChip(this,'cuerpo')">😴 Cansada</button>
+              <button class="chip" data-val="molestia" onclick="selectChip(this,'cuerpo')">🤕 Molestia</button>
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Ciclo</div>
+            <div class="chips" id="chips-ciclo" style="margin:0;">
+              <button class="chip" data-val="menstruacion" onclick="selectChip(this,'ciclo')">🔴 Regla</button>
+              <button class="chip" data-val="folicular" onclick="selectChip(this,'ciclo')">🌱 Post-regla</button>
+              <button class="chip selected" data-val="ovulacion" onclick="selectChip(this,'ciclo')">✨ Ovulación</button>
+              <button class="chip" data-val="lutea" onclick="selectChip(this,'ciclo')">🌙 Pre-regla</button>
+              <button class="chip" data-val="nodice" onclick="selectChip(this,'ciclo')">🤷 No sé</button>
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Disponible</div>
+            <div class="chips" id="chips-opciones" style="margin:0;">
+              <button class="chip selected" data-val="paseo"      onclick="toggleChip(this)">🚶 Madrid Río</button>
+              <button class="chip selected" data-val="classpass"  onclick="toggleChip(this)">🏋️ ClassPass</button>
+              <button class="chip selected" data-val="youtube"    onclick="toggleChip(this)">📺 YouTube</button>
+              <button class="chip selected" data-val="bandas"     onclick="toggleChip(this)">🎯 Bandas</button>
+              <button class="chip selected" data-val="kettlebell" onclick="toggleChip(this)">⚫ Kettlebell</button>
+              <button class="chip selected" data-val="cinta"      onclick="toggleChip(this)">🏃 Cinta</button>
+            </div>
+          </div>
+          <!-- chips weather y notas en detalles colapsables -->
+          <details style="margin-bottom:10px;">
+            <summary style="font-size:0.78rem;color:var(--muted);cursor:pointer;list-style:none;">+ Más opciones (tiempo, notas)</summary>
+            <div style="margin-top:8px;">
+              <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Tiempo fuera</div>
+              <div class="chips" id="chips-weather" style="margin:0 0 10px;">
+                <button class="chip selected" data-val="soleado" onclick="selectChip(this,'weather')">☀️ Sol</button>
+                <button class="chip" data-val="nublado"  onclick="selectChip(this,'weather')">☁️ Nublado</button>
+                <button class="chip" data-val="lluvia"   onclick="selectChip(this,'weather')">🌧️ Lluvia</button>
+                <button class="chip" data-val="calor"    onclick="selectChip(this,'weather')">🥵 Calor</button>
+                <button class="chip" data-val="frio"     onclick="selectChip(this,'weather')">🥶 Frío</button>
+              </div>
+              <input type="text" id="entreno-notas" placeholder="Algo especial: core, evitar impacto..." style="width:100%;margin-top:4px;" />
+            </div>
+          </details>
+          <button class="btn btn-primary" onclick="getEntrenoSuggestion()" id="entreno-btn">✨ Sugiéreme un entreno</button>
+        </div>
+
+        <div id="entreno-result"></div>
+        <div id="madrid-rio-program" style="display:none;margin-top:12px;"></div>
+        <div id="classpass-rec" style="display:none;margin-top:12px;"></div>
+        <div id="classpass-card"></div>
+        <div id="madrid-rio-card"></div>
+        <div id="yesterday-workout"></div>
+        <div id="weekly-plan-card-entreno"></div>
+        <div id="october-tips-wrap"></div>
       </div>
 
-      <!-- Feature: Upper Body Progress Tracker -->
-      <div class="card" id="upper-progress-card" style="margin-top:12px;">
-        <div class="card-title">💪 Progresión tren superior</div>
-        <p style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">Sin barra de dominadas — estos son tus ejercicios clave:</p>
-        <div id="overload-prescription"></div>
-        <div id="upper-progress-list"></div>
-        <button class="btn btn-secondary" style="margin-top:10px;" onclick="logUpperProgress()">+ Registrar sesión</button>
-      </div>
-
-      <!-- Zone 2 cardio guidance -->
-      <div class="card" id="zone2-card" style="margin-top:12px;">
-        <div class="card-title">🫀 Cardio inteligente</div>
-        <div id="zone2-status"></div>
-      </div>
-
-      <!-- Feature: Running Plan -->
-      <div class="card" id="run-plan-card" style="margin-top:12px;">
-        <div class="card-title">🏃 Plan de carrera — <span id="run-plan-week-label">Semana ?</span></div>
-        <div id="run-plan-week-content"></div>
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <button class="btn btn-secondary" style="flex:1;" onclick="showRunFitnessTest()">🔄 Hacer prueba</button>
-          <button class="btn btn-primary" style="flex:1;" onclick="generateRunPlan()">✨ Generar plan IA</button>
+      <!-- ── TAB PROGRESO ── -->
+      <div id="etab-content-progreso" style="display:none;">
+        <div class="card" id="upper-progress-card">
+          <div class="card-title">💪 Progresión tren superior</div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">Ejercicios clave para Survivor — sin barra de dominadas:</p>
+          <div id="overload-prescription"></div>
+          <div id="upper-progress-list"></div>
+          <button class="btn btn-secondary" style="margin-top:10px;width:100%;" onclick="logUpperProgress()">+ Registrar sesión de hoy</button>
+        </div>
+        <div class="card" id="zone2-card">
+          <div class="card-title">🫀 Cardio inteligente</div>
+          <div id="zone2-status"></div>
+        </div>
+        <div class="card" id="benchmark-card">
+          <div class="card-title">📊 Test mensual Survivor</div>
+          <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Una vez al mes mide tu progreso real.</p>
+          <div id="benchmark-history"></div>
+          <button class="btn btn-primary" style="width:100%;" onclick="startBenchmarkTest()">🏁 Hacer test ahora</button>
+        </div>
+        <div class="card" id="performance-log-card">
+          <div class="card-title">📝 Registro detallado de sesión</div>
+          <div id="performance-log-content"></div>
         </div>
       </div>
 
-      <div id="entreno-result"></div>
-      <div id="madrid-rio-program" style="display:none;margin-top:12px;"></div>
-      <div id="classpass-rec" style="display:none;margin-top:12px;"></div>
-
-      <!-- ✅ REGISTRO RÁPIDO desde ENTRENA -->
-      <div class="card" id="entreno-log-card" style="border:1.5px solid rgba(129,140,248,.3);background:linear-gradient(135deg,rgba(129,140,248,.07),rgba(99,102,241,.03));">
-        <div class="card-title" style="color:var(--accent);">✅ Registrar lo que hice</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Si elegiste ClassPass te preguntaré qué clase, si fue cardio te preguntaré la intensidad.</p>
-        <div id="entreno-log-today-list" style="margin-bottom:10px;"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div>
-            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Tipo</div>
-            <select id="elog-tipo" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.82rem;">
-              <option value="🧗 ClassPass">🧗 ClassPass</option>
-              <option value="🏃 Carrera">🏃 Carrera</option>
-              <option value="🏞️ Madrid Río">🏞️ Madrid Río</option>
-              <option value="🏋️ Pesas / Gym">🏋️ Pesas / Gym</option>
-              <option value="🤸 Entrenamiento en casa">🤸 Casa</option>
-              <option value="⚡ CrossFit / WOD">⚡ CrossFit</option>
-              <option value="🏊 Natación">🏊 Natación</option>
-              <option value="🚴 Bici / Spinning">🚴 Spinning</option>
-              <option value="🎯 Bandas / Fuerza">🎯 Fuerza</option>
-              <option value="🧘 Yoga / Pilates">🧘 Yoga / Pilates</option>
-              <option value="🚶 Paseo activo">🚶 Paseo activo</option>
-              <option value="💃 Baile">💃 Baile</option>
-              <option value="⚫ Kettlebell">⚫ Kettlebell</option>
-            </select>
-          </div>
-          <div>
-            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Duración (min)</div>
-            <input type="number" inputmode="decimal" id="elog-duracion" placeholder="45" min="1" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+      <!-- ── TAB PLANES ── -->
+      <div id="etab-content-planes" style="display:none;">
+        <div class="card" id="run-plan-card">
+          <div class="card-title">🏃 Plan carrera 10km — <span id="run-plan-week-label">Semana ?</span></div>
+          <div id="run-plan-week-content"></div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button class="btn btn-secondary" style="flex:1;" onclick="showRunFitnessTest()">🔄 Hacer prueba</button>
+            <button class="btn btn-primary"   style="flex:1;" onclick="generateRunPlan()">✨ Generar plan IA</button>
           </div>
         </div>
-        <div style="margin-bottom:10px;">
-          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Intensidad</div>
-          <div style="display:flex;gap:6px;">
-            <button class="elog-int-chip" data-val="suave" onclick="selectElogInt(this)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;">😌 Suave</button>
-            <button class="elog-int-chip selected" data-val="moderada" onclick="selectElogInt(this)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--accent);background:rgba(129,140,248,.15);color:var(--text);font-size:0.78rem;cursor:pointer;font-weight:700;">💪 Moderada</button>
-            <button class="elog-int-chip" data-val="intensa" onclick="selectElogInt(this)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;">🔥 Intensa</button>
-          </div>
+        <div class="card">
+          <div class="card-title">🏁 Circuito simulacro Survivor</div>
+          <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">Entrena exactamente los obstáculos del 24 de octubre.</p>
+          <button class="btn btn-primary" style="width:100%;" onclick="generateSurvivorCircuit()">⚡ Generar circuito</button>
+          <div id="survivor-circuit-result" style="display:none;margin-top:12px;"></div>
+          <button id="survivor-circuit-log-btn" onclick="logSurvivorCircuit()" style="display:none;width:100%;margin-top:8px;padding:11px;border-radius:12px;border:none;background:var(--green);color:#0f172a;font-weight:700;cursor:pointer;">✓ Registrar como completado</button>
         </div>
-        <button class="btn btn-primary" style="width:100%;" onclick="logActivityFromEntreno()">✅ Guardar entreno</button>
       </div>
 
-      <!-- Performance log card -->
-      <div class="card" id="performance-log-card" style="margin-top:12px;">
-        <div class="card-title">📝 Registrar mi sesión</div>
-        <div id="performance-log-content"></div>
-      </div>
     </div>
 
     <!-- ═══ PROGRESO ═══ -->
@@ -3064,6 +3075,23 @@ Usa ingredientes de supermercado español o tuppers Wetaca. Práctico para entre
 }
 
 // ═══════════════ PROGRESO PAGE ═══════════════
+function setEntrenoTab(tab) {
+  ['hoy','progreso','planes'].forEach(t => {
+    document.getElementById('etab-content-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('etab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'progreso') {
+    renderUpperProgressList();
+    renderOverloadPrescription();
+    renderZone2Status();
+    renderBenchmarkHistory();
+    renderPerformanceLog();
+  }
+  if (tab === 'planes') {
+    renderRunPlanWeek();
+  }
+}
+
 function setProgresoTab(tab){
   ['actividad','medidas','semana','retos','plan'].forEach(t=>{
     const pEl=document.getElementById('progreso-'+t);
@@ -5139,20 +5167,15 @@ showPage=function(name){
   _origShowPage(name);
   if(name==='entreno'){
     renderRaceCountdown();
+    checkUpperBodyVolume();
+    checkDeloadNeeded();
+    renderEntrenoLogToday();
     renderOctoberTips();
     renderWeeklyPlan();
-    renderPerformanceLog();
-    checkDeloadNeeded();
-    // Show madrid rio program if paseo selected
     if(chipOpciones.has('paseo'))renderMadridRioProgram();
-    checkUpperBodyVolume();
-    renderUpperProgressList();
-    renderOverloadPrescription();
-    renderZone2Status();
-    renderBenchmarkHistory();
-    renderRunPlanWeek();
-    renderEntrenoLogToday();
     checkAndUnlockAchievements();
+    // Activate default tab (hoy) without re-rendering heavy stuff
+    setEntrenoTab('hoy');
   }
   if(name==='home'){
     checkAndUnlockAchievements();
