@@ -5160,12 +5160,14 @@ function renderBenchmarkHistory(){
 }
 
 function startBenchmarkTest(){
+  // Steps with special rendering for flexiones (assisted toggle) and fallo inputs
   const steps=[
-    {id:'flexiones',label:'💪 Flexiones máximas',desc:'Haz todas las flexiones que puedas sin parar. Las de rodilla también cuentan — anota el total.',unit:'repeticiones',type:'number',placeholder:'ej. 12'},
-    {id:'colgada_seg',label:'⏱️ Colgada / Remo invertido',desc:'Si tienes barra: cuántos segundos aguantas colgada. Si no: remo invertido con silla (pies elevados, manos en borde de mesa) — cuántas repeticiones.',unit:'seg o reps',type:'number',placeholder:'ej. 15'},
-    {id:'remo_reps',label:'🪑 Remo con mancuerna/botella',desc:'Con una mancuerna o botella de 2L+, haz remo unilateral. Cuenta las repeticiones limpias con el brazo dominante.',unit:'repeticiones',type:'number',placeholder:'ej. 20'},
-    {id:'km_tiempo_seg',label:'🏃 1km cronometrado',desc:'Corre 1km lo más rápido que puedas. Introduce el tiempo en segundos (ej: 6 min = 360 seg).',unit:'segundos',type:'number',placeholder:'ej. 360'},
-    {id:'notas',label:'📝 Nota libre',desc:'¿Cómo te sentiste? ¿Algo a mejorar?',unit:'',type:'text',placeholder:'ej. Me costaron los remos, bien el cardio...'},
+    {id:'flexiones', special:'flexiones'},
+    {id:'colgada_seg', label:'⏱️ Remo invertido con silla', desc:'Pies elevados en silla, manos en borde de mesa. Baja el pecho hasta la mesa y sube. Haz todas las repeticiones al fallo que puedas.', unit:'repeticiones al fallo', placeholder:'ej. 8'},
+    {id:'remo_reps', label:'🪑 Remo con mancuerna/botella', desc:'Con mancuerna o botella de 2L+, remo unilateral. Brazo dominante, hasta el fallo. Cuenta solo las repeticiones limpias.', unit:'repeticiones al fallo', placeholder:'ej. 20'},
+    {id:'fondos_reps', label:'🏋️ Fondos en silla', desc:'Manos en el borde de una silla detrás de ti, baja hasta 90° y sube. Cuenta hasta el fallo.', unit:'repeticiones al fallo', placeholder:'ej. 12'},
+    {id:'km_tiempo_seg', special:'km'},
+    {id:'notas', label:'📝 Nota libre', desc:'¿Cómo te sentiste? ¿Qué te costó más? ¿Algo a mejorar?', unit:'', type:'text', placeholder:'ej. Los remos me costaron, el cardio bien...'},
   ];
   let currentStep=0;
   const values={};
@@ -5174,43 +5176,118 @@ function startBenchmarkTest(){
   overlay.id='benchmark-modal';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;display:flex;align-items:flex-end;';
 
-  function render(){
+  function renderStep(){
     const s=steps[currentStep];
     const isLast=currentStep===steps.length-1;
+    const total=steps.length;
+
+    let body='';
+    if(s.special==='flexiones'){
+      const isAsisted=values.flexiones_asistidas===true;
+      body=`
+        <div style="font-weight:800;font-size:1rem;margin-bottom:8px;">💪 Flexiones al fallo</div>
+        <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;margin-bottom:14px;">Haz todas las flexiones seguidas que puedas hasta el fallo total. Anota cuántas y si fueron asistidas (de rodilla) o completas.</div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">Tipo de flexión:</div>
+          <div style="display:flex;gap:8px;">
+            <button id="flex-full" onclick="setBenchFlexType(false)" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid ${!isAsisted?'var(--accent)':'var(--border)'};background:${!isAsisted?'rgba(129,140,248,.15)':'var(--surface2)'};color:var(--text);cursor:pointer;font-size:0.82rem;font-weight:${!isAsisted?700:400};">💪 Completas</button>
+            <button id="flex-asist" onclick="setBenchFlexType(true)" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid ${isAsisted?'var(--accent)':'var(--border)'};background:${isAsisted?'rgba(129,140,248,.15)':'var(--surface2)'};color:var(--text);cursor:pointer;font-size:0.82rem;font-weight:${isAsisted?700:400};">🦵 De rodilla</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;">Repeticiones al fallo:</div>
+          <input type="number" inputmode="decimal" id="bench-input" placeholder="ej. 8" value="${values.flexiones||''}"
+            style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:13px;color:var(--text);font-size:1rem;outline:none;" />
+        </div>`;
+    } else if(s.special==='km'){
+      body=`
+        <div style="font-weight:800;font-size:1rem;margin-bottom:8px;">🏃 1km cronometrado</div>
+        <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;margin-bottom:14px;">Corre 1km lo más rápido que puedas. Introduce el tiempo en minutos y segundos.</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div style="flex:1;">
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Minutos</div>
+            <input type="number" inputmode="decimal" id="bench-km-min" placeholder="ej. 6" value="${values._km_min||''}"
+              style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:13px;color:var(--text);font-size:1rem;outline:none;" />
+          </div>
+          <div style="font-size:1.2rem;color:var(--muted);margin-top:16px;">:</div>
+          <div style="flex:1;">
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Segundos</div>
+            <input type="number" inputmode="decimal" id="bench-km-sec" placeholder="ej. 30" value="${values._km_sec||''}"
+              style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:13px;color:var(--text);font-size:1rem;outline:none;" />
+          </div>
+        </div>`;
+    } else {
+      body=`
+        <div style="font-weight:800;font-size:1rem;margin-bottom:8px;">${s.label}</div>
+        <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;margin-bottom:14px;">${s.desc}</div>
+        <div>
+          <input type="${s.type||'number'}" inputmode="${(s.type||'number')==='number'?'decimal':'text'}" id="bench-input" placeholder="${s.placeholder}" value="${values[s.id]||''}"
+            style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:13px;color:var(--text);font-size:1rem;outline:none;" />
+          ${s.unit?`<div style="font-size:0.72rem;color:var(--muted);margin-top:4px;">📌 Al fallo — ${s.unit}</div>`:''}
+        </div>`;
+    }
+
+    // Progress dots
+    const dots=steps.map((_,i)=>`<div style="width:${i===currentStep?20:6}px;height:6px;border-radius:3px;background:${i===currentStep?'var(--accent)':i<currentStep?'var(--green)':'var(--border)'};transition:width .2s;"></div>`).join('');
+
     overlay.innerHTML=`
-      <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <div style="font-size:0.7rem;color:var(--muted);font-weight:700;">PASO ${currentStep+1} DE ${steps.length}</div>
+      <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:700;">TEST MENSUAL SURVIVOR • ${currentStep+1}/${total}</div>
           <button onclick="document.getElementById('benchmark-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;">✕</button>
         </div>
-        <div style="font-weight:800;font-size:1rem;margin-bottom:8px;">${s.label}</div>
-        <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;margin-bottom:16px;">${s.desc}</div>
-        <div style="margin-bottom:16px;">
-          <input type="${s.type}" inputmode="${s.type==='number'?'decimal':'text'}" id="bench-input" placeholder="${s.placeholder}" value="${values[s.id]||''}"
-            style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:13px;color:var(--text);font-size:1rem;outline:none;" />
-          ${s.unit?`<div style="font-size:0.72rem;color:var(--muted);margin-top:4px;">${s.unit}</div>`:''}
-        </div>
-        <div style="display:flex;gap:8px;">
+        <div style="display:flex;gap:4px;margin-bottom:18px;">${dots}</div>
+        ${body}
+        <div style="display:flex;gap:8px;margin-top:18px;">
           ${currentStep>0?`<button onclick="benchPrev()" class="btn btn-secondary" style="flex:1;">← Anterior</button>`:''}
-          <button onclick="benchNext()" class="btn btn-primary" style="flex:${currentStep>0?1:1};">${isLast?'✓ Guardar test':'Siguiente →'}</button>
+          <button onclick="benchNext()" class="btn btn-primary" style="flex:1;">${isLast?'✓ Guardar test':'Siguiente →'}</button>
         </div>
       </div>`;
   }
 
+  window.setBenchFlexType=function(asistidas){
+    values.flexiones_asistidas=asistidas;
+    // re-render just the buttons
+    const full=document.getElementById('flex-full');
+    const asist=document.getElementById('flex-asist');
+    if(!full||!asist)return;
+    full.style.borderColor=!asistidas?'var(--accent)':'var(--border)';
+    full.style.background=!asistidas?'rgba(129,140,248,.15)':'var(--surface2)';
+    full.style.fontWeight=!asistidas?700:400;
+    asist.style.borderColor=asistidas?'var(--accent)':'var(--border)';
+    asist.style.background=asistidas?'rgba(129,140,248,.15)':'var(--surface2)';
+    asist.style.fontWeight=asistidas?700:400;
+  };
+
   window.benchNext=function(){
-    const inp=document.getElementById('bench-input');
     const s=steps[currentStep];
-    const val=s.type==='number'?parseFloat(inp.value)||null:inp.value.trim()||null;
-    if(!val&&s.id!=='notas'){showToast('Introduce un valor para continuar');return;}
-    values[s.id]=val;
-    if(currentStep<steps.length-1){currentStep++;render();}
+    if(s.special==='flexiones'){
+      const inp=document.getElementById('bench-input');
+      const val=parseFloat(inp.value)||null;
+      if(!val){showToast('Introduce el número de repeticiones');return;}
+      values.flexiones=val;
+      if(values.flexiones_asistidas===undefined) values.flexiones_asistidas=false;
+    } else if(s.special==='km'){
+      const min=parseInt(document.getElementById('bench-km-min').value)||0;
+      const sec=parseInt(document.getElementById('bench-km-sec').value)||0;
+      if(!min&&!sec){showToast('Introduce el tiempo del km');return;}
+      values._km_min=min; values._km_sec=sec;
+      values.km_tiempo_seg=min*60+sec;
+    } else {
+      const inp=document.getElementById('bench-input');
+      const isNum=(s.type||'number')==='number';
+      const val=isNum?parseFloat(inp.value)||null:inp.value.trim()||null;
+      if(!val&&s.id!=='notas'){showToast('Introduce un valor para continuar');return;}
+      values[s.id]=val;
+    }
+    if(currentStep<steps.length-1){currentStep++;renderStep();}
     else{saveBenchmarkResult(values);}
   };
   window.benchPrev=function(){
-    if(currentStep>0){currentStep--;render();}
+    if(currentStep>0){currentStep--;renderStep();}
   };
 
-  render();
+  renderStep();
   document.body.appendChild(overlay);
 }
 
@@ -5227,8 +5304,9 @@ function saveBenchmarkResult(values){
   if(prev){
     const items=[
       {label:'Flexiones',key:'flexiones',unit:'reps',lower:false},
-      {label:'Colgada/Remo',key:'colgada_seg',unit:'',lower:false},
-      {label:'Remo reps',key:'remo_reps',unit:'reps',lower:false},
+      {label:'Remo silla',key:'colgada_seg',unit:'reps',lower:false},
+      {label:'Remo mancuerna',key:'remo_reps',unit:'reps',lower:false},
+      {label:'Fondos',key:'fondos_reps',unit:'reps',lower:false},
       {label:'1km',key:'km_tiempo_seg',unit:'seg',lower:true},
     ];
     compHtml=`<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
@@ -5256,9 +5334,10 @@ function saveBenchmarkResult(values){
       <div style="font-weight:800;font-size:1.1rem;text-align:center;margin-bottom:4px;">Test guardado</div>
       <div style="font-size:0.78rem;color:var(--muted);text-align:center;margin-bottom:16px;">${new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long'})}</div>
       <div style="background:var(--surface2);border-radius:12px;padding:12px;font-size:0.82rem;">
-        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>💪 Flexiones</span><strong>${entry.flexiones||'—'}</strong></div>
-        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>⏱️ Colgada/Remo</span><strong>${entry.colgada_seg||'—'}</strong></div>
-        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>🪑 Remo reps</span><strong>${entry.remo_reps||'—'}</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>💪 Flexiones${entry.flexiones_asistidas?' (rodilla)':''}</span><strong>${entry.flexiones||'—'} reps</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>🪑 Remo silla</span><strong>${entry.colgada_seg||'—'} reps</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>💧 Remo mancuerna</span><strong>${entry.remo_reps||'—'} reps</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>🏋️ Fondos silla</span><strong>${entry.fondos_reps||'—'} reps</strong></div>
         <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>🏃 1km</span><strong>${entry.km_tiempo_seg?Math.floor(entry.km_tiempo_seg/60)+'\''+String(entry.km_tiempo_seg%60).padStart(2,'0')+'"':'—'}</strong></div>
         ${entry.notas?`<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;color:var(--muted);">${esc(entry.notas)}</div>`:''}
       </div>
