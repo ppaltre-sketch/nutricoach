@@ -1,4 +1,4 @@
-const CACHE = 'nutricoach-v8';
+const CACHE = 'nutricoach-v9';
 const ASSETS = ['./manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {

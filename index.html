@@ -544,6 +544,7 @@
       <div id="recent-meals-strip"></div>
       <div id="reto21-card"></div>
       <div id="quick-repeat-section"></div>
+      <div id="macro-alerts-wrap"></div>
       <div class="card">
         <div class="card-title">Comidas de hoy</div>
         <div id="meal-search-wrap" style="display:none;margin-bottom:8px;">
@@ -859,6 +860,8 @@
 
     <!-- ═══ ENTRENO ═══ -->
     <div class="page" id="page-entreno">
+      <div id="race-countdown-wrap"></div>
+      <div id="october-tips-wrap"></div>
       <div id="deload-banner"></div>
       <div id="weekly-plan-card-entreno"></div>
       <div id="classpass-card"></div>
@@ -1095,6 +1098,12 @@
       <!-- Semana -->
       <div id="progreso-semana" style="display:none">
         <div id="consistencia-score-wrap"></div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">📊 Resumen de la semana</div>
+          <div id="weekly-score-card">
+            <button class="btn btn-primary" onclick="renderWeeklyScoreAI()" style="margin-bottom:0;">Generar resumen</button>
+          </div>
+        </div>
         <div class="weekly-ai-card" id="weekly-ai-card">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
             <div style="font-size:1.8rem;">🧠</div>
@@ -1534,6 +1543,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderGoalsHint();
 
   checkSetupFromURL();
+  checkWeeklyMotivation();
   renderTypeChips('s-type-chips','s');
   renderTypeChips('m-type-chips','m');
   renderTypeChips('bc-type-chips','bc');
@@ -1792,6 +1802,10 @@ function renderHome(){
           </div>`).join('')}
       </div>
     </div>`:'')
+
+  // ── Macro alerts ──
+  const macroAlertsEl = document.getElementById('macro-alerts-wrap');
+  if(macroAlertsEl) macroAlertsEl.innerHTML = renderMacroAlerts(meals, goals);
 
   // ── Meals list ──
   const listEl=document.getElementById('meals-list');
@@ -2710,6 +2724,8 @@ Perfil: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm. Objetivo: perder gra
 Semana pasada: ${mealsTracked}/7 días con comidas registradas, proteína media ${avgP}g/${goals.p}g objetivo, ${exerciseDays}/7 días con ejercicio.
 Racha actual: ${streak} días.
 
+${getSurvivorContext()}
+
 REGLAS para los retos:
 1. Deben ser CONCRETOS y MEDIBLES (no "comer mejor", sino "registrar todas las comidas 5 de 7 días")
 2. ALCANZABLES — ni muy fáciles ni imposibles, basados en cómo fue la semana
@@ -2913,7 +2929,18 @@ function setProgresoTab(tab){
   });
   if(tab==='actividad')renderActivityToday();
   if(tab==='medidas'){renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
-  if(tab==='semana'){renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();}
+  if(tab==='semana'){
+    renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();
+    // Auto-load weekly score on Sundays
+    const isSunday = new Date().getDay() === 0;
+    const weekScoreEl = document.getElementById('weekly-score-card');
+    if(isSunday && weekScoreEl && weekScoreEl.querySelector('button')) renderWeeklyScoreAI();
+    else if(weekScoreEl && weekScoreEl.innerHTML.trim()==='<button class="btn btn-primary" onclick="renderWeeklyScoreAI()" style="margin-bottom:0;">Generar resumen</button>'){
+      // show cached if available
+      const cached = localStorage.getItem('nc_weekly_score_'+getWeekKey());
+      if(cached) weekScoreEl.innerHTML = cached;
+    }
+  }
   if(tab==='retos')renderRetos();
 }
 
@@ -2964,11 +2991,28 @@ function logActivity(){
   const duracion=parseInt(document.getElementById('act-duracion').value)||0;
   if(!duracion){showToast('Indica la duración');return;}
   const intensidad=chipState.intensidad||'moderada';
+
+  // ClassPass intercept — ask type of class
+  if(tipo.includes('ClassPass')){
+    showClassPassTypeModal(function(claseInfo){
+      const act=getActivity();
+      act.actividades.push({tipo,duracion,intensidad,clase:claseInfo});
+      saveActivity(act);
+      document.getElementById('act-duracion').value='';
+      renderActivityToday();showToast('✓ Clase ClassPass registrada: '+claseInfo.label);
+      checkAndUnlockAchievements();
+      const esIntensa=intensidad==='intensa'||(intensidad==='moderada'&&duracion>=45);
+      if(esIntensa&&!getMacroBoost()){setTimeout(()=>offerMacroBoost(tipo,duracion,intensidad),300);}
+    });
+    return;
+  }
+
   const act=getActivity();
   act.actividades.push({tipo,duracion,intensidad});
   saveActivity(act);
   document.getElementById('act-duracion').value='';
   renderActivityToday();showToast('✓ Actividad registrada');
+  checkAndUnlockAchievements();
   // Offer macro boost for intense/long workouts
   const esIntensa=intensidad==='intensa'||(intensidad==='moderada'&&duracion>=45);
   if(esIntensa&&!getMacroBoost()){
@@ -4488,12 +4532,14 @@ async function getClassPassRec(){
   };
   const rec=recs[ciclo]||recs.nodice;
 
+  const survivorPhaseNote = getSurvivorContext().split('\n')[1] || ''; // FASE ACTUAL line
   recEl.innerHTML=`
     <div class="classpass-card">
       <div style="font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">🧘 ClassPass — Clase recomendada para hoy</div>
       <div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${esc(rec.clase)}</div>
       <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;">${esc(rec.motivo)}</div>
       <div style="font-size:0.72rem;color:var(--muted);margin-top:6px;">Es ${dow} · Energía ${energia} · ${ciclo!=='nodice'?'Fase '+ciclo:'ciclo no especificado'}</div>
+      ${survivorPhaseNote?`<div style="font-size:0.7rem;color:var(--accent);margin-top:5px;font-weight:600;">🏃 Survivor: ${esc(survivorPhaseNote.replace('FASE ACTUAL: ',''))}</div>`:''}
     </div>`;
 }
 
@@ -4933,6 +4979,8 @@ const _origShowPage=showPage;
 showPage=function(name){
   _origShowPage(name);
   if(name==='entreno'){
+    renderRaceCountdown();
+    renderOctoberTips();
     renderWeeklyPlan();
     renderPerformanceLog();
     checkDeloadNeeded();
@@ -5021,6 +5069,333 @@ toggleChip=function(el){
   }
 };
 
+// ═══════════════════════════════════════════════════════════
+// FEATURE: MACRO ALERTS
+// ═══════════════════════════════════════════════════════════
+function renderMacroAlerts(meals, goals) {
+  let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  const alerts = [];
+
+  const check = (val, goal, name, emoji, redEmoji) => {
+    const pct = goal > 0 ? val/goal : 0;
+    if (pct >= 1.0) {
+      alerts.push({
+        level:'over',
+        msg:`${redEmoji} <strong>${name}</strong> al límite — si puedes, cambia la cena por algo más ligero en ${name.toLowerCase()}`,
+        color:'var(--red)'
+      });
+    } else if (pct >= 0.85) {
+      alerts.push({
+        level:'warn',
+        msg:`${emoji} Casi en el límite de <strong>${name}</strong> — queda poco margen para la próxima comida`,
+        color:'var(--orange)'
+      });
+    }
+  };
+
+  check(P, goals.p, 'Proteína', '⚡', '🔴');
+  check(C, goals.c, 'Carbohidratos', '⚠️', '🔴');
+  check(F, goals.f, 'Grasas', '💛', '🔴');
+
+  // Internal calorie check (NEVER show numbers)
+  const defStatus = getInternalDeficitStatus(meals);
+  if (defStatus === 'exceso') {
+    alerts.push({
+      level:'over',
+      msg:'🔴 <strong>Energía</strong> — hoy has comido bastante. Para la cena opta por algo ligero: proteína + verduras',
+      color:'var(--red)'
+    });
+  } else if (defStatus === 'peligrosamente_bajo') {
+    alerts.push({
+      level:'warn',
+      msg:'⚡ Llevas poca energía hoy — come algo aunque sea pequeño para no perjudicar tu metabolismo',
+      color:'var(--yellow)'
+    });
+  }
+
+  if (alerts.length === 0) return '';
+
+  return `<div style="margin-bottom:12px;">
+    ${alerts.map(a => `
+      <div style="background:${a.color}18;border:1px solid ${a.color}44;border-radius:12px;padding:10px 14px;margin-bottom:6px;font-size:0.82rem;line-height:1.5;color:var(--text);">
+        ${a.msg}
+      </div>`).join('')}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE: WEEKLY SCORE CARD (AI)
+// ═══════════════════════════════════════════════════════════
+async function renderWeeklyScoreAI() {
+  const weekKey = getWeekKey();
+  const cacheKey = 'nc_weekly_score_' + weekKey;
+  const cached = localStorage.getItem(cacheKey);
+
+  const el = document.getElementById('weekly-score-card');
+  if (!el) return;
+
+  // Only generate on Friday afternoon through Sunday
+  const day = new Date().getDay(); // 0=Sun, 5=Fri, 6=Sat
+  const hour = new Date().getHours();
+  const isWeekEnd = day === 0 || day === 6 || (day === 5 && hour >= 17);
+
+  if (!isWeekEnd && !cached) {
+    el.innerHTML = `<p style="color:var(--muted);font-size:0.82rem;text-align:center;padding:12px;">El resumen semanal estará disponible el viernes por la tarde 📅</p>`;
+    return;
+  }
+
+  if (cached) {
+    el.innerHTML = cached;
+    return;
+  }
+
+  if (!getApiKey()) { showToast('Configura tu API Key primero'); showPage('config'); return; }
+
+  el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:8px;"><div class="spinner spinner-accent" style="width:16px;height:16px;"></div> Analizando tu semana... 🔍</div>`;
+
+  // Gather week data
+  const weekData = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay() + 1 + i); // Monday to Sunday
+    const dateKey = d.toISOString().split('T')[0];
+    const meals = JSON.parse(localStorage.getItem('meals_' + dateKey) || '[]');
+    const act = JSON.parse(localStorage.getItem('nc_activity_' + dateKey) || '{"pasos":0,"actividades":[]}');
+    let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+    weekData.push({ date: dateKey, meals: meals.length, P: Math.round(P), C: Math.round(C), F: Math.round(F), pasos: act.pasos, actividades: act.actividades.length });
+  }
+
+  const profile = getProfile();
+  const goals = getGoals();
+  const measuresRaw = localStorage.getItem('nc_measures');
+  const measures = measuresRaw ? JSON.parse(measuresRaw) : [];
+  const lastMeasure = measures.length > 0 ? measures[measures.length-1] : null;
+
+  // Internal calorie context for the week
+  const weekCalContext = weekData.map(d => {
+    const meals = JSON.parse(localStorage.getItem('meals_' + d.date) || '[]');
+    return buildCalorieContext(meals);
+  }).join('\n');
+
+  const survivorCtx = getSurvivorContext();
+
+  const prompt = `Eres el coach de NutriCoach. Evalúa la semana de ${profile.nombre || 'la usuaria'}.
+
+DATOS SEMANA:
+${weekData.map(d => `${d.date}: ${d.meals} comidas, P:${d.P}g C:${d.C}g F:${d.F}g, ${d.pasos} pasos, ${d.actividades} entrenamientos`).join('\n')}
+
+CONTEXTO INTERNO (NO MENCIONAR AL USUARIO):
+${weekCalContext}
+
+${survivorCtx}
+
+Peso objetivo: ${profile.pesoObj || 69}kg. Peso actual: ${profile.peso || '?'}kg.
+Metas diarias: P:${goals.p}g C:${goals.c}g G:${goals.f}g
+
+INSTRUCCIONES:
+- Puntúa del 1 al 10 la semana en: deporte, alimentación, progreso hacia el objetivo
+- NUNCA menciones calorías, déficit, kcal, ni números de energía
+- Si fue una semana difícil: mensaje empático, motivador, sin culpa ("esta semana no fue perfecta, la siguiente lo será")
+- Calcula estimación de semanas hasta 69kg SOLO si hay suficientes datos (sin mencionar déficit)
+- Máximo 200 palabras, tono de coach cercano y motivador
+
+Formato exacto de respuesta:
+📊 **TU SEMANA**
+
+🏋️ Deporte: X/10
+🥗 Alimentación: X/10
+🎯 Progreso global: X/10
+
+[2-3 frases de evaluación honesta y empática]
+
+⏱️ [Si seguimos así: "En aproximadamente X semanas podrías llegar a tu objetivo" — SOLO si hay datos suficientes. Si no hay datos: omite esta línea]
+
+[Frase motivadora final orientada a octubre]`;
+
+  try {
+    const res = await callClaude([{role:'user', content: prompt}]);
+    const html = `<div style="padding:4px 0;font-size:0.85rem;line-height:1.7;">${formatAI(res)}</div>
+      <button onclick="localStorage.removeItem('nc_weekly_score_${weekKey}');renderWeeklyScoreAI();" style="margin-top:10px;background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;">↺ Regenerar</button>`;
+    el.innerHTML = html;
+    localStorage.setItem(cacheKey, html);
+  } catch(e) {
+    el.innerHTML = `<p style="color:var(--red);font-size:0.82rem;">Error al generar el resumen. <button onclick="renderWeeklyScoreAI()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-weight:700;">Reintentar</button></p>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE: CLASSPASS TYPE MODAL
+// ═══════════════════════════════════════════════════════════
+const CLASS_TYPES = [
+  {id:'pilates', label:'Pilates', emoji:'🧘', muscles:'core, estabilidad, flexibilidad'},
+  {id:'yoga', label:'Yoga', emoji:'🕉️', muscles:'flexibilidad, respiración, core'},
+  {id:'spinning', label:'Spinning / Cycling', emoji:'🚴', muscles:'cardio, piernas, resistencia'},
+  {id:'hiit', label:'HIIT / Funcional', emoji:'⚡', muscles:'cuerpo completo, cardio, fuerza'},
+  {id:'boxeo', label:'Boxeo / Kickboxing', emoji:'🥊', muscles:'brazos, core, cardio'},
+  {id:'barre', label:'Barre / Ballet Fit', emoji:'🩰', muscles:'piernas, glúteos, core'},
+  {id:'natacion', label:'Natación', emoji:'🏊', muscles:'brazos, cardio, cuerpo completo'},
+  {id:'escalada', label:'Escalada', emoji:'🧗', muscles:'brazos, espalda, agarre'},
+  {id:'fuerza', label:'Sala de pesas', emoji:'🏋️', muscles:'fuerza general'},
+  {id:'otro', label:'Otro', emoji:'💪', muscles:'varios'},
+];
+
+function showClassPassTypeModal(callback) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;">
+      <h3 style="margin:0 0 4px;font-size:1rem;">¿Qué tipo de clase hiciste?</h3>
+      <p style="color:var(--muted);font-size:0.78rem;margin:0 0 16px;">Esto ayuda a personalizar tus entrenamientos futuros</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        ${CLASS_TYPES.map(t => `
+          <button onclick="selectClassType('${t.id}','${t.label}','${t.muscles}',this)"
+            style="padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;text-align:left;font-size:0.82rem;line-height:1.4;">
+            <div style="font-size:1.2rem;margin-bottom:4px;">${t.emoji}</div>
+            <div style="font-weight:700;">${t.label}</div>
+            <div style="font-size:0.72rem;color:var(--muted);">${t.muscles}</div>
+          </button>`).join('')}
+      </div>
+      <button onclick="this.closest('[style*=\'position:fixed\']').remove()"
+        style="width:100%;margin-top:12px;padding:12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">Cancelar</button>
+    </div>`;
+
+  window._classPassCallback = callback;
+  document.body.appendChild(overlay);
+}
+
+function selectClassType(id, label, muscles, btn) {
+  const overlay = btn.closest('[style*="position:fixed"]');
+  overlay.remove();
+  if (window._classPassCallback) window._classPassCallback({id, label, muscles});
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE: SURVIVOR RACE CONTEXT
+// ═══════════════════════════════════════════════════════════
+function getSurvivorContext() {
+  const race = new Date('2026-10-24');
+  const today = new Date();
+  const daysLeft = Math.ceil((race - today) / (1000*60*60*24));
+  const weeksLeft = Math.floor(daysLeft / 7);
+  const isIntensive = today >= new Date('2026-09-24');
+
+  let phase, focus;
+  if (isIntensive) {
+    phase = 'FASE INTENSIVA (último mes antes de carrera)';
+    focus = 'máxima intensidad en fuerza brazos + circuitos completos + mantener cardio. Dieta muy ajustada para llegar al peso óptimo. Objetivo: hacer argollas con algo de ayuda pero no extrema, subir muros sin ayuda.';
+  } else if (weeksLeft > 16) {
+    phase = 'BASE (más de 16 semanas)';
+    focus = 'construir fuerza en brazos/espalda/core. Cardio progresivo. Pérdida de peso lenta y sostenida. Pesos en press, dominadas asistidas, remo.';
+  } else if (weeksLeft > 8) {
+    phase = 'DESARROLLO (8-16 semanas)';
+    focus = 'aumentar cargas en tren superior, introducir ejercicios funcionales tipo obstacle (escaladas, jalones, fondos). Cardio HIIT 2x/semana. Sesiones ClassPass: boxeo o funcional prioritarios.';
+  } else if (weeksLeft > 4) {
+    phase = 'PICO (4-8 semanas)';
+    focus = 'circuitos de obstáculos, máxima fuerza en brazos y espalda, intervalos de carrera. Muy importante: dominadas (aunque sean asistidas), ring rows, fondos en barras.';
+  } else {
+    phase = 'TAPERING (últimas 4 semanas)';
+    focus = 'mantener fuerza sin acumular fatiga. Reducir volumen 20%, mantener intensidad. Asegurar llegada al peso objetivo.';
+  }
+
+  return `OBJETIVO CARRERA: Survivor 10km el 24 oct 2026 (faltan ${daysLeft} días / ${weeksLeft} semanas).
+FASE ACTUAL: ${phase}
+FOCO ENTRENAMIENTO: ${focus}
+EJERCICIOS CLAVE PARA SURVIVOR: dominadas/jalones (muros), fondos en paralelas (obstáculos), jalón al pecho, remo con mancuerna, press militar, core antirotatorio. Cardio: correr + intervalos.`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE: RACE COUNTDOWN BANNER
+// ═══════════════════════════════════════════════════════════
+function renderRaceCountdown() {
+  const race = new Date('2026-10-24');
+  const today = new Date();
+  const daysLeft = Math.ceil((race - today) / (1000*60*60*24));
+  const weeksLeft = Math.floor(daysLeft / 7);
+  const intensiveStart = new Date('2026-09-24');
+  const isIntensive = today >= intensiveStart;
+
+  let focusLabel;
+  if (isIntensive) focusLabel = '💥 Todo al máximo';
+  else if (weeksLeft > 12) focusLabel = '💪 Fuerza base + cardio';
+  else if (weeksLeft > 8) focusLabel = '🏋️ Fuerza + resistencia';
+  else if (weeksLeft > 4) focusLabel = '⚡ Potencia + circuitos';
+  else focusLabel = '🔥 Peak + recuperación';
+
+  const el = document.getElementById('race-countdown-wrap');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="background:${isIntensive ? 'linear-gradient(135deg,rgba(239,68,68,.15),rgba(251,146,60,.1))' : 'linear-gradient(135deg,rgba(129,140,248,.1),rgba(99,102,241,.04))'};border:1px solid ${isIntensive ? 'rgba(239,68,68,.3)' : 'rgba(129,140,248,.2)'};border-radius:14px;padding:14px 16px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">🏃 Survivor 10km</div>
+          <div style="font-size:1.1rem;font-weight:800;margin-top:2px;">${isIntensive ? '🔥 FASE INTENSIVA' : `${weeksLeft} semanas`}</div>
+          <div style="font-size:0.78rem;color:var(--muted);">24 oct • ${daysLeft} días</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:0.7rem;color:var(--muted);margin-bottom:2px;">FOCO</div>
+          <div style="font-size:0.72rem;line-height:1.5;">${focusLabel}</div>
+        </div>
+      </div>
+      ${isIntensive ? '<div style="margin-top:8px;font-size:0.78rem;color:var(--orange);font-weight:700;">⚡ Último mes — máxima intensidad en fuerza y cardio</div>' : ''}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE: OCTOBER TIPS CARD
+// ═══════════════════════════════════════════════════════════
+function renderOctoberTips() {
+  const race = new Date('2026-10-24');
+  const today = new Date();
+  const weeksLeft = Math.floor((race - today) / (1000*60*60*24*7));
+
+  const tips = [
+    { weeks: [20,99], icon:'💪', title:'Construye la base', tip:'Ahora es el momento de ganar fuerza. Prioriza: jalón al pecho, remo, press. 2-3 sesiones/semana con pesos que te cuesten trabajo.' },
+    { weeks: [12,19], icon:'🏋️', title:'Aumenta las cargas', tip:'Si las dominadas asistidas ya se sienten bien, reduce la asistencia. En ClassPass prioriza Funcional, HIIT o Boxeo para combinar fuerza + cardio.' },
+    { weeks: [8,11], icon:'⚡', title:'Circuitos funcionales', tip:'Empieza a hacer circuitos: jalones + burpees + remo + carrera. Esto replica exactamente los obstáculos Survivor.' },
+    { weeks: [4,7], icon:'🔥', title:'Fase intensiva', tip:'El último mes es de máxima intensidad. 4-5 sesiones/semana. ClassPass: escalada y funcional. Carrera 2x/semana mínimo.' },
+    { weeks: [0,3], icon:'🎯', title:'¡Ya casi!', tip:'Semana de tapering. Mantén la intensidad pero reduce volumen. Duerme bien, hidrátate, llega descansada. ¡Vas a romperla!' },
+  ];
+
+  const tip = tips.find(t => weeksLeft >= t.weeks[0] && weeksLeft <= t.weeks[1]) || tips[0];
+
+  const el = document.getElementById('october-tips-wrap');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,rgba(251,146,60,.1),rgba(239,68,68,.05));border:1px solid rgba(251,146,60,.25);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">🏃 CAMINO A OCTUBRE</div>
+      <div style="font-size:0.9rem;font-weight:800;margin-bottom:6px;">${tip.icon} ${tip.title}</div>
+      <div style="font-size:0.82rem;color:var(--text);line-height:1.5;">${tip.tip}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE: WEEKLY MOTIVATION CHECK (Mondays)
+// ═══════════════════════════════════════════════════════════
+function checkWeeklyMotivation() {
+  const weekKey = getWeekKey();
+  const shown = localStorage.getItem('nc_weekly_alert_' + weekKey);
+  if (shown) return;
+
+  const day = new Date().getDay();
+  if (day !== 1) return; // Only Monday
+
+  // Check last week's data
+  const lastWeekMeals = [];
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const meals = JSON.parse(localStorage.getItem('meals_' + d.toISOString().split('T')[0]) || '[]');
+    lastWeekMeals.push(...meals);
+  }
+
+  if (lastWeekMeals.length < 5) {
+    localStorage.setItem('nc_weekly_alert_' + weekKey, '1');
+    setTimeout(() => {
+      showToast('💙 Nueva semana, nueva oportunidad. ¡Vamos a por ella!');
+    }, 2000);
+  }
+}
+
 // Improve getEntrenoSuggestion prompt + wire ClassPass rec
 const _origGetEntrenoSuggestion=getEntrenoSuggestion;
 getEntrenoSuggestion=async function(){
@@ -5039,7 +5414,7 @@ getEntrenoSuggestion=async function(){
 
   localStorage.setItem('nc_ciclo_hoy',chipState.ciclo||'nodice');
 
-  const prompt=buildCalorieContext(meals)+`Eres entrenadora personal experta en fitness femenino, pérdida de volumen y grasa, y fuerza funcional. Tu enfoque es positivo, sin presión, fomentando la constancia.
+  const prompt=buildCalorieContext(meals)+getSurvivorContext()+`\n\nEres entrenadora personal experta en fitness femenino, pérdida de volumen y grasa, y fuerza funcional. Tu enfoque es positivo, sin presión, fomentando la constancia.
 
 Clienta: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Vive junto a Madrid Río. Tiene ClassPass.
 Objetivo: reducir peso y volumen, ganar fuerza, relación sana con el ejercicio.
@@ -5056,12 +5431,12 @@ ${chipState.ciclo==='menstruacion'?'RECUERDA: está con la regla — sé empáti
 ${daysSinceWorkout>=5?'IMPORTANTE: lleva '+daysSinceWorkout+' días sin entrenar — propón vuelta gradual y motivadora, que dé ganas de volver mañana.':''}
 ${daysSinceWorkout>=3&&daysSinceWorkout<5?'Lleva unos días sin entrenar — propón algo motivador que la enganche de nuevo.':''}
 ${streak>=7?'Lleva '+streak+' días de racha activa — puede subir la intensidad, está en modo constancia.':''}
-Racha actual: ${streak} días. Diseña el entrenamiento para que sea PROGRESIVO.
+Racha actual: ${streak} días. Diseña el entrenamiento para que sea PROGRESIVO y alineado con la fase Survivor actual.
 
 ESTRUCTURA OBLIGATORIA (siempre incluye las 4 partes):
 
 ## [Nombre del entreno] — [duración]
-[Por qué es ideal para hoy, 1-2 frases]
+[Por qué es ideal para hoy y para el objetivo Survivor, 1-2 frases]
 
 ### Calentamiento · 5 min
 - [ejercicio específico y duración]
