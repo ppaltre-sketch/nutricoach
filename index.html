@@ -514,6 +514,56 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
+
+    /* ── UX 4: SKELETON LOADING ── */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+    .skeleton-line { height: 12px; margin-bottom: 8px; border-radius: 6px; }
+    .skeleton-line.w-80 { width: 80%; }
+    .skeleton-line.w-60 { width: 60%; }
+    .skeleton-line.w-90 { width: 90%; }
+
+    /* ── UX 6: FAB PADDING FIX ── */
+    .page-inner { padding-bottom: calc(var(--nav-h, 64px) + 90px) !important; }
+
+    /* ── UX 8: MACRO TEXT SIZES ── */
+    .macro-pct, .ring-label, .macro-val { font-size: 0.85rem !important; }
+    .macro-name { font-size: 0.75rem !important; }
+    .ring-center-text { font-size: 1rem !important; }
+
+    /* ── UX 9: BETTER ACTIVE TABS ── */
+    .progress-tab {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      flex-shrink: 0;
+    }
+    .progress-tab.active {
+      background: var(--accent) !important;
+      color: #fff !important;
+      border-color: var(--accent) !important;
+      font-weight: 700 !important;
+    }
+
+    /* ── UX 10: FLASH CONFIRM ── */
+    @keyframes flashGreen {
+      0% { background: rgba(52,211,153,.4); }
+      100% { background: transparent; }
+    }
+    .flash-confirm { animation: flashGreen 0.6s ease-out; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -556,9 +606,10 @@
         <div id="meal-search-wrap" style="display:none;margin-bottom:8px;">
           <input type="text" id="meal-search-input" placeholder="🔍 Buscar en historial..." oninput="filterMealHistory()" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;" />
         </div>
+        <div id="repeat-yesterday-chip" style="margin-bottom:8px;"></div>
         <div id="meals-list"></div>
       </div>
-      <div id="evening-summary-card"></div>
+      <div id="hoy-extras-toggle"></div>
       <div id="dia-dificil-wrap"></div>
     </div>
 
@@ -1393,7 +1444,7 @@
 
 <div id="fab-container" style="position:fixed;bottom:calc(var(--nav-h) + 12px);right:16px;z-index:99;display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
   <div id="fab-options" style="display:none;flex-direction:column;align-items:flex-end;gap:8px;margin-bottom:4px;">
-    <div class="fab-option" onclick="closeFab();showPage('add')" style="display:flex;align-items:center;gap:8px;">
+    <div class="fab-option" onclick="closeFab();showAddMealSheet()" style="display:flex;align-items:center;gap:8px;">
       <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">🍽️ Añadir comida</span>
       <div style="width:40px;height:40px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 10px rgba(52,211,153,.4);">🍽️</div>
     </div>
@@ -1669,6 +1720,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('cfg-goal-fib').value=g.fib||25;
   renderGoalsHint();
 
+  initSwipeNav();
+  initKeyboardFix();
   checkSetupFromURL();
   checkWeeklyMotivation();
   renderTypeChips('s-type-chips','s');
@@ -1859,8 +1912,8 @@ function renderHome(){
   // ── Hambre card ──
   renderHambreCard();
 
-  // ── Evening Summary ──
-  renderEveningSummary();
+  // ── Hoy Extras (evening summary, etc.) ──
+  renderHoyExtras();
 
   // ── Día Difícil ──
   renderDiaDificil();
@@ -2005,6 +2058,7 @@ function renderHome(){
   renderNutritionPeriodCard();
   checkRaceWeekProtocol();
   updateNavDots();
+  renderRepeatYesterdayChip();
 }
 
 function dismissOnboard(){
@@ -2030,6 +2084,7 @@ function setGlass(n){
   setWater(cur===n?n-1:n); // tap same glass = unmark
   vibrate(20);
   renderWaterTracker();
+  flashConfirm(document.getElementById('water-tracker-wrap'));
 }
 
 function repeatMeal(m){
@@ -2353,6 +2408,7 @@ async function getCenaSuggestion(){
   const rP=Math.round(Math.max(0,goals.p-P)*10)/10,rC=Math.round(Math.max(0,goals.c-C)*10)/10,rF=Math.round(Math.max(0,goals.f-F)*10)/10;
   const btn=document.getElementById('cena-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Analizando tu día...';
+  document.getElementById('cena-result').innerHTML=`<div class="card">${skeletonHTML(5)}</div>`;
 
   const energyStatus=computeEnergyStatus(meals);
   const cicloHoy=localStorage.getItem('nc_ciclo_hoy')||chipState.ciclo||'nodice';
@@ -2443,6 +2499,7 @@ async function getEntrenoSuggestion(){
   if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
   const btn=document.getElementById('entreno-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Preparando tu entreno...';
+  document.getElementById('entreno-result').innerHTML=`<div class="card">${skeletonHTML(5)}</div>`;
 
   const opMap={paseo:'paseo rápido por Madrid Río',classpass:'ClassPass',youtube:'YouTube en TV',bandas:'bandas elásticas',kettlebell:'kettlebell 6kg',cinta:'cinta de andar'};
   const opciones=[...chipOpciones].map(o=>opMap[o]).join(', ');
@@ -2857,7 +2914,8 @@ function getWeekKey(){
 async function generarRetos(){
   if(!getApiKey()){showToast('Configura tu API Key primero');showPage('config');return;}
   const btn=document.getElementById('retos-btn');
-  btn.disabled=true;btn.innerHTML='<div class="spinner spinner-accent"></div> Analizando tu semana...';
+  btn.disabled=true;btn.innerHTML='<div class="spinner spinner-accent"></div> Analizando...';
+  document.getElementById('weekly-score-card').innerHTML=skeletonHTML(4);
   const goals=getGoals(),p=getProfile();
   const {streak}=calcStreak();
   // Last 7 days summary
@@ -3026,6 +3084,7 @@ async function getAlmuerzoSuggestion(){
   const tP=Math.round(rP*0.45),tC=Math.round(rC*0.45),tF=Math.round(rF*0.45);
   const btn=document.getElementById('almuerzo-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Pensando...';
+  document.getElementById('almuerzo-result').innerHTML=`<div class="card">${skeletonHTML(5)}</div>`;
   const cicloHoyA=localStorage.getItem('nc_ciclo_hoy')||chipState.ciclo||'nodice';
   const cicloNutricionA={
     menstruacion:'Prioriza hierro y magnesio. Reduce inflamación. Lentejas, espinacas, frutos secos, chocolate negro.',
@@ -3156,6 +3215,7 @@ function saveSteps(){
   const steps=parseInt(document.getElementById('steps-input').value)||0;
   const act=getActivity();act.pasos=steps;saveActivity(act);
   renderActivityToday();showToast('✓ Pasos guardados');
+  flashConfirm(document.getElementById('steps-bar'));
 }
 
 function logActivity(){
@@ -7393,6 +7453,240 @@ function renderWeeklyRitual() {
       </div>
     </div>
     <button onclick="saveWeeklyRitual()" class="btn btn-primary" style="width:100%;">Guardar ritual</button>`;
+}
+
+// ═══════════════ UX 1: HOY EXTRAS TOGGLE ═══════════════
+function renderHoyExtras() {
+  const el = document.getElementById('hoy-extras-toggle');
+  if (!el) return;
+  const expanded = localStorage.getItem('nc_hoy_extras_open') === '1';
+  el.innerHTML = `
+    <button onclick="toggleHoyExtras()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:0.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;">
+      ${expanded ? '▲ Menos' : '▼ Ver más'}
+    </button>
+    <div id="hoy-extras-content" style="display:${expanded?'block':'none'};">
+      <div id="evening-summary-card"></div>
+    </div>`;
+  if (expanded) {
+    renderEveningSummary();
+  }
+}
+
+function toggleHoyExtras() {
+  const open = localStorage.getItem('nc_hoy_extras_open') === '1';
+  localStorage.setItem('nc_hoy_extras_open', open ? '0' : '1');
+  renderHoyExtras();
+  if (!open) {
+    renderEveningSummary();
+  }
+}
+
+// ═══════════════ UX 2: ADD MEAL BOTTOM SHEET ═══════════════
+function showAddMealSheet() {
+  const recent = JSON.parse(localStorage.getItem('nc_recent_meals') || '[]').slice(0, 6);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'add-meal-sheet';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:1rem;font-weight:800;">🍽️ Añadir comida</div>
+        <button onclick="document.getElementById('add-meal-sheet').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;min-height:44px;min-width:44px;">✕</button>
+      </div>
+      ${recent.length ? `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Recientes</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${recent.map(m => `<button onclick="quickAddRecentMeal(${JSON.stringify(m).replace(/"/g,'&quot;')})" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;min-height:36px;">${esc(m.name)}</button>`).join('')}
+          </div>
+        </div>` : ''}
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <input type="text" id="sheet-meal-name" placeholder="Nombre de la comida" style="padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:3px;">Proteína (g)</div>
+            <input type="number" inputmode="decimal" id="sheet-meal-p" placeholder="0" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+          </div>
+          <div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:3px;">Carbos (g)</div>
+            <input type="number" inputmode="decimal" id="sheet-meal-c" placeholder="0" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+          </div>
+          <div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:3px;">Grasa (g)</div>
+            <input type="number" inputmode="decimal" id="sheet-meal-f" placeholder="0" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:3px;">Tipo</div>
+            <select id="sheet-meal-type" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;">
+              <option value="desayuno">Desayuno</option>
+              <option value="almuerzo" selected>Almuerzo</option>
+              <option value="merienda">Merienda</option>
+              <option value="cena">Cena</option>
+              <option value="snack">Snack</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:3px;">Fibra (g, opcional)</div>
+            <input type="number" inputmode="decimal" id="sheet-meal-fib" placeholder="0" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;" />
+          </div>
+        </div>
+      </div>
+      <button onclick="saveFromSheet()" class="btn btn-primary" style="width:100%;margin-top:14px;">✓ Guardar comida</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  // Close on overlay background tap
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  // Auto-detect meal type by time
+  const h = new Date().getHours();
+  const typeEl = document.getElementById('sheet-meal-type');
+  if (typeEl) {
+    if (h < 11) typeEl.value = 'desayuno';
+    else if (h < 16) typeEl.value = 'almuerzo';
+    else if (h < 18) typeEl.value = 'merienda';
+    else if (h < 21) typeEl.value = 'cena';
+    else typeEl.value = 'snack';
+  }
+  setTimeout(() => document.getElementById('sheet-meal-name')?.focus(), 100);
+}
+
+function saveFromSheet() {
+  const name = document.getElementById('sheet-meal-name')?.value.trim();
+  if (!name) { showToast('Escribe el nombre de la comida'); return; }
+  const p = parseFloat(document.getElementById('sheet-meal-p')?.value) || 0;
+  const c = parseFloat(document.getElementById('sheet-meal-c')?.value) || 0;
+  const f = parseFloat(document.getElementById('sheet-meal-f')?.value) || 0;
+  const fib = parseFloat(document.getElementById('sheet-meal-fib')?.value) || 0;
+  const type = document.getElementById('sheet-meal-type')?.value || 'almuerzo';
+
+  const meal = { name, p, c, f, fib, type, time: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) };
+  const meals = getMeals();
+  meals.push(meal);
+  localStorage.setItem('meals_' + dk(), JSON.stringify(meals));
+
+  // Save to recent meals
+  updateRecentMealsCache({ name, p, c, f, fib });
+
+  document.getElementById('add-meal-sheet')?.remove();
+  renderHome();
+  renderCenaRemaining();
+  renderAlmuerzoRemaining();
+  vibrate([30, 20, 30]);
+  showToast('✓ ' + name + ' añadido');
+}
+
+function quickAddRecentMeal(m) {
+  const meals = getMeals();
+  meals.push({ ...m, time: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) });
+  localStorage.setItem('meals_' + dk(), JSON.stringify(meals));
+  document.getElementById('add-meal-sheet')?.remove();
+  renderHome();
+  renderCenaRemaining();
+  renderAlmuerzoRemaining();
+  vibrate([30, 20, 30]);
+  showToast('✓ ' + esc(m.name) + ' añadido');
+}
+
+// ═══════════════ UX 3: REPEAT YESTERDAY CHIP ═══════════════
+function renderRepeatYesterdayChip() {
+  const el = document.getElementById('repeat-yesterday-chip');
+  if (!el) return;
+  const todayMeals = getMeals();
+  const h = new Date().getHours();
+
+  const mealType = h < 11 ? 'desayuno' : h < 16 ? 'almuerzo' : h < 18 ? 'merienda' : h < 21 ? 'cena' : 'snack';
+
+  // Already logged this meal type today?
+  if (todayMeals.some(m => m.type === mealType)) { el.innerHTML = ''; return; }
+
+  // Get yesterday's meals of this type
+  const yest = new Date(); yest.setDate(yest.getDate() - 1);
+  const yesterdayMeals = JSON.parse(localStorage.getItem('meals_' + yest.toISOString().split('T')[0]) || '[]');
+  const yesterdayType = yesterdayMeals.filter(m => m.type === mealType);
+
+  if (!yesterdayType.length) { el.innerHTML = ''; return; }
+
+  const names = yesterdayType.map(m => m.name).join(' + ');
+  const displayNames = names.length > 40 ? names.slice(0, 40) + '...' : names;
+  el.innerHTML = `<button onclick="repeatYesterdayMeals('${mealType}')" style="width:100%;padding:9px 14px;border-radius:10px;border:1px dashed var(--accent);background:rgba(129,140,248,.06);color:var(--accent);font-size:0.78rem;cursor:pointer;text-align:left;margin-bottom:8px;">
+    ↩️ Repetir ${mealType} de ayer: <strong>${esc(displayNames)}</strong>
+  </button>`;
+}
+
+function repeatYesterdayMeals(mealType) {
+  const yest = new Date(); yest.setDate(yest.getDate() - 1);
+  const yesterdayMeals = JSON.parse(localStorage.getItem('meals_' + yest.toISOString().split('T')[0]) || '[]');
+  const toRepeat = yesterdayMeals.filter(m => m.type === mealType);
+  if (!toRepeat.length) return;
+
+  const meals = getMeals();
+  toRepeat.forEach(m => meals.push({ ...m, time: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) }));
+  localStorage.setItem('meals_' + dk(), JSON.stringify(meals));
+  renderHome();
+  vibrate([30, 20, 30]);
+  showToast('↩️ ' + mealType + ' de ayer repetido');
+}
+
+// ═══════════════ UX 4: SKELETON HELPER ═══════════════
+function skeletonHTML(lines = 4) {
+  const widths = ['w-90','w-80','w-60','w-90','w-80','w-70'];
+  return `<div style="padding:4px 0;">${Array.from({length:lines},(_,i)=>`<div class="skeleton skeleton-line ${widths[i%widths.length]}"></div>`).join('')}</div>`;
+}
+
+// ═══════════════ UX 5: SWIPE NAVIGATION ═══════════════
+const PAGE_ORDER = ['home','cena','entreno','progreso','config'];
+
+function initSwipeNav() {
+  let startX = 0, startY = 0, startTime = 0;
+
+  document.addEventListener('touchstart', e => {
+    if (e.target.closest('input,select,textarea,button,.chips,.recent-strip-scroll,.quick-scroll,.progress-tabs,.ia-tabs,.c25k-tabs,.add-mode-tabs')) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!startX) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+    const dt = Date.now() - startTime;
+
+    // Valid swipe: fast, mostly horizontal, significant distance
+    if (Math.abs(dx) < 60 || dy > Math.abs(dx) * 0.7 || dt > 400) { startX = 0; return; }
+
+    const currentPage = PAGE_ORDER.find(p => {
+      const el = document.getElementById('page-' + p);
+      return el && el.classList.contains('active');
+    }) || 'home';
+
+    const idx = PAGE_ORDER.indexOf(currentPage);
+    if (dx < 0 && idx < PAGE_ORDER.length - 1) showPage(PAGE_ORDER[idx + 1]);
+    if (dx > 0 && idx > 0) showPage(PAGE_ORDER[idx - 1]);
+    startX = 0;
+  }, { passive: true });
+}
+
+// ═══════════════ UX 7: IOS KEYBOARD FIX ═══════════════
+function initKeyboardFix() {
+  document.addEventListener('focusin', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+      setTimeout(() => {
+        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  });
+}
+
+// ═══════════════ UX 10: FLASH CONFIRM ═══════════════
+function flashConfirm(el) {
+  if (!el) return;
+  el.classList.remove('flash-confirm');
+  void el.offsetWidth; // reflow to restart animation
+  el.classList.add('flash-confirm');
+  setTimeout(() => el.classList.remove('flash-confirm'), 700);
 }
 
 let _ritualFeel = null;
