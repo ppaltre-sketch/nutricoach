@@ -26,7 +26,7 @@
     /* TOP BAR */
     .topbar{height:var(--top-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;position:fixed;top:0;left:0;right:0;z-index:100;}
     .topbar-title{font-weight:800;font-size:1.1rem;color:var(--accent);}
-    .topbar-date{font-size:0.75rem;color:var(--muted);margin-left:auto;}
+    .topbar-date{font-size:0.75rem;color:var(--muted);}
 
     /* BOTTOM NAV */
     .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;padding-bottom:env(safe-area-inset-bottom);z-index:100;}
@@ -571,7 +571,10 @@
 <div id="offline-banner" style="display:none;background:var(--orange);color:#fff;text-align:center;font-size:0.75rem;padding:4px;font-weight:600;position:fixed;top:0;left:0;right:0;z-index:200;">Sin conexión — las funciones de IA no están disponibles</div>
 <div class="topbar" id="main-topbar">
   <span class="topbar-title">🥗 NutriCoach</span>
-  <span class="topbar-date" id="today-date"></span>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+    <span class="topbar-date" id="today-date"></span>
+    <button onclick="showPage('config')" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:2px 4px;line-height:1;" title="Ajustes">⚙️</button>
+  </div>
 </div>
 
 <div class="scroll" id="scroll-container">
@@ -1092,6 +1095,12 @@
           <div id="survivor-circuit-result" style="display:none;margin-top:12px;"></div>
           <button id="survivor-circuit-log-btn" onclick="logSurvivorCircuit()" style="display:none;width:100%;margin-top:8px;padding:11px;border-radius:12px;border:none;background:var(--green);color:#0f172a;font-weight:700;cursor:pointer;">✓ Registrar como completado</button>
         </div>
+        <div class="card">
+          <div class="card-title">📅 Tu semana de entrenamiento</div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;">Planifica el domingo, ejecuta el resto.</p>
+          <div id="plan-days-container"></div>
+          <button class="btn btn-primary" style="margin-top:6px;" onclick="generarPlanSemanalIA()" id="plan-ia-btn">✨ Generar plan con IA</button>
+        </div>
       </div>
 
     </div>
@@ -1102,8 +1111,6 @@
         <div class="progress-tab active" id="ptab-actividad" onclick="setProgresoTab('actividad')" style="white-space:nowrap;">🏃 Actividad</div>
         <div class="progress-tab" id="ptab-medidas" onclick="setProgresoTab('medidas')" style="white-space:nowrap;">📏 Medidas</div>
         <div class="progress-tab" id="ptab-semana" onclick="setProgresoTab('semana')" style="white-space:nowrap;">📊 Semana</div>
-        <div class="progress-tab" id="ptab-objetivos" onclick="setProgresoTab('objetivos')" style="white-space:nowrap;">🎯 Objetivos</div>
-        <div class="progress-tab" id="ptab-plan" onclick="setProgresoTab('plan')" style="white-space:nowrap;">📅 Plan</div>
       </div>
 
       <!-- Actividad hoy -->
@@ -1118,45 +1125,6 @@
           <div style="display:flex;gap:8px;margin-top:8px;">
             <input type="number" inputmode="decimal" id="steps-input" placeholder="Total pasos del día..." style="flex:1;" />
             <button onclick="saveSteps()" style="padding:11px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:0.85rem;white-space:nowrap;">Guardar</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Actividad de hoy</div>
-          <div id="activity-list-today"></div>
-          <div style="margin-top:12px;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-              <div class="form-group" style="margin:0;">
-                <label>Tipo de actividad</label>
-                <select id="act-tipo">
-                  <option value="🚶 Paseo">🚶 Paseo</option>
-                  <option value="🏋️ Pesas / Gym">🏋️ Pesas / Gym</option>
-                  <option value="🧘 Yoga / Pilates">🧘 Yoga / Pilates</option>
-                  <option value="🚴 Bici">🚴 Bici</option>
-                  <option value="🏊 Natación">🏊 Natación</option>
-                  <option value="🤸 Cardio en casa">🤸 Cardio en casa</option>
-                  <option value="💃 Baile">💃 Baile</option>
-                  <option value="🏃 Carrera">🏃 Carrera</option>
-                  <option value="⚫ Kettlebell">⚫ Kettlebell</option>
-                  <option value="🎯 Bandas / Fuerza">🎯 Bandas / Fuerza</option>
-                  <option value="🧗 ClassPass">🧗 ClassPass</option>
-                  <option value="🏞️ Madrid Río">🏞️ Madrid Río</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin:0;">
-                <label>Duración (min)</label>
-                <input type="number" inputmode="decimal" id="act-duracion" placeholder="30" min="1" />
-              </div>
-            </div>
-            <div class="form-group" style="margin-bottom:10px;">
-              <label>Intensidad</label>
-              <div class="chips" id="chips-intensidad" style="margin-top:6px;">
-                <button class="chip selected" data-val="suave" onclick="selectChip(this,'intensidad')">😌 Suave</button>
-                <button class="chip" data-val="moderada" onclick="selectChip(this,'intensidad')">💪 Moderada</button>
-                <button class="chip" data-val="intensa" onclick="selectChip(this,'intensidad')">🔥 Intensa</button>
-              </div>
-            </div>
-            <button class="btn btn-primary" onclick="logActivity()">Añadir actividad</button>
           </div>
         </div>
 
@@ -1209,16 +1177,6 @@
         </div>
       </div>
 
-      <!-- Plan semanal -->
-      <div id="progreso-plan" style="display:none">
-        <div class="card">
-          <div class="card-title">📅 Tu semana de entrenamiento</div>
-          <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;">Planifica el domingo, ejecuta el resto.</p>
-          <div id="plan-days-container"></div>
-          <button class="btn btn-primary" style="margin-top:6px;" onclick="generarPlanSemanalIA()" id="plan-ia-btn">✨ Generar plan con IA</button>
-        </div>
-      </div>
-
       <!-- Retos semanales (legacy, hidden) -->
       <div id="progreso-retos" style="display:none"></div>
 
@@ -1227,29 +1185,6 @@
         <div id="logros-count" style="display:none;"></div>
         <div id="logros-grid" style="display:none;"></div>
         <div id="strength-challenge-card" style="display:none;"><div id="strength-challenge-content"></div></div>
-      </div>
-
-      <!-- Objetivos = Retos + Logros merged -->
-      <div id="progreso-objetivos" style="display:none">
-        <div class="card">
-          <div class="card-title">🎯 Mis retos de esta semana</div>
-          <div id="retos-content"></div>
-          <button class="btn btn-secondary" style="margin-top:12px;" onclick="generarRetos()" id="retos-btn">✨ Generar mis retos con IA</button>
-        </div>
-        <div class="card" style="background:linear-gradient(135deg,rgba(129,140,248,.1),rgba(99,102,241,.04));border-color:rgba(129,140,248,.2);">
-          <div class="card-title" style="color:var(--accent);">¿Para qué sirven los retos?</div>
-          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;">La IA analiza cómo fue tu semana — días activos, macros, agua — y te propone 3 objetivos pequeños pero concretos. No perfectos, alcanzables. La constancia en pequeños hábitos es lo que cambia el cuerpo a largo plazo.</p>
-        </div>
-        <div style="border-top:2px solid var(--border);margin:4px 0 14px;"></div>
-        <div class="card">
-          <div class="card-title">🏆 Mis logros</div>
-          <div id="ob-logros-count" style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;"></div>
-          <div id="ob-logros-grid" class="achievements-grid"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">💥 Reto de fuerza</div>
-          <div id="ob-strength-challenge-content"></div>
-        </div>
       </div>
 
       <!-- Semana -->
@@ -1290,6 +1225,26 @@
         <div class="card">
           <div class="card-title">🏃 Actividad esta semana</div>
           <div id="weekly-activity"></div>
+        </div>
+        <div style="border-top:1px solid var(--border);margin:8px 0 14px;"></div>
+        <div class="card">
+          <div class="card-title">🎯 Mis retos de esta semana</div>
+          <div id="retos-content"></div>
+          <button class="btn btn-secondary" style="margin-top:12px;" onclick="generarRetos()" id="retos-btn">✨ Generar mis retos con IA</button>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg,rgba(129,140,248,.1),rgba(99,102,241,.04));border-color:rgba(129,140,248,.2);">
+          <div class="card-title" style="color:var(--accent);">¿Para qué sirven los retos?</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;">La IA analiza cómo fue tu semana — días activos, macros, agua — y te propone 3 objetivos pequeños pero concretos. No perfectos, alcanzables. La constancia en pequeños hábitos es lo que cambia el cuerpo a largo plazo.</p>
+        </div>
+        <div style="border-top:2px solid var(--border);margin:4px 0 14px;"></div>
+        <div class="card">
+          <div class="card-title">🏆 Mis logros</div>
+          <div id="ob-logros-count" style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;"></div>
+          <div id="ob-logros-grid" class="achievements-grid"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">💥 Reto de fuerza</div>
+          <div id="ob-strength-challenge-content"></div>
         </div>
       </div>
     </div>
@@ -1468,7 +1423,7 @@
     <div class="bnav-icon">🏠</div><div class="bnav-label" style="font-size:.55rem;">HOY</div>
   </div>
   <div class="bnav-item" id="bnav-cena" onclick="showPage('cena')">
-    <div class="bnav-icon">🤖</div><div class="bnav-label" style="font-size:.55rem;">IA</div>
+    <div class="bnav-icon">🍽️</div><div class="bnav-label" style="font-size:.55rem;">COMER</div>
   </div>
   <div class="bnav-item" id="bnav-entreno" onclick="showPage('entreno')" style="position:relative;">
     <div id="bnav-entrena-dot" style="display:none;width:6px;height:6px;border-radius:50%;background:var(--green);position:absolute;top:8px;right:calc(50% - 10px);"></div>
@@ -1476,9 +1431,6 @@
   </div>
   <div class="bnav-item" id="bnav-progreso" onclick="showPage('progreso')">
     <div class="bnav-icon">📊</div><div class="bnav-label" style="font-size:.55rem;">PROGRESO</div>
-  </div>
-  <div class="bnav-item" id="bnav-config" onclick="showPage('config')">
-    <div class="bnav-icon">⚙️</div><div class="bnav-label" style="font-size:.55rem;">CONFIG</div>
   </div>
 </nav>
 
@@ -3148,11 +3100,12 @@ function setEntrenoTab(tab) {
   }
   if (tab === 'planes') {
     renderRunPlanWeek();
+    renderWeeklyPlan();
   }
 }
 
 function setProgresoTab(tab){
-  ['actividad','medidas','semana','retos','plan'].forEach(t=>{
+  ['actividad','medidas','semana','retos'].forEach(t=>{
     const pEl=document.getElementById('progreso-'+t);
     const tEl=document.getElementById('ptab-'+t);
     if(pEl)pEl.style.display=t===tab?'block':'none';
@@ -3162,6 +3115,7 @@ function setProgresoTab(tab){
   if(tab==='medidas'){renderWeeklyRitual();renderBodyComposition();renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
   if(tab==='semana'){
     renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();
+    renderRetos();
     // Auto-load weekly score on Sundays
     const isSunday = new Date().getDay() === 0;
     const weekScoreEl = document.getElementById('weekly-score-card');
@@ -3172,7 +3126,6 @@ function setProgresoTab(tab){
     }
   }
   if(tab==='retos')renderRetos();
-  if(tab==='plan')renderWeeklyPlan();
 }
 
 function renderProgreso(){
