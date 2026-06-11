@@ -3311,7 +3311,7 @@ function renderWeeklySummary(){
     const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
     let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
     const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
-    days.push({key,label:d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}),P,C,F,hasMeals:meals.length>0,act});
+    days.push({key,label:d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}),P:Math.round(P),C:Math.round(C),F:Math.round(F),hasMeals:meals.length>0,act});
   }
   const sumEl=document.getElementById('weekly-summary');
   sumEl.innerHTML=days.map(d=>{
