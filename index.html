@@ -585,6 +585,7 @@
       <div id="time-context-card"></div>
       <div id="survivor-semaforo"></div>
       <div id="streaks-bar"></div>
+      <div id="ciclo-phase-chip"></div>
       <div id="home-onboard"></div>
       <div id="race-week-banner" style="display:none;margin-bottom:14px;"></div>
       <div id="reminder-banners"></div>
@@ -613,6 +614,7 @@
         <div id="meals-list"></div>
       </div>
       <div id="hoy-extras-toggle"></div>
+      <div id="evening-checkin-wrap"></div>
       <div id="dia-dificil-wrap"></div>
     </div>
 
@@ -1080,6 +1082,10 @@
           <div class="card-title">📝 Registro detallado de sesión</div>
           <div id="performance-log-content"></div>
         </div>
+        <div class="card" id="classpass-hist-card">
+          <div class="card-title">🧗 Historial ClassPass</div>
+          <div id="classpass-history-card"></div>
+        </div>
       </div>
 
       <!-- ── TAB PLANES ── -->
@@ -1148,6 +1154,7 @@
 
       <!-- Medidas -->
       <div id="progreso-medidas" style="display:none">
+        <div id="talla40-progress-wrap"></div>
         <div class="card" id="weekly-measures-ritual">
           <div class="card-title">📏 Ritual del domingo</div>
           <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Cintura y cadera en ayunas, misma hora cada semana. Esto es tu brújula real hacia la talla 40.</p>
@@ -1366,6 +1373,25 @@
         <div id="notif-status" style="font-size:0.78rem;margin-top:8px;"></div>
       </div>
 
+      <div class="card">
+        <div class="card-title">🩸 Ciclo menstrual</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Indica cuándo empezó tu último periodo. La app calculará automáticamente en qué fase estás cada día y ajustará tus entrenamientos y nutrición.</p>
+        <div class="form-group">
+          <label>Fecha inicio último periodo</label>
+          <input type="date" id="ciclo-last-period" onchange="saveCicloConfig()" style="width:100%;" />
+        </div>
+        <div class="form-group">
+          <label>Duración del ciclo (días)</label>
+          <input type="number" id="ciclo-length" value="28" min="21" max="40" onchange="saveCicloConfig()" style="width:100%;" />
+        </div>
+        <div id="ciclo-status-config" style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:10px;font-size:0.82rem;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔔 Recordatorios</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Activa los recordatorios para no olvidar el agua, las comidas y las medidas semanales.</p>
+        <div id="notif-status-new" style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;"></div>
+        <button class="btn btn-secondary" onclick="enableNotifications()">🔔 Activar recordatorios</button>
+      </div>
       <div class="card">
         <div class="setting-group-title">Restablecer datos</div>
         <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3);" onclick="clearToday()">Borrar comidas de hoy</button>
@@ -1705,6 +1731,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   initSwipeNav();
   initKeyboardFix();
   checkSetupFromURL();
+  handleURLActions();
+  if('Notification' in window && Notification.permission === 'granted' && localStorage.getItem('nc_notif_enabled')) scheduleNotifications();
   checkWeeklyMotivation();
   renderTypeChips('s-type-chips','s');
   renderTypeChips('m-type-chips','m');
@@ -1752,6 +1780,7 @@ function showPage(name){
   if(name==='cena'){renderCenaRemaining();renderAlmuerzoRemaining();}
   if(name==='entreno'){renderYesterdayWorkout();renderZone2Status();renderOverloadPrescription();}
   if(name==='progreso')renderProgreso();
+  if(name==='config'){initCicloConfig();initNotifStatus();}
 }
 
 // ═══════════════ HOME ═══════════════
@@ -1897,8 +1926,15 @@ function renderHome(){
   // ── Hoy Extras (evening summary, etc.) ──
   renderHoyExtras();
 
+  // ── Ciclo phase chip ──
+  renderCicloPhaseChip();
+
+  // ── Evening check-in ──
+  renderEveningCheckin();
+
   // ── Día Difícil ──
   renderDiaDificil();
+  renderDiaDificilBtn();
 
   // ── Status messages ──
   const msgs=[];
@@ -2393,7 +2429,7 @@ async function getCenaSuggestion(){
   document.getElementById('cena-result').innerHTML=`<div class="card">${skeletonHTML(5)}</div>`;
 
   const energyStatus=computeEnergyStatus(meals);
-  const cicloHoy=localStorage.getItem('nc_ciclo_hoy')||chipState.ciclo||'nodice';
+  const cicloHoy=localStorage.getItem('nc_ciclo_hoy')||chipState.ciclo||getCicloPhase()||'nodice';
   const cicloNutricion={
     menstruacion:'Prioriza hierro (lentejas, espinacas, carne roja, mejillones), magnesio (chocolate negro 85%+, frutos secos), reduce alimentos inflamatorios.',
     folicular:'Buena respuesta a proteína y carbos, momento de cargar bien para recuperación.',
@@ -3152,6 +3188,7 @@ function setEntrenoTab(tab) {
     renderZone2Status();
     renderBenchmarkHistory();
     renderPerformanceLog();
+    renderClassPassHistory();
   }
   if (tab === 'planes') {
     renderRunPlanWeek();
@@ -3167,7 +3204,7 @@ function setProgresoTab(tab){
     if(tEl)tEl.classList.toggle('active',t===tab);
   });
   if(tab==='actividad')renderActivityToday();
-  if(tab==='medidas'){renderWeeklyRitual();renderBodyComposition();renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
+  if(tab==='medidas'){renderTalla40Progress();renderWeeklyRitual();renderBodyComposition();renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
   if(tab==='semana'){
     renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();
     renderRetos();
@@ -5867,7 +5904,10 @@ function logActivityFromEntreno() {
   }
 
   if (isClassPass) {
-    showClassPassTypeModal(claseInfo => saveElog({ clase: claseInfo }));
+    showClassPassTypeModal(claseInfo => {
+      if(claseInfo) saveClassPassHistory(claseInfo.label || tipo, duracion);
+      saveElog({ clase: claseInfo });
+    });
   } else if (isCasa) {
     showHomeWorkoutModal(claseInfo => saveElog({ clase: claseInfo || { id: 'casa', label: 'Casa' } }));
   } else if (isCardio) {
@@ -6415,7 +6455,12 @@ function selectClassType(id, label, muscles, btn) {
     showHomeWorkoutModal(window._classPassCallback);
     return;
   }
-  if (window._classPassCallback) window._classPassCallback({id, label, muscles});
+  if (window._classPassCallback) {
+    const durEl = document.getElementById('elog-duracion');
+    const dur = durEl ? parseInt(durEl.value)||0 : 0;
+    saveClassPassHistory(label, dur);
+    window._classPassCallback({id, label, muscles});
+  }
 }
 
 async function showHomeWorkoutModal(callback) {
@@ -7794,6 +7839,340 @@ function saveWeeklyRitual() {
   renderBodyComposition();
   showToast('📏 Ritual guardado — ¡un paso más hacia la 40!');
   vibrate([30,20,30]);
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 1: CICLO MENSTRUAL AUTO-TRACKER
+// ═══════════════════════════════════════════════════════════
+function saveCicloConfig(){
+  const lastPeriod = document.getElementById('ciclo-last-period')?.value;
+  const length = parseInt(document.getElementById('ciclo-length')?.value) || 28;
+  if(lastPeriod){
+    localStorage.setItem('nc_ciclo_last_period', lastPeriod);
+    localStorage.setItem('nc_ciclo_length', length);
+    renderCicloConfigStatus();
+  }
+}
+
+function getCicloPhase(){
+  const lastPeriod = localStorage.getItem('nc_ciclo_last_period');
+  if(!lastPeriod) return localStorage.getItem('nc_ciclo_hoy') || 'nodice';
+  const cycleLength = parseInt(localStorage.getItem('nc_ciclo_length')) || 28;
+  const start = new Date(lastPeriod + 'T12:00:00');
+  const today = new Date();
+  const dayInCycle = Math.floor((today - start) / 86400000) % cycleLength;
+  if(dayInCycle < 0) return 'nodice';
+  if(dayInCycle <= 4) return 'menstruacion';
+  if(dayInCycle <= 13) return 'folicular';
+  if(dayInCycle <= 16) return 'ovulacion';
+  return 'lutea';
+}
+
+function getCicloPhaseLabel(phase){
+  return {menstruacion:'🔴 Menstruación',folicular:'🌱 Fase folicular',ovulacion:'✨ Ovulación',lutea:'🌙 Fase lútea',nodice:'🤷 No especificada'}[phase]||'';
+}
+
+function renderCicloConfigStatus(){
+  const el = document.getElementById('ciclo-status-config');
+  if(!el) return;
+  const phase = getCicloPhase();
+  const lastPeriod = localStorage.getItem('nc_ciclo_last_period');
+  if(!lastPeriod){ el.textContent = 'Introduce la fecha para activar el tracker'; return; }
+  const cycleLength = parseInt(localStorage.getItem('nc_ciclo_length')) || 28;
+  const start = new Date(lastPeriod + 'T12:00:00');
+  const today = new Date();
+  const dayInCycle = (Math.floor((today - start) / 86400000) % cycleLength) + 1;
+  el.innerHTML = `Hoy es el día <strong>${dayInCycle}</strong> de tu ciclo · Fase actual: <strong>${getCicloPhaseLabel(phase)}</strong>`;
+}
+
+function initCicloConfig(){
+  const lastPeriod = localStorage.getItem('nc_ciclo_last_period');
+  const length = localStorage.getItem('nc_ciclo_length');
+  const lpEl = document.getElementById('ciclo-last-period');
+  const lnEl = document.getElementById('ciclo-length');
+  if(lpEl && lastPeriod) lpEl.value = lastPeriod;
+  if(lnEl && length) lnEl.value = length;
+  renderCicloConfigStatus();
+}
+
+function renderCicloPhaseChip(){
+  const el = document.getElementById('ciclo-phase-chip');
+  if(!el) return;
+  const phase = getCicloPhase();
+  if(phase === 'nodice') { el.innerHTML = ''; return; }
+  const label = getCicloPhaseLabel(phase);
+  const colors = {menstruacion:'var(--red)',folicular:'var(--green)',ovulacion:'var(--accent)',lutea:'var(--orange)'};
+  const color = colors[phase] || 'var(--muted)';
+  el.innerHTML = `<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid ${color};background:${color}22;font-size:0.75rem;color:${color};margin-bottom:10px;">${label}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 3: MODO DÍA DIFÍCIL (NUEVO)
+// ═══════════════════════════════════════════════════════════
+function renderDiaDificilBtn(){
+  const el = document.getElementById('dia-dificil-wrap');
+  if(!el) return;
+  // If the old renderDiaDificil already rendered something (legacy cache), don't override
+  const cacheKey = 'nc_dia_dificil_' + dk();
+  const legacyCached = localStorage.getItem(cacheKey);
+  // Legacy format: plain text. New format: key 'nc_dia_dificil_btn_used_' + dk()
+  const used = localStorage.getItem('nc_dia_dificil_btn_used_' + dk());
+  if(used){
+    el.innerHTML = `<div style="text-align:center;padding:8px;font-size:0.78rem;color:var(--muted);">💜 Lo hiciste bien hoy. Mañana es otro día.</div>`;
+    return;
+  }
+  if(legacyCached) return; // old dia dificil already showing via renderDiaDificil
+  el.innerHTML = `
+    <button onclick="activateDiaDificil()" style="width:100%;padding:12px;border-radius:14px;border:1.5px dashed rgba(248,113,113,.4);background:rgba(248,113,113,.05);color:var(--muted);font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+      💜 Estoy teniendo un día difícil
+    </button>`;
+}
+
+async function activateDiaDificil(){
+  localStorage.setItem('nc_dia_dificil_btn_used_' + dk(), '1');
+  const el = document.getElementById('dia-dificil-wrap');
+  if(el) el.innerHTML = `<div class="card" style="border-color:rgba(248,113,113,.3);background:linear-gradient(135deg,rgba(248,113,113,.08),rgba(248,113,113,.02));">
+    <div style="font-size:1.5rem;margin-bottom:8px;">💜</div>
+    <div style="font-weight:800;margin-bottom:8px;">Está bien tener días así</div>
+    <div id="dia-dificil-content" style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${skeletonHTML(4)}</div>
+  </div>`;
+
+  if(!getApiKey()){ document.getElementById('dia-dificil-content').innerHTML = '🫂 Recuerda: un día difícil no deshace todo el progreso. Tómate un snack que te nutra y date permiso para descansar.'; return; }
+
+  const meals = getMeals();
+  let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  const goals = getGoals();
+  const phase = getCicloPhase();
+  try{
+    const res = await callClaudeWithTimeout([{role:'user',content:`Eres una coach con enfoque compasivo en nutrición y bienestar. La usuaria está teniendo un día difícil — estrés, ansiedad o posible antojo fuerte. Tiene un trastorno alimentario, así que el tono debe ser SIEMPRE empático, sin culpa, sin presión, sin mencionar calorías ni peso.
+
+Macros comidos hoy: P${Math.round(P)}g C${Math.round(C)}g G${Math.round(F)}g de objetivos P${goals.p}g C${goals.c}g G${goals.f}g.
+Fase del ciclo: ${phase}.
+
+Responde con estructura exacta (máximo 120 palabras):
+🫂 **Un mensaje de apoyo** (2 frases empáticas, valida que está bien tener días así)
+🍓 **Snack que te cuida ahora** (uno concreto, nutritivo, fácil, que sacie y reconforte — sin culpa)
+🧘 **Movimiento de 10 minutos** (algo muy suave: paseo, estiramientos, respiración — nada intenso)
+💜 **Recordatorio** (una frase sobre su progreso hacia Survivor, sin presión)`}]);
+    const contentEl = document.getElementById('dia-dificil-content');
+    if(contentEl) contentEl.innerHTML = `<div class="ai-bubble" style="background:transparent;padding:0;">${formatAI(res)}</div>`;
+  }catch(e){
+    const contentEl = document.getElementById('dia-dificil-content');
+    if(contentEl) contentEl.innerHTML = '🫂 Recuerda: un día difícil no deshace todo el progreso. Date permiso para cuidarte hoy.';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 4: NOTIFICACIONES PUSH
+// ═══════════════════════════════════════════════════════════
+async function requestNotificationPermission(){
+  if(!('Notification' in window)) return false;
+  if(Notification.permission === 'granted') return true;
+  if(Notification.permission === 'denied') return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+function scheduleNotifications(){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const h = now.getHours();
+  const min = now.getMinutes();
+
+  if(h < 11){
+    const msTo11 = ((11 - h - 1) * 60 + (60 - min)) * 60000;
+    setTimeout(()=>{
+      if(getWater() === 0 && Notification.permission === 'granted'){
+        new Notification('💧 NutriCoach', {body:'¿Ya bebiste agua hoy? Hidratarte bien ayuda a tu progreso hacia Survivor.', icon:'./icon.svg'});
+      }
+    }, msTo11);
+  }
+
+  if(h < 13){
+    const msTo13 = ((13 - h - 1) * 60 + (60 - min)) * 60000;
+    setTimeout(()=>{
+      const meals = getMeals();
+      if(meals.length < 1 && Notification.permission === 'granted'){
+        new Notification('🍽️ NutriCoach', {body:'Son las 13h — ¿registraste tu almuerzo? Llevar el seguimiento te acerca a talla 40.', icon:'./icon.svg'});
+      }
+    }, msTo13);
+  }
+
+  const isSunday = now.getDay() === 0;
+  if(isSunday && h < 9){
+    const msTo9 = ((9 - h - 1) * 60 + (60 - min)) * 60000;
+    setTimeout(()=>{
+      if(Notification.permission === 'granted'){
+        new Notification('📏 NutriCoach', {body:'¡Domingo de ritual! Tómate las medidas en ayunas para ver tu progreso esta semana.', icon:'./icon.svg'});
+      }
+    }, msTo9);
+  }
+}
+
+async function enableNotifications(){
+  const granted = await requestNotificationPermission();
+  const el = document.getElementById('notif-status-new');
+  if(granted){
+    scheduleNotifications();
+    localStorage.setItem('nc_notif_enabled','1');
+    if(el) el.innerHTML = '<span style="color:var(--green);">✓ Recordatorios activados</span>';
+    showToast('✓ Recordatorios activados');
+  } else {
+    if(el) el.innerHTML = '<span style="color:var(--orange);">Actívalos desde Ajustes del navegador</span>';
+    showToast('Activa los permisos desde los ajustes del navegador');
+  }
+}
+
+function initNotifStatus(){
+  const el = document.getElementById('notif-status-new');
+  if(!el) return;
+  if(!('Notification' in window)){ el.textContent = 'Las notificaciones no están disponibles en este navegador'; return; }
+  if(Notification.permission === 'granted'){
+    el.innerHTML = '<span style="color:var(--green);">✓ Recordatorios activados</span>';
+    if(localStorage.getItem('nc_notif_enabled')) scheduleNotifications();
+  } else if(Notification.permission === 'denied'){
+    el.innerHTML = '<span style="color:var(--orange);">Bloqueadas — actívalas desde Ajustes del navegador</span>';
+  } else {
+    el.textContent = 'Pulsa el botón para activar';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 5: CHECK-IN DE FIN DE DÍA
+// ═══════════════════════════════════════════════════════════
+function renderEveningCheckin(){
+  const el = document.getElementById('evening-checkin-wrap');
+  if(!el) return;
+  const h = new Date().getHours();
+  if(h < 19 || h >= 24){ el.innerHTML = ''; return; }
+
+  const done = localStorage.getItem('nc_evening_checkin_' + dk());
+  if(done){
+    const data = safeParse(done, {});
+    el.innerHTML = `<div style="text-align:center;padding:6px;font-size:0.78rem;color:var(--muted);">Check-in de esta noche: ${data.emoji || '✓'} anotado</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="card" style="border-color:rgba(129,140,248,.25);">
+      <div class="card-title">🌙 ¿Cómo fue el día?</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">3 segundos. Sin juicio.</p>
+      <div style="display:flex;justify-content:space-around;margin-bottom:12px;">
+        ${[['😤','Difícil'],['😐','Normal'],['😊','Bien'],['🌟','Genial']].map(([e,l])=>`
+          <button onclick="saveEveningCheckin('${e}','${l}')" style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;">
+            <span style="font-size:1.6rem;">${e}</span>
+            <span style="font-size:0.65rem;color:var(--muted);">${l}</span>
+          </button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function saveEveningCheckin(emoji, label){
+  const data = {emoji, label, ts: new Date().toISOString()};
+  localStorage.setItem('nc_evening_checkin_' + dk(), JSON.stringify(data));
+  renderEveningCheckin();
+  showToast('🌙 Anotado — buenas noches');
+  vibrate([20,10,20]);
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 6: BARRA VISUAL PROGRESO HACIA TALLA 40
+// ═══════════════════════════════════════════════════════════
+function renderTalla40Progress(){
+  const el = document.getElementById('talla40-progress-wrap');
+  if(!el) return;
+  const measures = getMeasures().filter(m => m.cintura);
+  if(measures.length < 2){ el.innerHTML = ''; return; }
+
+  const first = measures[0];
+  const last = measures[measures.length - 1];
+  const target = 75;
+  const startCm = first.cintura;
+  const currentCm = last.cintura;
+  const totalToLose = Math.max(0, startCm - target);
+  const lost = Math.max(0, startCm - currentCm);
+  const pct = totalToLose > 0 ? Math.min(100, Math.round(lost / totalToLose * 100)) : 0;
+
+  const weeksTracked = Math.round((new Date(last.date) - new Date(first.date)) / (7 * 86400000));
+  const trend = startCm - currentCm;
+
+  let msg, color;
+  if(trend > 0){
+    msg = `Llevas <strong>${trend.toFixed(1)}cm menos</strong> desde que empezaste 📉`;
+    color = 'var(--green)';
+  } else if(trend === 0){
+    msg = 'Sin cambio todavía — la constancia suma';
+    color = 'var(--muted)';
+  } else {
+    msg = 'El cuerpo fluctúa — sigue el ritmo';
+    color = 'var(--orange)';
+  }
+
+  el.innerHTML = `
+    <div class="card" style="border-color:rgba(129,140,248,.3);background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(99,102,241,.02));margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-weight:800;font-size:0.95rem;">👖 Camino a talla 40</div>
+        <div style="font-size:1.4rem;font-weight:900;color:var(--accent);">${pct}%</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:20px;height:10px;overflow:hidden;margin-bottom:10px;">
+        <div style="height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--green));width:${pct}%;transition:width .5s ease;"></div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.5;">${msg}${weeksTracked>0?` · ${weeksTracked} semanas de datos`:''}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 7: HISTORIAL CLASSPASS
+// ═══════════════════════════════════════════════════════════
+function saveClassPassHistory(classType, duracion){
+  const history = safeParse(localStorage.getItem('nc_classpass_history'), []);
+  history.unshift({date: dk(), classType, duracion, ts: new Date().toISOString()});
+  localStorage.setItem('nc_classpass_history', JSON.stringify(history.slice(0, 50)));
+}
+
+function renderClassPassHistory(){
+  const el = document.getElementById('classpass-history-card');
+  if(!el) return;
+  const history = safeParse(localStorage.getItem('nc_classpass_history'), []);
+  if(!history.length){
+    el.innerHTML = '<div style="font-size:0.78rem;color:var(--muted);">Sin clases registradas todavía</div>';
+    return;
+  }
+  const counts = {};
+  history.forEach(h => { counts[h.classType] = (counts[h.classType]||0) + 1; });
+  const topClass = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+
+  el.innerHTML = `
+    <div style="margin-bottom:10px;font-size:0.78rem;color:var(--muted);">Tu clase favorita: <strong style="color:var(--accent);">${esc(topClass[0])}</strong> (${topClass[1]} veces)</div>
+    ${history.slice(0,8).map(h=>{
+      const d = new Date(h.date+'T12:00:00');
+      const dateStr = d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:0.82rem;">${esc(h.classType)}</span>
+        <span style="font-size:0.72rem;color:var(--muted);">${dateStr}${h.duracion?' · '+h.duracion+'min':''}</span>
+      </div>`;
+    }).join('')}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEATURE 8: PWA URL ACTION HANDLING
+// ═══════════════════════════════════════════════════════════
+function handleURLActions(){
+  const params = new URLSearchParams(location.search);
+  const action = params.get('action');
+  if(action === 'add-meal'){
+    history.replaceState(null,'',location.pathname);
+    setTimeout(()=> showAddMealSheet(), 500);
+  }
+  if(action === 'add-water'){
+    history.replaceState(null,'',location.pathname);
+    setTimeout(()=>{
+      const w = getWater();
+      setWater(Math.min(8, w+1));
+      renderHome();
+      showToast('💧 Agua añadida');
+    }, 500);
+  }
 }
 </script>
 </body>

@@ -15,5 +15,21 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Añadir comida",
+      "short_name": "Comida",
+      "description": "Registrar una comida rápidamente",
+      "url": "./?action=add-meal",
+      "icons": [{"src": "./icon.svg", "sizes": "192x192"}]
+    },
+    {
+      "name": "Registrar agua",
+      "short_name": "Agua",
+      "description": "Añadir un vaso de agua",
+      "url": "./?action=add-water",
+      "icons": [{"src": "./icon.svg", "sizes": "192x192"}]
+    }
   ]
 }
