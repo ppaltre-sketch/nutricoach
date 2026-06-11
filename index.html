@@ -618,6 +618,10 @@
 
     <!-- ═══ ADD ═══ -->
     <div class="page" id="page-add">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <button onclick="showPage('home')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:5px;">← Volver</button>
+        <div style="font-weight:800;font-size:1rem;">Registrar comida</div>
+      </div>
       <div class="add-mode-tabs" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
         <div class="add-mode-tab active" id="tab-scan" onclick="setAddMode('scan')" style="white-space:nowrap;">📸 Wetaca</div>
         <div class="add-mode-tab" id="tab-ingredientes" onclick="setAddMode('ingredientes')" style="white-space:nowrap;">🥗 Ingredientes</div>
