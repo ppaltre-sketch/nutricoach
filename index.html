@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -1252,6 +1252,18 @@
 
     <!-- ═══ CONFIG ═══ -->
     <div class="page" id="page-config">
+      <div class="card" style="border-color:rgba(52,211,153,.3);background:linear-gradient(135deg,rgba(52,211,153,.06),rgba(52,211,153,.02));">
+        <div class="card-title" style="color:var(--green);">💾 Mis datos</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Todos tus datos se guardan en este dispositivo. Exporta una copia regularmente para no perderlos si cambias de móvil o limpias el navegador.</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button class="btn btn-secondary" onclick="exportData()" style="border-color:var(--green);color:var(--green);">⬇️ Exportar copia de seguridad</button>
+          <label style="cursor:pointer;display:block;">
+            <div class="btn btn-secondary" style="display:flex;align-items:center;justify-content:center;gap:7px;">⬆️ Restaurar copia de seguridad</div>
+            <input type="file" accept=".json" onchange="importData(this)" style="display:none;" />
+          </label>
+        </div>
+        <div id="backup-status" style="margin-top:8px;font-size:0.75rem;color:var(--muted);"></div>
+      </div>
       <div class="card">
         <div class="card-title">🔑 API Key de Anthropic</div>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">
@@ -1514,6 +1526,12 @@ let chipOpciones = new Set(['paseo','classpass','youtube','bandas','kettlebell',
 let scannedMacros = null;
 let scanPortion = 1; // 1 = completa, 0.5 = mitad
 
+function safeParse(json, fallback) {
+  if (json === null || json === undefined) return fallback;
+  try { return JSON.parse(json); }
+  catch(e) { console.warn('safeParse:', e.message); return fallback; }
+}
+
 function setPortionScan(portion){
   scanPortion = portion;
   document.getElementById('portion-full').style.background = portion===1 ? 'var(--accent)' : 'var(--surface2)';
@@ -1557,11 +1575,11 @@ function computeEnergyStatus(meals){
   if(kcal>tdee)return'over';
   return'ok';
 }
-const getMeals = () => JSON.parse(localStorage.getItem('meals_'+dk())||'[]');
+const getMeals = () => safeParse(localStorage.getItem('meals_'+dk()),[]);
 const saveMeals = m => localStorage.setItem('meals_'+dk(), JSON.stringify(m));
 const getApiKey = () => localStorage.getItem('anthropic_key')||'';
-const getProfile = () => { const d=JSON.parse(localStorage.getItem('nc_profile')||'{"peso":90,"altura":174,"edad":37,"sexo":"mujer","actividad":"bajo","pesoObj":69}'); if(!d.pesoObj)d.pesoObj=69; return d; };
-const getGoalsBase = () => { const d=JSON.parse(localStorage.getItem('nc_goals')||'{"p":120,"c":150,"f":55}'); if(!d.fib)d.fib=25; return d; };
+const getProfile = () => { const d=safeParse(localStorage.getItem('nc_profile'),{"peso":90,"altura":174,"edad":37,"sexo":"mujer","actividad":"bajo","pesoObj":69}); if(!d.pesoObj)d.pesoObj=69; return d; };
+const getGoalsBase = () => { const d=safeParse(localStorage.getItem('nc_goals'),{"p":120,"c":150,"f":55}); if(!d.fib)d.fib=25; return d; };
 function getGoals(){
   const base=getGoalsBase();
   const boost=getMacroBoost();
@@ -1625,22 +1643,26 @@ const getLastWorkout = () => localStorage.getItem('last_workout')||'';
 const setLastWorkout = t => localStorage.setItem('last_workout', t);
 const getLastWorkoutDate = () => localStorage.getItem('last_workout_date')||'';
 const setLastWorkoutDate = d => localStorage.setItem('last_workout_date', d);
-const getFavorites = () => JSON.parse(localStorage.getItem('nc_favorites')||'[]');
+const getFavorites = () => safeParse(localStorage.getItem('nc_favorites'),[]);
 const saveFavorites = f => localStorage.setItem('nc_favorites', JSON.stringify(f));
-const getMeasures = () => JSON.parse(localStorage.getItem('nc_measures')||'[]');
+const getMeasures = () => safeParse(localStorage.getItem('nc_measures'),[]);
 const saveMeasures = m => localStorage.setItem('nc_measures', JSON.stringify(m));
-const getActivity = (d=dk()) => JSON.parse(localStorage.getItem('nc_activity_'+d)||'{"pasos":0,"actividades":[]}');
+const getActivity = (d=dk()) => safeParse(localStorage.getItem('nc_activity_'+d),{"pasos":0,"actividades":[]});
 const saveActivity = (a,d=dk()) => localStorage.setItem('nc_activity_'+d, JSON.stringify(a));
-const getMacroBoost = () => JSON.parse(localStorage.getItem('nc_macro_boost_'+dk())||'null');
+const getMacroBoost = () => safeParse(localStorage.getItem('nc_macro_boost_'+dk()),null);
 const saveMacroBoost = b => localStorage.setItem('nc_macro_boost_'+dk(), JSON.stringify(b));
 
 function getAllPastMeals(){
-  const all=[], today=dk();
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i);
-    if(k.startsWith('meals_')&&k!=='meals_'+today)
-      JSON.parse(localStorage.getItem(k)||'[]').forEach(m=>all.push(m));
-  }
+  const all=[],today=dk();
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('meals_')&&k!=='meals_'+today){
+        const data=safeParse(localStorage.getItem(k),[]);
+        if(Array.isArray(data)) all.push(...data);
+      }
+    }
+  }catch(e){console.warn('getAllPastMeals:',e);}
   return all;
 }
 
@@ -1962,7 +1984,7 @@ function renderHome(){
   // ── Meals list ──
   const listEl=document.getElementById('meals-list');
   // Show search if enough historical meals
-  const allHistorical = JSON.parse(localStorage.getItem('nc_recent_meals')||'[]');
+  const allHistorical = safeParse(localStorage.getItem('nc_recent_meals'), []);
   const searchWrap = document.getElementById('meal-search-wrap');
   if(searchWrap) searchWrap.style.display = allHistorical.length >= 3 ? 'block' : 'none';
 
@@ -2218,7 +2240,7 @@ Responde SOLO en este JSON exacto, sin texto adicional:
 Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima razonablemente. Redondea a 1 decimal.`;
 
   try{
-    const res=await callClaude([{role:'user',content:prompt}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     const json=JSON.parse(res.match(/\{[\s\S]*\}/)?.[0]||'{}');
 
     const nombreGenerado=json.nombre||'Comida';
@@ -2281,7 +2303,7 @@ async function processPhotoFile(file){
 
   try{
     const b64=await fileToBase64(file);
-    const res=await callClaude([{role:'user',content:[
+    const res=await callClaudeWithTimeout([{role:'user',content:[
       {type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:b64.split(',')[1]}},
       {type:'text',text:'Etiqueta nutricional de un tupper Wetaca. Extrae: nombre del plato, proteínas (g), carbohidratos (g), grasas totales (g), calorías. Responde SOLO JSON: {"nombre":"...","proteinas":0,"carbohidratos":0,"grasas":0,"calorias":0}. Si no lees algún valor pon null.'}
     ]}]);
@@ -2409,7 +2431,7 @@ Proteína: Xg · Carbos: Xg · Grasa: Xg
 Usa ingredientes de supermercado español. Cena realista entre semana. Que sacie bien.`;
 
   try{
-    const res=await callClaude([{role:'user',content:prompt}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     document.getElementById('cena-result').innerHTML=`<div class="card"><div class="card-title">Tu cena de esta noche</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
     document.getElementById('alternativas-section').style.display='block';
   }catch(e){
@@ -2427,7 +2449,7 @@ async function getAlternativas(){
   const btn=document.getElementById('alt-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div>';
   try{
-    const res=await callClaude([{role:'user',content:`Cena propuesta: ${cenaText}\n\nEl usuario quiere cambiar "${ing}"${motivo?' porque: '+motivo:''}.\n\nDa 3 alternativas concretas: nombre, gramos exactos, impacto en macros. Formato: **Opción 1/2/3:** seguido de descripción breve.`}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:`Cena propuesta: ${cenaText}\n\nEl usuario quiere cambiar "${ing}"${motivo?' porque: '+motivo:''}.\n\nDa 3 alternativas concretas: nombre, gramos exactos, impacto en macros. Formato: **Opción 1/2/3:** seguido de descripción breve.`}]);
     document.getElementById('alternativas-result').innerHTML=`<div class="card"><div class="card-title">Alternativas para "${esc(ing)}"</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
   }catch(e){
     document.getElementById('alternativas-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
@@ -2506,7 +2528,7 @@ Diseña UN entrenamiento concreto. Estructura:
 Adapta la intensidad a energía ${chipState.energia}. Sé concreta y práctica.`;
 
   try{
-    const res=await callClaude([{role:'user',content:prompt}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     document.getElementById('entreno-result').innerHTML=`<div class="card"><div class="card-title">Tu entreno de hoy</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
     // Save workout type for tomorrow
     const match=res.match(/^##\s+([^\n—]+)/m);
@@ -2550,7 +2572,7 @@ async function verifyApiKey(){
   btn.disabled=true;
   btn.innerHTML='<div class="spinner spinner-blue"></div> Probando...';
   try{
-    await callClaude([{role:'user',content:'Di solo "ok"'}]);
+    await callClaudeWithTimeout([{role:'user',content:'Di solo "ok"'}]);
     document.getElementById('api-key-status').innerHTML='<span style="color:var(--green)">✓ Conexión correcta — la IA está lista</span>';
     showToast('✓ API Key funcionando');
   }catch(e){
@@ -2580,7 +2602,7 @@ async function recalcGoals(){
   const btn=document.getElementById('recalc-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner spinner-accent"></div> Calculando...';
   try{
-    const res=await callClaude([{role:'user',content:`Calcula los macros diarios óptimos (proteína, carbohidratos, grasa en gramos) para una mujer de ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Peso objetivo: ${p.pesoObj||69}kg. Objetivo: reducir grasa preservando músculo, llegar al peso objetivo de forma sostenible. Calcula internamente el TDEE y aplica un déficit de 400-500kcal diarias. RESPONDE SOLO JSON sin texto adicional: {"p":0,"c":0,"f":0}`}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:`Calcula los macros diarios óptimos (proteína, carbohidratos, grasa en gramos) para una mujer de ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Peso objetivo: ${p.pesoObj||69}kg. Objetivo: reducir grasa preservando músculo, llegar al peso objetivo de forma sostenible. Calcula internamente el TDEE y aplica un déficit de 400-500kcal diarias. RESPONDE SOLO JSON sin texto adicional: {"p":0,"c":0,"f":0}`}]);
     const json=JSON.parse(res.match(/\{[\s\S]*?\}/)?.[0]||'{}');
     if(json.p){
       document.getElementById('cfg-goal-p').value=json.p;
@@ -2614,10 +2636,25 @@ function saveGoals(){
   renderHome();
 }
 function clearToday(){
-  if(confirm('¿Borrar todas las comidas de hoy?')){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML=`
+    <div style="background:var(--surface);border-radius:16px;padding:20px;max-width:300px;width:100%;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🗑️</div>
+      <div style="font-weight:800;margin-bottom:8px;">¿Borrar las comidas de hoy?</div>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">Esta acción no se puede deshacer.</p>
+      <div style="display:flex;gap:8px;">
+        <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-secondary" style="flex:1;">Cancelar</button>
+        <button id="clear-today-confirm-btn" class="btn btn-primary" style="flex:1;background:var(--red);border-color:var(--red);">Borrar todo</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('clear-today-confirm-btn').addEventListener('click',()=>{
+    overlay.remove();
     localStorage.removeItem('meals_'+dk());
-    renderHome();renderCenaRemaining();showToast('Comidas borradas');
-  }
+    renderHome();
+    showToast('✓ Comidas de hoy borradas');
+  });
 }
 
 // ═══════════════ API ═══════════════
@@ -2636,13 +2673,23 @@ async function callClaude(messages){
     throw new Error('Sin conexión con la API ['+err.name+': '+err.message+'] — protocol:'+location.protocol);
   }
   if(!r.ok){
-    const body=await r.json().catch(()=>({}));
-    const msg=body.error?.message||`Error ${r.status}`;
-    if(r.status===401) throw new Error('API Key inválida o expirada — revísala en Configuración');
-    if(r.status===429) throw new Error('Límite de uso alcanzado — espera un momento e inténtalo de nuevo');
-    throw new Error(msg);
+    let errMsg=`Error ${r.status}`;
+    try{const ed=await r.json();errMsg=ed.error?.message||errMsg;}catch(e){}
+    if(r.status===401) throw new Error('API Key inválida o expirada');
+    if(r.status===429) throw new Error('Límite de uso alcanzado — espera unos minutos');
+    if(r.status>=500) throw new Error('Error en el servidor — intenta más tarde');
+    throw new Error(errMsg);
   }
-  return (await r.json()).content?.[0]?.text||'';
+  const data=await r.json();
+  if(!data?.content?.[0]?.text) throw new Error('Respuesta inesperada de la API — intenta de nuevo');
+  return data.content[0].text;
+}
+
+function callClaudeWithTimeout(messages,ms=20000){
+  return Promise.race([
+    callClaude(messages),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('La solicitud tardó demasiado — comprueba tu conexión')),ms))
+  ]);
 }
 
 // ═══════════════ FORMAT AI ═══════════════
@@ -2680,8 +2727,8 @@ function calcStreak(){
   let d=new Date();
   for(let i=0;i<365;i++){
     const key=d.toISOString().split('T')[0];
-    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
-    const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    const meals=safeParse(localStorage.getItem('meals_'+key),[]);
+    const act=safeParse(localStorage.getItem('nc_activity_'+key), {"pasos":0,"actividades":[]});
     const hasFood=meals.length>0;
     const hasActivity=act.actividades.length>0||act.pasos>=3000;
     if(hasFood||hasActivity){streak++;}
@@ -2779,12 +2826,12 @@ async function getEmpujon(){
   let activeDays=0;
   for(let i=1;i<=7;i++){
     const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
-    if(JSON.parse(localStorage.getItem('meals_'+d)||'[]').length>0)activeDays++;
+    if(safeParse(localStorage.getItem('meals_'+d), []).length>0)activeDays++;
   }
   // Ayer
   const ayer=new Date(Date.now()-86400000).toISOString().split('T')[0];
-  const ayerMeals=JSON.parse(localStorage.getItem('meals_'+ayer)||'[]');
-  const ayerAct=JSON.parse(localStorage.getItem('nc_activity_'+ayer)||'{"pasos":0,"actividades":[]}');
+  const ayerMeals=safeParse(localStorage.getItem('meals_'+ayer), []);
+  const ayerAct=safeParse(localStorage.getItem('nc_activity_'+ayer), {"pasos":0,"actividades":[]});
   const ayerP=Math.round(ayerMeals.reduce((s,m)=>s+(m.p||0),0)*10)/10;
   const ayerActDesc=ayerAct.actividades.length>0?ayerAct.actividades.map(a=>a.nombre).join(', '):(ayerAct.pasos>3000?`${ayerAct.pasos} pasos`:'sin actividad');
   const checkin=getCheckin();
@@ -2820,7 +2867,7 @@ Escríbele UN mensaje corto (3-4 frases máximo). Varía el enfoque según el mo
 - Tono: amiga lista que dice la verdad con cariño. Texto corrido, sin asteriscos ni listas.`;
 
   try{
-    const res=await callClaude([{role:'user',content:prompt}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     const el=document.getElementById('empujon-result');
     el.style.display='block';
     el.textContent=res;
@@ -2829,7 +2876,7 @@ Escríbele UN mensaje corto (3-4 frases máximo). Varía el enfoque según el mo
 }
 
 // ═══════════════ RETOS ═══════════════
-function getRetosData(){return JSON.parse(localStorage.getItem('nc_retos')||'null');}
+function getRetosData(){return safeParse(localStorage.getItem('nc_retos'), null);}
 function saveRetosData(d){localStorage.setItem('nc_retos',JSON.stringify(d));}
 
 function renderRetos(){
@@ -2874,8 +2921,8 @@ async function generarRetos(){
   let activeDays=0,mealsTracked=0,avgP=0,exerciseDays=0;
   for(let i=1;i<=7;i++){
     const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
-    const m=JSON.parse(localStorage.getItem('meals_'+d)||'[]');
-    const act=JSON.parse(localStorage.getItem('nc_activity_'+d)||'{"pasos":0,"actividades":[]}');
+    const m=safeParse(localStorage.getItem('meals_'+d), []);
+    const act=safeParse(localStorage.getItem('nc_activity_'+d), {"pasos":0,"actividades":[]});
     if(m.length>0){mealsTracked++;let pp=0;m.forEach(x=>pp+=x.p||0);avgP+=pp;}
     if(act.actividades.length>0||(act.pasos||0)>=5000)exerciseDays++;
   }
@@ -2897,7 +2944,7 @@ REGLAS para los retos:
 Responde SOLO JSON sin texto adicional:
 {"retos":["texto reto 1","texto reto 2","texto reto 3"]}`;
   try{
-    const res=await callClaude([{role:'user',content:prompt}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     const json=JSON.parse(res.match(/\{[\s\S]*\}/)?.[0]||'{}');
     if(json.retos&&json.retos.length===3){
       saveRetosData({week:getWeekKey(),retos:json.retos.map(t=>({texto:t,done:false}))});
@@ -3077,7 +3124,7 @@ Proteína: Xg · Carbos: Xg · Grasa: Xg
 
 Usa ingredientes de supermercado español o tuppers Wetaca. Práctico para entre semana.`;
   try{
-    const res=await callClaude([{role:'user',content:prompt}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     document.getElementById('almuerzo-result').innerHTML=`<div class="card"><div class="card-title">Tu almuerzo de hoy</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
   }catch(e){
     document.getElementById('almuerzo-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
@@ -3308,9 +3355,9 @@ function renderWeeklySummary(){
   for(let i=6;i>=0;i--){
     const d=new Date(Date.now()-i*86400000);
     const key=d.toISOString().split('T')[0];
-    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
+    const meals=safeParse(localStorage.getItem('meals_'+key),[]);
     let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
-    const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    const act=safeParse(localStorage.getItem('nc_activity_'+key), {"pasos":0,"actividades":[]});
     const isToday = i === 0;
     days.push({key,label:d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}),P:Math.round(P),C:Math.round(C),F:Math.round(F),hasMeals:meals.length>0,act,isToday});
   }
@@ -3347,6 +3394,61 @@ function renderWeeklySummary(){
         ${steps>0?`<div class="steps-bar-wrap"><div class="steps-bar" style="width:${Math.min(100,steps/8000*100)}%;background:${steps>=8000?'var(--green)':steps>=5000?'var(--yellow)':'var(--accent)'};"></div></div>`:''}
       </div>`;
   }).join('');
+}
+
+// ═══════════════ BACKUP / RESTORE ═══════════════
+function exportData(){
+  const backup={version:1,exported:new Date().toISOString(),data:{}};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k) backup.data[k]=localStorage.getItem(k);
+  }
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='nutricoach-backup-'+dk()+'.json';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('✓ Backup descargado');
+  const s=document.getElementById('backup-status');
+  if(s) s.textContent='Última exportación: '+new Date().toLocaleString('es-ES');
+}
+
+function importData(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    const backup=safeParse(e.target.result,null);
+    if(!backup||!backup.data){showToast('❌ Archivo de backup inválido');return;}
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px;';
+    const keys=Object.keys(backup.data).length;
+    const dateStr=backup.exported?new Date(backup.exported).toLocaleDateString('es-ES'):'desconocido';
+    overlay.innerHTML=`
+      <div style="background:var(--surface);border-radius:16px;padding:20px;max-width:320px;width:100%;">
+        <div style="font-weight:800;font-size:1rem;margin-bottom:8px;">⬆️ Restaurar backup</div>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">Se restaurarán <strong>${keys}</strong> entradas del backup del <strong>${dateStr}</strong>.<br><br><span style="color:var(--orange);">Esto sobreescribirá tus datos actuales.</span></p>
+        <div style="display:flex;gap:8px;">
+          <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-secondary" style="flex:1;">Cancelar</button>
+          <button id="confirm-import-btn" class="btn btn-primary" style="flex:1;">Restaurar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('confirm-import-btn').addEventListener('click',()=>{
+      confirmImport(backup);overlay.remove();
+    });
+  };
+  reader.readAsText(file);input.value='';
+}
+
+function confirmImport(backup){
+  try{
+    const currentKey=localStorage.getItem('anthropic_key');
+    Object.entries(backup.data).forEach(([k,v])=>localStorage.setItem(k,v));
+    if(currentKey&&!backup.data['anthropic_key'])localStorage.setItem('anthropic_key',currentKey);
+    showToast('✓ Backup restaurado');
+    setTimeout(()=>location.reload(),1200);
+  }catch(e){showToast('❌ Error al restaurar: '+e.message);}
 }
 
 // ═══════════════ UTILS ═══════════════
@@ -3420,7 +3522,7 @@ function closeCheckin(){
 }
 
 function getCheckin(){
-  return JSON.parse(localStorage.getItem('nc_checkin_' + dk()) || 'null');
+  return safeParse(localStorage.getItem('nc_checkin_' + dk()), null);
 }
 
 // ═══════════════ REMINDER BANNERS ═══════════════
@@ -3509,7 +3611,7 @@ Comidas hoy: ${meals.length===0?'ninguna':meals.map(m=>m.name).join(', ')}.
 Sugiere UN snack concreto que encaje. Máximo 3-4 líneas: qué comer exactamente (con cantidad), por qué encaja. Tono directo y sin calorías. Sin formato markdown, texto corrido.`;
 
   try{
-    const res = await callClaude([{role:'user', content: prompt}]);
+    const res = await callClaudeWithTimeout([{role:'user', content: prompt}]);
     const el = document.getElementById('hambre-result');
     el.style.display = 'block';
     el.textContent = res;
@@ -3590,7 +3692,7 @@ Recomiéndale la mejor opción (máximo 2 platos). Para cada opción: nombre, po
     } else {
       msgContent = systemPrompt;
     }
-    const res = await callClaude([{role:'user', content: msgContent}]);
+    const res = await callClaudeWithTimeout([{role:'user', content: msgContent}]);
     document.getElementById('restaurante-result').innerHTML=`<div class="card"><div class="card-title">🎯 Tu elección ideal</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
   }catch(e){
     document.getElementById('restaurante-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
@@ -3671,10 +3773,10 @@ async function getWeeklyAISummary(){
   for(let i=6; i>=0; i--){
     const d = new Date(Date.now()-i*86400000);
     const key = d.toISOString().split('T')[0];
-    const meals = JSON.parse(localStorage.getItem('meals_'+key)||'[]');
-    const act = JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    const meals = safeParse(localStorage.getItem('meals_'+key),[]);
+    const act = safeParse(localStorage.getItem('nc_activity_'+key), {"pasos":0,"actividades":[]});
     const water = parseInt(localStorage.getItem('water_'+key)||'0');
-    const checkin = JSON.parse(localStorage.getItem('nc_checkin_'+key)||'null');
+    const checkin = safeParse(localStorage.getItem('nc_checkin_'+key), null);
     let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
     const totalMin = act.actividades.reduce((s,a)=>s+parseInt(a.duracion||0),0);
     days.push({
@@ -3728,7 +3830,7 @@ Estructura tu análisis así:
 [Frase motivadora personalizada — cálida, directa, sin cursilerías]`;
 
   try{
-    const res = await callClaude([{role:'user', content: prompt}]);
+    const res = await callClaudeWithTimeout([{role:'user', content: prompt}]);
     localStorage.setItem('nc_weekly_summary_'+weekKey, res);
     resultEl.innerHTML = `<div class="ai-bubble">${formatAI(res)}</div><button onclick="regenerateWeeklySummary()" style="margin-top:10px;background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;">↺ Regenerar</button>`;
     resultEl.style.display='block';
@@ -3765,7 +3867,7 @@ function regenerateWeeklySummary(){
 
 // ═══════════════ FEATURE 1: RECENT MEALS STRIP ═══════════════
 function updateRecentMealsCache(meal){
-  let recent=JSON.parse(localStorage.getItem('nc_recent_meals')||'[]');
+  let recent=safeParse(localStorage.getItem('nc_recent_meals'), []);
   // deduplicate by name
   recent=recent.filter(m=>m.name!==meal.name);
   recent.unshift({name:meal.name,p:meal.p,c:meal.c,f:meal.f});
@@ -3776,7 +3878,7 @@ function updateRecentMealsCache(meal){
 function renderRecentMealsStrip(){
   const el=document.getElementById('recent-meals-strip');
   if(!el)return;
-  const recent=JSON.parse(localStorage.getItem('nc_recent_meals')||'[]');
+  const recent=safeParse(localStorage.getItem('nc_recent_meals'), []);
   const todayMeals=getMeals();
   const todayNames=new Set(todayMeals.map(m=>m.name));
   const filtered=recent.filter(m=>!todayNames.has(m.name)).slice(0,5);
@@ -3795,7 +3897,7 @@ function renderRecentMealsStrip(){
 }
 
 // ═══════════════ FEATURE 2: WETACA FAVORITES ═══════════════
-const getWetacaFavs=()=>JSON.parse(localStorage.getItem('nc_wetaca_favs')||'[]');
+const getWetacaFavs=()=>safeParse(localStorage.getItem('nc_wetaca_favs'), []);
 const saveWetacaFavs=f=>localStorage.setItem('nc_wetaca_favs',JSON.stringify(f));
 
 function saveWetacaFav(){
@@ -3902,7 +4004,7 @@ function renderReto21(){
   for(let i=20;i>=0;i--){
     const d=new Date(Date.now()-i*86400000);
     const key=d.toISOString().split('T')[0];
-    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
+    const meals=safeParse(localStorage.getItem('meals_'+key),[]);
     const done=meals.length>=2;
     if(done)completed++;
     const isToday=key===today;
@@ -3951,7 +4053,7 @@ async function generateEveningSummary(){
 Datos del día: ${meals.length} comidas registradas, proteína ${Math.round(P)}g/${goals.p}g objetivo, carbos ${Math.round(C)}g/${goals.c}g, grasa ${Math.round(F)}g/${goals.f}g, agua ${water}/8 vasos, actividad: ${hasActivity?act.actividades.map(a=>a.tipo).join(', ')||'pasos'  :'sin actividad'}.
 Tono: cálido, breve, sin juicio. Menciona 1 cosa buena concreta y 1 pequeño aprendizaje.`;
   try{
-    const res=await callClaude([{role:'user',content:prompt}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     localStorage.setItem('nc_evening_'+dk(),res);
     renderEveningSummary();
   }catch(e){showToast('Error: '+e.message);}
@@ -3980,7 +4082,7 @@ Mujer, ${p.edad} años, ${p.peso}kg, objetivo ${p.pesoObj||69}kg.
 Dame un plan ultra simple: 2-3 opciones de comida sin cocinar (con macros aproximados) + UNA acción pequeña que la haga sentir mejor hoy.
 Sin calorías, sin presión, sin markdown. Texto corrido, máximo 5-6 frases en total. Tono amable y sin culpa.`;
   try{
-    const res=await callClaude([{role:'user',content:prompt}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     localStorage.setItem('nc_dia_dificil_'+dk(),res);
     renderDiaDificil();
   }catch(e){
@@ -3999,8 +4101,8 @@ function renderConsistenciaScore(){
   for(let i=6;i>=0;i--){
     const d=new Date(Date.now()-i*86400000);
     const key=d.toISOString().split('T')[0];
-    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
-    const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    const meals=safeParse(localStorage.getItem('meals_'+key),[]);
+    const act=safeParse(localStorage.getItem('nc_activity_'+key), {"pasos":0,"actividades":[]});
     const water=parseInt(localStorage.getItem('water_'+key)||'0');
     curDays.push({
       label:d.toLocaleDateString('es-ES',{weekday:'short'}),
@@ -4013,8 +4115,8 @@ function renderConsistenciaScore(){
   const prevDays=[];
   for(let i=13;i>=7;i--){
     const key=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
-    const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
-    const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
+    const meals=safeParse(localStorage.getItem('meals_'+key),[]);
+    const act=safeParse(localStorage.getItem('nc_activity_'+key), {"pasos":0,"actividades":[]});
     const water=parseInt(localStorage.getItem('water_'+key)||'0');
     prevDays.push({mealDone:meals.length>=2,actDone:act.actividades.length>0||(act.pasos||0)>=3000,waterDone:water>=4});
   }
@@ -4133,7 +4235,7 @@ function checkPlateauDetection(){
   let daysWithMeals=0;
   for(let i=1;i<=7;i++){
     const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
-    if(JSON.parse(localStorage.getItem('meals_'+d)||'[]').length>0)daysWithMeals++;
+    if(safeParse(localStorage.getItem('meals_'+d), []).length>0)daysWithMeals++;
   }
   if(daysWithMeals<3)return;
   // Show plateau card
@@ -4158,7 +4260,7 @@ async function adjustPlateauPlan(){
   if(btn){btn.disabled=true;btn.innerHTML='<span style="display:inline-flex;gap:6px;align-items:center;"><span class="spinner" style="width:13px;height:13px;"></span></span>';}
   const goals=getGoalsBase(), p=getProfile();
   try{
-    const res=await callClaude([{role:'user',content:`Eres nutricionista experta. Esta paciente lleva 3 semanas sin cambios en cintura a pesar de seguir su plan. Propón 2-3 ajustes concretos al plan (ej: reducir carbos 10-15g, añadir 1 sesión de fuerza semanal, cambiar distribución de macros). Mujer, ${p.edad} años, ${p.peso}kg, objetivo ${p.pesoObj||69}kg. Objetivos actuales: P${goals.p}g C${goals.c}g G${goals.f}g Fibra${goals.fib||25}g. NUNCA menciones calorías. Tono directo y motivador. Máximo 4-5 líneas.`}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:`Eres nutricionista experta. Esta paciente lleva 3 semanas sin cambios en cintura a pesar de seguir su plan. Propón 2-3 ajustes concretos al plan (ej: reducir carbos 10-15g, añadir 1 sesión de fuerza semanal, cambiar distribución de macros). Mujer, ${p.edad} años, ${p.peso}kg, objetivo ${p.pesoObj||69}kg. Objetivos actuales: P${goals.p}g C${goals.c}g G${goals.f}g Fibra${goals.fib||25}g. NUNCA menciones calorías. Tono directo y motivador. Máximo 4-5 líneas.`}]);
     const card=document.getElementById('plateau-card');
     if(card){
       card.innerHTML=`<div style="display:flex;gap:8px;align-items:flex-start;"><span>📊</span><div style="font-size:0.82rem;line-height:1.6;">${esc(res)}<br><button onclick="localStorage.setItem('nc_plateau_ack_${dk()}','1');document.getElementById('plateau-card')?.remove();" style="margin-top:8px;background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;">Cerrar ✕</button></div></div>`;
@@ -4355,7 +4457,7 @@ function showConfetti() {
 // ═══════════════ FEATURE: MEAL HISTORY SEARCH ═══════════════
 function filterMealHistory() {
   const q = (document.getElementById('meal-search-input')?.value || '').toLowerCase().trim();
-  const recent = JSON.parse(localStorage.getItem('nc_recent_meals') || '[]');
+  const recent = safeParse(localStorage.getItem('nc_recent_meals'), []);
   const strip = document.getElementById('recent-meals-strip');
   if (!strip) return;
   if (!q) { renderRecentMealsStrip(); return; }
@@ -4464,9 +4566,9 @@ const WEIGHT_OPTIONS = ['Sin peso','Bandas','Kettlebell 6kg','Peso corporal'];
 
 let perfUnit = 'reps'; // 'reps' or 'seconds'
 
-function getSessionExercises(date){ return JSON.parse(localStorage.getItem('nc_session_'+(date||dk()))||'[]'); }
+function getSessionExercises(date){ return safeParse(localStorage.getItem('nc_session_'+(date||dk())), []); }
 function saveSessionExercises(arr,date){ localStorage.setItem('nc_session_'+(date||dk()),JSON.stringify(arr)); }
-function getPRs(){ return JSON.parse(localStorage.getItem('nc_prs')||'{}'); }
+function getPRs(){ return safeParse(localStorage.getItem('nc_prs'), {}); }
 function savePRs(p){ localStorage.setItem('nc_prs',JSON.stringify(p)); }
 
 function renderPerformanceLog(){
@@ -4589,7 +4691,7 @@ function showHistorialModal(){
     const k=localStorage.key(i);
     if(k.startsWith('nc_session_')){
       const date=k.replace('nc_session_','');
-      const arr=JSON.parse(localStorage.getItem(k)||'[]');
+      const arr=safeParse(localStorage.getItem(k), []);
       arr.forEach(ex=>allSessions.push({...ex,date}));
     }
   }
@@ -4631,7 +4733,7 @@ function showHistorialModal(){
 const PLAN_TYPES=['Fuerza','CrossFit','Cardio','ClassPass','Madrid Río','Yoga/Pilates','Descanso activo','Descanso'];
 const DAY_NAMES=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
-function getWeeklyPlan(weekKey){ return JSON.parse(localStorage.getItem('nc_weekly_plan_'+(weekKey||getWeekKey()))||'null'); }
+function getWeeklyPlan(weekKey){ return safeParse(localStorage.getItem('nc_weekly_plan_'+(weekKey||getWeekKey())), null); }
 function saveWeeklyPlan(plan,weekKey){ localStorage.setItem('nc_weekly_plan_'+(weekKey||getWeekKey()),JSON.stringify(plan)); }
 
 function getMondayDate(){
@@ -4662,7 +4764,7 @@ function renderWeeklyPlan(){
     const dayDate=new Date(weekKey);dayDate.setDate(dayDate.getDate()+i);
     const dayKey=dayDate.toISOString().split('T')[0];
     return d.done||getSessionExercises(dayKey).length>0||
-      JSON.parse(localStorage.getItem('nc_activity_'+dayKey)||'{"actividades":[]}').actividades.length>0;
+      safeParse(localStorage.getItem('nc_activity_'+dayKey), {"actividades":[]}).actividades.length>0;
   }).length;
 
   el.innerHTML=`
@@ -4680,7 +4782,7 @@ function renderWeeklyPlan(){
     const dayDate=new Date(weekKey);dayDate.setDate(dayDate.getDate()+i);
     const dayKey=dayDate.toISOString().split('T')[0];
     const hasActivity=getSessionExercises(dayKey).length>0||
-      JSON.parse(localStorage.getItem('nc_activity_'+dayKey)||'{"actividades":[]}').actividades.length>0;
+      safeParse(localStorage.getItem('nc_activity_'+dayKey), {"actividades":[]}).actividades.length>0;
     const d=plan[i]||{type:'',done:false};
     const isDone=d.done||hasActivity;
     return `
@@ -4762,7 +4864,7 @@ const ACHIEVEMENTS=[
   {id:'full_plan_week',emoji:'📅',title:'Semana perfecta',desc:'Completaste tu plan semanal entero'},
 ];
 
-function getAchievements(){ return JSON.parse(localStorage.getItem('nc_achievements')||'[]'); }
+function getAchievements(){ return safeParse(localStorage.getItem('nc_achievements'), []); }
 function saveAchievements(a){ localStorage.setItem('nc_achievements',JSON.stringify(a)); }
 
 function unlockAchievement(id){
@@ -4785,12 +4887,12 @@ function checkAndUnlockAchievements(){
   let totalSessions=0;
   for(let i=0;i<localStorage.length;i++){
     const k=localStorage.key(i);
-    if(k.startsWith('nc_session_')&&JSON.parse(localStorage.getItem(k)||'[]').length>0)totalSessions++;
+    if(k.startsWith('nc_session_')&&safeParse(localStorage.getItem(k), []).length>0)totalSessions++;
   }
   // Also count activity logs
   for(let i=0;i<localStorage.length;i++){
     const k=localStorage.key(i);
-    if(k.startsWith('nc_activity_')&&JSON.parse(localStorage.getItem(k)||'{"actividades":[]}').actividades.length>0)totalSessions++;
+    if(k.startsWith('nc_activity_')&&safeParse(localStorage.getItem(k), {"actividades":[]}).actividades.length>0)totalSessions++;
   }
   if(totalSessions>=1)unlockAchievement('first_workout');
   if(streak>=3)unlockAchievement('streak_3');
@@ -4812,7 +4914,7 @@ function checkAndUnlockAchievements(){
   let protStreak=0;
   for(let i=0;i<7;i++){
     const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
-    const meals=JSON.parse(localStorage.getItem('meals_'+d)||'[]');
+    const meals=safeParse(localStorage.getItem('meals_'+d), []);
     const P=meals.reduce((s,m)=>s+(m.p||0),0);
     if(P>=goals.p*0.9)protStreak++;
     else break;
@@ -4823,7 +4925,7 @@ function checkAndUnlockAchievements(){
   for(let i=0;i<localStorage.length;i++){
     const k=localStorage.key(i);
     if(k.startsWith('nc_madrid_rio_sessions')){
-      const sessions=JSON.parse(localStorage.getItem(k)||'[]');
+      const sessions=safeParse(localStorage.getItem(k), []);
       if(sessions.length>0){unlockAchievement('madrid_rio');break;}
     }
   }
@@ -4877,7 +4979,7 @@ const MR_PROGRAM=[
 ];
 
 function getMRWeek(){ return parseInt(localStorage.getItem('nc_madrid_rio_week')||'1'); }
-function getMRSessions(){ return JSON.parse(localStorage.getItem('nc_madrid_rio_sessions')||'[]'); }
+function getMRSessions(){ return safeParse(localStorage.getItem('nc_madrid_rio_sessions'), []); }
 function saveMRSessions(s){ localStorage.setItem('nc_madrid_rio_sessions',JSON.stringify(s)); }
 
 function renderMadridRioProgram(){
@@ -4983,7 +5085,7 @@ function saveFreeWalk(){
   saveActivity(act);
 
   // Save to activity storage
-  const actD=JSON.parse(localStorage.getItem('nc_activity_'+dk())||'{"pasos":0,"actividades":[]}');
+  const actD=safeParse(localStorage.getItem('nc_activity_'+dk()), {pasos:0,actividades:[]});
   actD.actividades.push({tipo:'🏞️ Madrid Río',duracion:min,intensidad:'suave'});
   localStorage.setItem('nc_activity_'+dk(),JSON.stringify(actD));
 
@@ -5013,7 +5115,7 @@ function checkDeloadNeeded(){
   for(let i=0;i<28;i++){
     const d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
     if(getSessionExercises(d).length>0)count++;
-    const act=JSON.parse(localStorage.getItem('nc_activity_'+d)||'{"actividades":[]}');
+    const act=safeParse(localStorage.getItem('nc_activity_'+d), {"actividades":[]});
     if(act.actividades.length>0)count++;
   }
 
@@ -5053,7 +5155,7 @@ async function getDeloadPlan(){
   btn.disabled=true;btn.innerHTML='<span style="display:inline-flex;gap:6px;align-items:center;"><span class="spinner" style="width:13px;height:13px;border-top-color:#0f172a;border-color:rgba(0,0,0,.2);"></span></span>';
   const p=getProfile();
   try{
-    const res=await callClaude([{role:'user',content:`Eres entrenadora personal. Diseña una semana de descarga (deload) para una mujer de ${p.edad} años, ${p.peso}kg, nivel activo. Equipo disponible: bandas elásticas, kettlebell 6kg, acceso a Madrid Río, YouTube.
+    const res=await callClaudeWithTimeout([{role:'user',content:`Eres entrenadora personal. Diseña una semana de descarga (deload) para una mujer de ${p.edad} años, ${p.peso}kg, nivel activo. Equipo disponible: bandas elásticas, kettlebell 6kg, acceso a Madrid Río, YouTube.
 La semana de descarga debe tener: 70% menos volumen, sin HIIT, movimiento suave, recuperación activa.
 Propón el plan de 7 días de forma concreta y breve: qué hacer cada día (3-4 líneas en total). Tono motivador. Sin calorías. Sin markdown, texto corrido.`}]);
     localStorage.setItem('nc_last_deload',new Date().toISOString());
@@ -5076,7 +5178,7 @@ const CHALLENGE_DEFS=[
   {type:'plancha',emoji:'🧘',title:'Reto plancha',desc:'De 20 segundos a 2 minutos en 8 semanas',unit:'seconds',goal:120,goalLabel:'2 minutos de plancha'},
 ];
 
-function getStrengthChallenge(){ return JSON.parse(localStorage.getItem('nc_strength_challenge')||'null'); }
+function getStrengthChallenge(){ return safeParse(localStorage.getItem('nc_strength_challenge'), null); }
 function saveStrengthChallenge(c){ localStorage.setItem('nc_strength_challenge',JSON.stringify(c)); }
 
 function renderStrengthChallenge(){
@@ -5165,7 +5267,7 @@ async function saveChallengeCheckin(){
     const def=CHALLENGE_DEFS.find(d=>d.type===challenge.type)||CHALLENGE_DEFS[0];
     const prev=challenge.weeklyCheckins.length>=2?challenge.weeklyCheckins[challenge.weeklyCheckins.length-2].best:null;
     try{
-      const res=await callClaude([{role:'user',content:`Eres coach. Esta persona hace su check-in del reto "${def.title}". Marca actual: ${val} ${def.unit}. Objetivo: ${def.goal} ${def.unit}.${prev?' La semana pasada tenía '+prev+'.':''} Escribe UN mensaje motivador de 1-2 frases. Sin markdown.`}]);
+      const res=await callClaudeWithTimeout([{role:'user',content:`Eres coach. Esta persona hace su check-in del reto "${def.title}". Marca actual: ${val} ${def.unit}. Objetivo: ${def.goal} ${def.unit}.${prev?' La semana pasada tenía '+prev+'.':''} Escribe UN mensaje motivador de 1-2 frases. Sin markdown.`}]);
       msgEl.style.color='var(--green)';msgEl.textContent=res;
     }catch(e){}
   }
@@ -5268,7 +5370,7 @@ function startChallengeMerged(type){startChallenge(type);renderStrengthChallenge
 // ═══════════════════════════════════════════════════════════
 // SURVIVOR FEATURE 1: MONTHLY BENCHMARK TESTS
 // ═══════════════════════════════════════════════════════════
-function getBenchmarks(){ return JSON.parse(localStorage.getItem('nc_benchmarks')||'[]'); }
+function getBenchmarks(){ return safeParse(localStorage.getItem('nc_benchmarks'), []); }
 function saveBenchmarks(b){ localStorage.setItem('nc_benchmarks',JSON.stringify(b)); }
 
 function renderBenchmarkHistory(){
@@ -5515,7 +5617,7 @@ function checkUpperBodyVolume(){
   let upperSessions=0;
   for(let i=0;i<7;i++){
     const d=new Date();d.setDate(d.getDate()-i);
-    const act=JSON.parse(localStorage.getItem('nc_activity_'+d.toISOString().split('T')[0])||'{"actividades":[]}');
+    const act=safeParse(localStorage.getItem('nc_activity_'+d.toISOString().split('T')[0]), {actividades:[]});
     act.actividades.forEach(a=>{
       const tipo=(a.tipo||'').toLowerCase();
       const claseId=a.clase?a.clase.id:'';
@@ -5552,7 +5654,7 @@ const UPPER_EXERCISES=[
   {id:'jalon_banda',label:'Jalón con banda',emoji:'🎽',desc:'Banda anclada en puerta — simula jalón al pecho',unit:'reps',survivorKey:true},
 ];
 
-function getUpperLog(){ return JSON.parse(localStorage.getItem('nc_upper_log')||'[]'); }
+function getUpperLog(){ return safeParse(localStorage.getItem('nc_upper_log'), []); }
 function saveUpperLog(l){ localStorage.setItem('nc_upper_log',JSON.stringify(l)); }
 
 function renderUpperProgressList(){
@@ -5667,7 +5769,7 @@ async function generateSurvivorCircuit(){
   const survivor=getSurvivorContext();
   const profile=getProfile();
   try{
-    const res=await callClaude([{role:'user',content:`Genera un circuito simulacro Survivor de 25 minutos para preparar la carrera.
+    const res=await callClaudeWithTimeout([{role:'user',content:`Genera un circuito simulacro Survivor de 25 minutos para preparar la carrera.
 
 Restricciones importantes:
 - Sin barra de dominadas (no disponible)
@@ -5840,8 +5942,8 @@ function checkRaceWeekProtocol(){
 // ═══════════════════════════════════════════════════════════
 // SURVIVOR FEATURE 7: RUNNING PLAN WITH FITNESS TEST
 // ═══════════════════════════════════════════════════════════
-function getRunTest(){ return JSON.parse(localStorage.getItem('nc_run_test')||'null'); }
-function getRunPlan(){ return JSON.parse(localStorage.getItem('nc_run_plan')||'null'); }
+function getRunTest(){ return safeParse(localStorage.getItem('nc_run_test'), null); }
+function getRunPlan(){ return safeParse(localStorage.getItem('nc_run_plan'), null); }
 function saveRunPlan(p){ localStorage.setItem('nc_run_plan',JSON.stringify(p)); }
 
 function renderRunPlanWeek(){
@@ -5985,7 +6087,7 @@ async function generateRunPlan(){
   const today=dk();
   const raceDate='2026-10-24';
   try{
-    const res=await callClaude([{role:'user',content:`Genera un plan de carrera de 12 semanas para preparar una carrera Survivor 10km el 24 oct 2026.
+    const res=await callClaudeWithTimeout([{role:'user',content:`Genera un plan de carrera de 12 semanas para preparar una carrera Survivor 10km el 24 oct 2026.
 
 Nivel actual:
 - Puede correr sin parar: ${test.duracion}
@@ -6003,7 +6105,8 @@ El plan debe:
 {"weeks":[{"weekNum":1,"focus":"Base aeróbica","sessions":[{"day":"Martes","type":"Rodaje suave","description":"25 min ritmo conversación","duration_min":25}]}]}`}]);
     const jsonMatch=res.match(/\{[\s\S]*\}/);
     if(!jsonMatch)throw new Error('No se pudo parsear el plan');
-    const parsed=JSON.parse(jsonMatch[0]);
+    const parsed=safeParse(jsonMatch[0],null);
+    if(!parsed)throw new Error('El plan generado no es válido — intenta de nuevo');
     if(!parsed.weeks||!parsed.weeks.length)throw new Error('Plan vacío');
     saveRunPlan({generated:today,fitnessLevel:test.duracion,weeksAvailable:test.dias,weeks:parsed.weeks});
     renderRunPlanWeek();
@@ -6021,7 +6124,7 @@ El plan debe:
 function renderBodyComposition(){
   const measures=getMeasures();
   const upperLog=getUpperLog();
-  const feelLog=JSON.parse(localStorage.getItem('nc_feel_log')||'{}');
+  const feelLog=safeParse(localStorage.getItem('nc_feel_log'), {});
   const el=document.getElementById('body-comp-section');
   if(!el)return;
 
@@ -6056,7 +6159,7 @@ function renderBodyComposition(){
 }
 
 function saveFeelLog(val){
-  const log=JSON.parse(localStorage.getItem('nc_feel_log')||'{}');
+  const log=safeParse(localStorage.getItem('nc_feel_log'), {});
   log[getWeekKey()]=val;
   localStorage.setItem('nc_feel_log',JSON.stringify(log));
   renderBodyComposition();
@@ -6173,8 +6276,8 @@ async function renderWeeklyScoreAI() {
     const dateKey = d.toISOString().split('T')[0];
     const isToday = dateKey === today;
     const isFuture = dateKey > today;
-    const meals = JSON.parse(localStorage.getItem('meals_' + dateKey) || '[]');
-    const act = JSON.parse(localStorage.getItem('nc_activity_' + dateKey) || '{"pasos":0,"actividades":[]}');
+    const meals = safeParse(localStorage.getItem('meals_' + dateKey), []);
+    const act = safeParse(localStorage.getItem('nc_activity_' + dateKey), {"pasos":0,"actividades":[]});
     let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
     weekData.push({ date: dateKey, meals: meals.length, P: Math.round(P), C: Math.round(C), F: Math.round(F), pasos: act.pasos, actividades: act.actividades.length, isToday, isFuture });
   }
@@ -6199,7 +6302,7 @@ async function renderWeeklyScoreAI() {
 
   // Internal calorie context for the week
   const weekCalContext = weekData.filter(d => !d.isFuture && !d.isToday).map(d => {
-    const meals = JSON.parse(localStorage.getItem('meals_' + d.date) || '[]');
+    const meals = safeParse(localStorage.getItem('meals_' + d.date), []);
     return buildCalorieContext(meals);
   }).join('\n');
 
@@ -6242,7 +6345,7 @@ Formato exacto:
 [Frase motivadora final orientada a Survivor octubre]`;
 
   try {
-    const res = await callClaude([{role:'user', content: prompt}]);
+    const res = await callClaudeWithTimeout([{role:'user', content: prompt}]);
     const html = `<div style="padding:4px 0;font-size:0.85rem;line-height:1.7;">${formatAI(res)}</div>
       <button onclick="localStorage.removeItem('nc_weekly_score_${weekKey}');renderWeeklyScoreAI();" style="margin-top:10px;background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;">↺ Regenerar</button>`;
     el.innerHTML = html;
@@ -6379,7 +6482,7 @@ async function generateHomeWorkout() {
   const material = matChips.length ? matChips.join(', ') : 'sin material especial';
 
   try {
-    const res = await callClaude([{role:'user', content:`Genera una rutina de entrenamiento en casa para:
+    const res = await callClaudeWithTimeout([{role:'user', content:`Genera una rutina de entrenamiento en casa para:
 - Tiempo: ${timeChip.dataset.val}
 - Foco: ${focusChip.dataset.val}
 - Material: ${material}
@@ -6531,7 +6634,7 @@ function checkWeeklyMotivation() {
   for (let i = 1; i <= 7; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const meals = JSON.parse(localStorage.getItem('meals_' + d.toISOString().split('T')[0]) || '[]');
+    const meals = safeParse(localStorage.getItem('meals_' + d.toISOString().split('T')[0]), []);
     lastWeekMeals.push(...meals);
   }
 
@@ -6602,7 +6705,7 @@ ESTRUCTURA OBLIGATORIA (siempre incluye las 4 partes):
 [Progresión concreta: más reps, menos descanso, más peso, etc. — una frase específica]`;
 
   try{
-    const res=await callClaude([{role:'user',content:prompt}]);
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     document.getElementById('entreno-result').innerHTML=`<div class="card"><div class="card-title">Tu entreno de hoy</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
     const match=res.match(/^##\s+([^\n—]+)/m);
     if(match)setLastWorkout(match[1].trim());
@@ -6638,7 +6741,7 @@ function computeSurvivorReadiness() {
   let recentUpperSessions = 0;
   for (let i = 0; i < 14; i++) {
     const d = new Date(); d.setDate(d.getDate() - i);
-    const act = JSON.parse(localStorage.getItem('nc_activity_' + d.toISOString().split('T')[0]) || '{"actividades":[]}');
+    const act = safeParse(localStorage.getItem('nc_activity_' + d.toISOString().split('T')[0]), {actividades:[]});
     act.actividades.forEach(a => {
       const clase = a.clase ? a.clase.id : '';
       if (['crossfit','hiit','boxeo','escalada','fuerza','casa'].includes(clase) || (a.tipo||'').toLowerCase().includes('fuerza') || (a.tipo||'').toLowerCase().includes('crossfit')) recentUpperSessions++;
@@ -6653,7 +6756,7 @@ function computeSurvivorReadiness() {
   let recentCardioSessions = 0;
   for (let i = 0; i < 14; i++) {
     const d = new Date(); d.setDate(d.getDate() - i);
-    const act = JSON.parse(localStorage.getItem('nc_activity_' + d.toISOString().split('T')[0]) || '{"actividades":[],"pasos":0}');
+    const act = safeParse(localStorage.getItem('nc_activity_' + d.toISOString().split('T')[0]), {actividades:[],pasos:0});
     act.actividades.forEach(a => {
       const tipo = (a.tipo||'').toLowerCase();
       const clase = a.clase ? a.clase.id : '';
@@ -6672,7 +6775,7 @@ function computeSurvivorReadiness() {
   let proteinDaysOk = 0, daysWithData = 0;
   for (let i = 1; i <= 7; i++) {
     const d = new Date(); d.setDate(d.getDate() - i);
-    const meals = JSON.parse(localStorage.getItem('meals_' + d.toISOString().split('T')[0]) || '[]');
+    const meals = safeParse(localStorage.getItem('meals_' + d.toISOString().split('T')[0]), []);
     if (meals.length > 0) {
       daysWithData++;
       let P = 0; meals.forEach(m => P += m.p || 0);
@@ -6686,7 +6789,7 @@ function computeSurvivorReadiness() {
   else { nutriStatus = 'red'; nutriMsg = 'Proteína muy inconsistente'; }
 
   // PILLAR 4: MEDIDAS (measurement trend toward talla 40)
-  const measures = JSON.parse(localStorage.getItem('nc_measures') || '[]');
+  const measures = safeParse(localStorage.getItem('nc_measures'), []);
   let medidasStatus, medidasMsg;
   if (measures.length < 2) {
     medidasStatus = 'grey';
@@ -6786,7 +6889,7 @@ async function getSurvivorAIAssessment() {
   const r = computeSurvivorReadiness();
   const survivor = getSurvivorContext ? getSurvivorContext() : '';
   try {
-    const res = await callClaude([{role:'user', content:`Analiza la preparación de esta usuaria para Survivor 10km obstacles (${r.weeksLeft} semanas hasta la carrera).
+    const res = await callClaudeWithTimeout([{role:'user', content:`Analiza la preparación de esta usuaria para Survivor 10km obstacles (${r.weeksLeft} semanas hasta la carrera).
 
 Estado actual:
 - Fuerza: ${r.fuerzaStatus} — ${r.fuerzaMsg}
@@ -6828,8 +6931,8 @@ async function generateMicroObjectives() {
   for (let i = 1; i <= 7; i++) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const dk2 = d.toISOString().split('T')[0];
-    const meals = JSON.parse(localStorage.getItem('meals_' + dk2) || '[]');
-    const act = JSON.parse(localStorage.getItem('nc_activity_' + dk2) || '{"pasos":0,"actividades":[]}');
+    const meals = safeParse(localStorage.getItem('meals_' + dk2), []);
+    const act = safeParse(localStorage.getItem('nc_activity_' + dk2), {"pasos":0,"actividades":[]});
     if (meals.length) lastWeekMeals.push({date:dk2, meals});
     if (act.actividades.length || act.pasos > 0) lastWeekAct.push({date:dk2, ...act});
   }
@@ -6838,7 +6941,7 @@ async function generateMicroObjectives() {
   const readiness = computeSurvivorReadiness();
 
   try {
-    const res = await callClaude([{role:'user', content:`Genera 3 micro-objetivos semanales para preparar Survivor 10km.
+    const res = await callClaudeWithTimeout([{role:'user', content:`Genera 3 micro-objetivos semanales para preparar Survivor 10km.
 
 SEMÁFORO ACTUAL:
 - Fuerza: ${readiness.fuerzaStatus} — ${readiness.fuerzaMsg}
@@ -6887,7 +6990,7 @@ function renderMicroObjectives(objectives) {
   const el = document.getElementById('micro-obj-list');
   if (!el) return;
   const doneKey = 'nc_microobj_done_' + getWeekKey();
-  const done = JSON.parse(localStorage.getItem(doneKey) || '[]');
+  const done = safeParse(localStorage.getItem(doneKey), []);
 
   el.innerHTML = objectives.map((obj, i) => `
     <div onclick="toggleMicroObj(${i})" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:${done.includes(i)?'rgba(52,211,153,.1)':'var(--surface2)'};border:1px solid ${done.includes(i)?'rgba(52,211,153,.3)':'var(--border)'};margin-bottom:6px;cursor:pointer;">
@@ -6898,7 +7001,7 @@ function renderMicroObjectives(objectives) {
 
 function toggleMicroObj(i) {
   const doneKey = 'nc_microobj_done_' + getWeekKey();
-  const done = JSON.parse(localStorage.getItem(doneKey) || '[]');
+  const done = safeParse(localStorage.getItem(doneKey), []);
   const idx = done.indexOf(i);
   if (idx === -1) { done.push(i); vibrate(30); showToast('💪 ¡Objetivo cumplido!'); }
   else done.splice(idx, 1);
@@ -6932,7 +7035,7 @@ async function checkRaceReadinessAlert() {
   localStorage.setItem('nc_last_readiness_alert', today);
 
   try {
-    const res = await callClaude([{role:'user', content:`Genera un mensaje motivador pero honesto para una usuaria que lleva ${readiness.weeksLeft} semanas hasta su carrera Survivor y está retrasada en:
+    const res = await callClaudeWithTimeout([{role:'user', content:`Genera un mensaje motivador pero honesto para una usuaria que lleva ${readiness.weeksLeft} semanas hasta su carrera Survivor y está retrasada en:
 ${readiness.fuerzaStatus === 'red' ? '- Fuerza: ' + readiness.fuerzaMsg + '\n' : ''}${readiness.cardioStatus === 'red' ? '- Cardio: ' + readiness.cardioMsg + '\n' : ''}${readiness.nutriStatus === 'red' ? '- Nutrición: ' + readiness.nutriMsg + '\n' : ''}${readiness.medidasStatus === 'red' ? '- Medidas: ' + readiness.medidasMsg + '\n' : ''}
 
 El mensaje debe:
@@ -6985,7 +7088,7 @@ function renderMilestoneTimeline() {
     { date: '2026-10-24', label: '🏁 SURVIVOR 10KM', icon: '🏆' },
   ];
 
-  const benchmarks = JSON.parse(localStorage.getItem('nc_benchmarks') || '[]');
+  const benchmarks = safeParse(localStorage.getItem('nc_benchmarks'), []);
 
   el.innerHTML = `<div style="position:relative;padding-left:20px;">
     <div style="position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border);border-radius:2px;"></div>
@@ -7015,7 +7118,7 @@ function computeStreaks() {
   for (let i = 1; i <= 30; i++) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const dk2 = d.toISOString().split('T')[0];
-    const meals = JSON.parse(localStorage.getItem('meals_' + dk2) || '[]');
+    const meals = safeParse(localStorage.getItem('meals_' + dk2), []);
     if (!meals.length) break;
     let P = 0; meals.forEach(m => P += m.p || 0);
     if (P >= goals.p * 0.85) nutriStreak++;
@@ -7025,7 +7128,7 @@ function computeStreaks() {
   for (let i = 1; i <= 30; i++) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const dk2 = d.toISOString().split('T')[0];
-    const act = JSON.parse(localStorage.getItem('nc_activity_' + dk2) || '{"actividades":[],"pasos":0}');
+    const act = safeParse(localStorage.getItem('nc_activity_' + dk2), {"actividades":[],"pasos":0});
     if (act.actividades.length > 0 || act.pasos >= 6000) trainStreak++;
     else break;
   }
@@ -7118,7 +7221,7 @@ function getSleepContext() {
 // ═══════════════════════════════════════════════════════
 function getOverloadPlan() {
   const weekKey = getWeekKey();
-  const stored = JSON.parse(localStorage.getItem('nc_overload_plan') || 'null');
+  const stored = safeParse(localStorage.getItem('nc_overload_plan'), null);
   if (stored && stored.week === weekKey) return stored.exercises;
 
   const upperLog = getUpperLog();
@@ -7181,7 +7284,7 @@ function renderZone2Status() {
   let z2Count = 0, hiitCount = 0;
   for (let i = 0; i < 14; i++) {
     const d = new Date(); d.setDate(d.getDate() - i);
-    const act = JSON.parse(localStorage.getItem('nc_activity_' + d.toISOString().split('T')[0]) || '{"actividades":[]}');
+    const act = safeParse(localStorage.getItem('nc_activity_' + d.toISOString().split('T')[0]), {actividades:[]});
     act.actividades.forEach(a => {
       if (a.intensidad_zona === 'z2') z2Count++;
       else if (a.intensidad_zona === 'hiit' || a.intensidad === 'intensa' || (a.clase && ['crossfit','hiit','boxeo'].includes(a.clase.id))) hiitCount++;
@@ -7315,8 +7418,8 @@ function saveRecovery(val) {
 // ═══════════════════════════════════════════════════════
 function checkNonScaleVictories() {
   const upperLog = getUpperLog();
-  const benchmarks = JSON.parse(localStorage.getItem('nc_benchmarks') || '[]');
-  const victories = JSON.parse(localStorage.getItem('nc_nsv') || '[]');
+  const benchmarks = safeParse(localStorage.getItem('nc_benchmarks'), []);
+  const victories = safeParse(localStorage.getItem('nc_nsv'), []);
 
   const today = dk();
   upperLog.filter(l => l.date === today).forEach(log => {
@@ -7371,10 +7474,10 @@ function renderWeeklyRitual() {
   if (!el) return;
   const weekKey = getWeekKey();
   const ritualKey = 'nc_ritual_' + weekKey;
-  const done = JSON.parse(localStorage.getItem(ritualKey) || 'null');
+  const done = safeParse(localStorage.getItem(ritualKey), null);
 
   if (done) {
-    const measures = JSON.parse(localStorage.getItem('nc_measures') || '[]');
+    const measures = safeParse(localStorage.getItem('nc_measures'), []);
     const prev = measures.length >= 2 ? measures[measures.length - 2] : null;
     const curr = measures[measures.length - 1];
 
@@ -7446,7 +7549,7 @@ function toggleHoyExtras() {
 
 // ═══════════════ UX 2: ADD MEAL BOTTOM SHEET ═══════════════
 function showAddMealSheet() {
-  const recent = JSON.parse(localStorage.getItem('nc_recent_meals') || '[]').slice(0, 6);
+  const recent = safeParse(localStorage.getItem('nc_recent_meals'), []).slice(0, 6);
 
   const overlay = document.createElement('div');
   overlay.id = 'add-meal-sheet';
@@ -7566,7 +7669,7 @@ function renderRepeatYesterdayChip() {
 
   // Get yesterday's meals of this type
   const yest = new Date(); yest.setDate(yest.getDate() - 1);
-  const yesterdayMeals = JSON.parse(localStorage.getItem('meals_' + yest.toISOString().split('T')[0]) || '[]');
+  const yesterdayMeals = safeParse(localStorage.getItem('meals_' + yest.toISOString().split('T')[0]), []);
   const yesterdayType = yesterdayMeals.filter(m => m.type === mealType);
 
   if (!yesterdayType.length) { el.innerHTML = ''; return; }
@@ -7580,7 +7683,7 @@ function renderRepeatYesterdayChip() {
 
 function repeatYesterdayMeals(mealType) {
   const yest = new Date(); yest.setDate(yest.getDate() - 1);
-  const yesterdayMeals = JSON.parse(localStorage.getItem('meals_' + yest.toISOString().split('T')[0]) || '[]');
+  const yesterdayMeals = safeParse(localStorage.getItem('meals_' + yest.toISOString().split('T')[0]), []);
   const toRepeat = yesterdayMeals.filter(m => m.type === mealType);
   if (!toRepeat.length) return;
 
@@ -7669,7 +7772,7 @@ function saveWeeklyRitual() {
   const cadera = parseFloat(document.getElementById('ritual-cadera')?.value);
   if (!cintura) { showToast('Introduce al menos la cintura'); return; }
 
-  const measures = JSON.parse(localStorage.getItem('nc_measures') || '[]');
+  const measures = safeParse(localStorage.getItem('nc_measures'), []);
   const entry = { date: dk(), cintura, cadera: cadera || null, feel: _ritualFeel };
   // Replace today's entry if exists
   const filtered = measures.filter(m => m.date !== dk());
@@ -7687,3 +7790,7 @@ function saveWeeklyRitual() {
 </script>
 </body>
 </html>
+
+
+
+
