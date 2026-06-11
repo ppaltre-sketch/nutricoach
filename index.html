@@ -3311,16 +3311,18 @@ function renderWeeklySummary(){
     const meals=JSON.parse(localStorage.getItem('meals_'+key)||'[]');
     let P=0,C=0,F=0;meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
     const act=JSON.parse(localStorage.getItem('nc_activity_'+key)||'{"pasos":0,"actividades":[]}');
-    days.push({key,label:d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}),P:Math.round(P),C:Math.round(C),F:Math.round(F),hasMeals:meals.length>0,act});
+    const isToday = i === 0;
+    days.push({key,label:d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}),P:Math.round(P),C:Math.round(C),F:Math.round(F),hasMeals:meals.length>0,act,isToday});
   }
   const sumEl=document.getElementById('weekly-summary');
   sumEl.innerHTML=days.map(d=>{
     if(!d.hasMeals) return `<div class="week-day"><div class="week-day-header"><span style="text-transform:capitalize;">${d.label}</span><span style="color:var(--border)">sin datos</span></div></div>`;
     const pP=Math.min(100,d.P/goals.p*100),pC=Math.min(100,d.C/goals.c*100),pF=Math.min(100,d.F/goals.f*100);
+    const todayTag = d.isToday ? `<span style="font-size:0.65rem;background:rgba(129,140,248,.2);color:var(--accent);padding:1px 6px;border-radius:6px;margin-left:4px;">en curso</span>` : '';
     return `
       <div class="week-day">
         <div class="week-day-header">
-          <span style="text-transform:capitalize;">${d.label}</span>
+          <span style="text-transform:capitalize;">${d.label}${todayTag}</span>
           <span>P${d.P}g C${d.C}g G${d.F}g</span>
         </div>
         <div class="week-bars">
@@ -6163,15 +6165,18 @@ async function renderWeeklyScoreAI() {
   el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:8px;"><div class="spinner spinner-accent" style="width:16px;height:16px;"></div> Analizando tu semana... 🔍</div>`;
 
   // Gather week data
+  const today = dk();
   const weekData = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date();
     d.setDate(d.getDate() - d.getDay() + 1 + i); // Monday to Sunday
     const dateKey = d.toISOString().split('T')[0];
+    const isToday = dateKey === today;
+    const isFuture = dateKey > today;
     const meals = JSON.parse(localStorage.getItem('meals_' + dateKey) || '[]');
     const act = JSON.parse(localStorage.getItem('nc_activity_' + dateKey) || '{"pasos":0,"actividades":[]}');
     let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
-    weekData.push({ date: dateKey, meals: meals.length, P: Math.round(P), C: Math.round(C), F: Math.round(F), pasos: act.pasos, actividades: act.actividades.length });
+    weekData.push({ date: dateKey, meals: meals.length, P: Math.round(P), C: Math.round(C), F: Math.round(F), pasos: act.pasos, actividades: act.actividades.length, isToday, isFuture });
   }
 
   const profile = getProfile();
@@ -6180,46 +6185,61 @@ async function renderWeeklyScoreAI() {
   const measures = measuresRaw ? JSON.parse(measuresRaw) : [];
   const lastMeasure = measures.length > 0 ? measures[measures.length-1] : null;
 
+  // Build cintura trend for projection
+  const cinturaTrend = measures.filter(m => m.cintura).slice(-8).map(m => `${m.date}: ${m.cintura}cm`).join(', ');
+  const firstCintura = measures.find(m => m.cintura);
+  const lastCintura = [...measures].reverse().find(m => m.cintura);
+  let proyeccionCtx = '';
+  if (firstCintura && lastCintura && firstCintura.date !== lastCintura.date) {
+    const daysDiff = (new Date(lastCintura.date) - new Date(firstCintura.date)) / 86400000;
+    const cmDiff = firstCintura.cintura - lastCintura.cintura; // positive = reducing
+    const cmPerWeek = (cmDiff / daysDiff) * 7;
+    proyeccionCtx = `Tendencia cintura: ${firstCintura.cintura}cm → ${lastCintura.cintura}cm en ${Math.round(daysDiff)} días (${cmPerWeek > 0 ? '-' : '+'}${Math.abs(cmPerWeek).toFixed(1)}cm/semana). Objetivo: entrar en talla 40 (cintura ~75cm aprox).`;
+  }
+
   // Internal calorie context for the week
-  const weekCalContext = weekData.map(d => {
+  const weekCalContext = weekData.filter(d => !d.isFuture && !d.isToday).map(d => {
     const meals = JSON.parse(localStorage.getItem('meals_' + d.date) || '[]');
     return buildCalorieContext(meals);
   }).join('\n');
 
   const survivorCtx = getSurvivorContext();
+  const nowHour = new Date().getHours();
 
   const prompt = `Eres el coach de NutriCoach. Evalúa la semana de ${profile.nombre || 'la usuaria'}.
 
-DATOS SEMANA:
-${weekData.map(d => `${d.date}: ${d.meals} comidas, P:${d.P}g C:${d.C}g F:${d.F}g, ${d.pasos} pasos, ${d.actividades} entrenamientos`).join('\n')}
+DATOS SEMANA (solo evalúa días completos — hoy es ${today} y son las ${nowHour}h, el día está en curso):
+${weekData.filter(d => !d.isFuture).map(d => `${d.date}${d.isToday ? ` (HOY — DÍA EN CURSO, son las ${nowHour}h, datos PARCIALES, no juzgar como día completo)` : ''}: ${d.meals} comidas, P:${d.P}g C:${d.C}g F:${d.F}g, ${d.pasos} pasos, ${d.actividades} entrenamientos`).join('\n')}
 
 CONTEXTO INTERNO (NO MENCIONAR AL USUARIO):
 ${weekCalContext}
 
+${proyeccionCtx ? `TENDENCIA MEDIDAS (para proyección, NO mencionar números de cintura al usuario):\n${proyeccionCtx}\n` : ''}
 ${survivorCtx}
 
-Peso objetivo: ${profile.pesoObj || 69}kg. Peso actual: ${profile.peso || '?'}kg.
 Metas diarias: P:${goals.p}g C:${goals.c}g G:${goals.f}g
 
 INSTRUCCIONES:
-- Puntúa del 1 al 10 la semana en: deporte, alimentación, progreso hacia el objetivo
-- NUNCA menciones calorías, déficit, kcal, ni números de energía
-- Si fue una semana difícil: mensaje empático, motivador, sin culpa ("esta semana no fue perfecta, la siguiente lo será")
-- Si hay tendencia positiva en medidas (cintura bajando), menciona el progreso hacia talla 40 de forma motivadora
-- Máximo 200 palabras, tono de coach cercano y motivador
+- Evalúa SOLO los días completos (no hoy si el día está empezando)
+- Puntúa del 1 al 10: deporte, alimentación, progreso global
+- NUNCA menciones calorías, déficit, kcal, peso en kg ni números de energía
+- NUNCA menciones centímetros de cintura directamente
+- Si hay tendencia positiva en medidas, menciona el progreso hacia talla 40 de forma motivadora
+- Si fue semana difícil: empático, sin culpa
+- Máximo 200 palabras, tono de coach cercano
 
-Formato exacto de respuesta:
+Formato exacto:
 📊 **TU SEMANA**
 
 🏋️ Deporte: X/10
 🥗 Alimentación: X/10
 🎯 Progreso global: X/10
 
-[2-3 frases de evaluación honesta y empática]
+[2-3 frases de evaluación honesta y empática basada en días completos]
 
-⏱️ [Si seguimos así: "En aproximadamente X semanas podrías llegar a tu objetivo" — SOLO si hay datos suficientes. Si no hay datos: omite esta línea]
+⏱️ [Si hay tendencia clara en medidas: calcula cuántas semanas para talla 40 a este ritmo y escríbelo en positivo. Si no hay datos suficientes: omite esta línea completamente]
 
-[Frase motivadora final orientada a octubre]`;
+[Frase motivadora final orientada a Survivor octubre]`;
 
   try {
     const res = await callClaude([{role:'user', content: prompt}]);
