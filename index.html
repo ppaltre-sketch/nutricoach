@@ -6153,16 +6153,6 @@ async function renderWeeklyScoreAI() {
   const el = document.getElementById('weekly-score-card');
   if (!el) return;
 
-  // Only generate on Friday afternoon through Sunday
-  const day = new Date().getDay(); // 0=Sun, 5=Fri, 6=Sat
-  const hour = new Date().getHours();
-  const isWeekEnd = day === 0 || day === 6 || (day === 5 && hour >= 17);
-
-  if (!isWeekEnd && !cached) {
-    el.innerHTML = `<p style="color:var(--muted);font-size:0.82rem;text-align:center;padding:12px;">El resumen semanal estará disponible el viernes por la tarde 📅</p>`;
-    return;
-  }
-
   if (cached) {
     el.innerHTML = cached;
     return;
