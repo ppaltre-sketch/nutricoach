@@ -1675,7 +1675,7 @@ function getInternalDeficitStatus(meals){
   if(kcal<1200)return'peligrosamente_bajo';
   if(kcal<target*0.75)return'muy_bajo';
   if(kcal<target*0.90)return'bajo';
-  if(kcal<=tdee)return'optimo';
+  if(kcal<=target*1.10)return'optimo';
   return'exceso';
 }
 function buildCalorieContext(meals){
