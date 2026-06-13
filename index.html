@@ -587,7 +587,9 @@
       <div id="time-context-card"></div>
       <div id="survivor-semaforo"></div>
       <div id="daily-todos" style="display:flex;gap:8px;margin-bottom:12px;"></div>
+      <div id="repeat-yesterday-banner"></div>
       <div id="next-workout-card"></div>
+      <div id="postworkout-banner"></div>
       <div id="streaks-bar"></div>
       <div id="streak-recovery-msg"></div>
       <div id="ciclo-phase-chip"></div>
@@ -620,6 +622,7 @@
       </div>
       <div id="hoy-extras-toggle"></div>
       <div id="evening-checkin-wrap"></div>
+      <div id="quick-snacks-wrap"></div>
       <div id="dia-dificil-wrap"></div>
     </div>
 
@@ -1399,6 +1402,12 @@
         <button class="btn btn-secondary" onclick="enableNotifications()">🔔 Activar recordatorios</button>
       </div>
       <div class="card">
+        <div class="card-title">📋 Días tipo</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Guarda las comidas de un día como plantilla y cárgalas de un toque en cualquier momento.</p>
+        <button class="btn btn-secondary" onclick="saveCurrentDayAsTemplate()" style="width:100%;margin-bottom:10px;">💾 Guardar hoy como plantilla</button>
+        <div id="meal-templates-list"></div>
+      </div>
+      <div class="card">
         <div class="setting-group-title">Restablecer datos</div>
         <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3);" onclick="clearToday()">Borrar comidas de hoy</button>
       </div>
@@ -1455,9 +1464,13 @@
       <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">🥗 Describir lo que comí (IA calcula macros)</span>
       <div style="width:40px;height:40px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 10px rgba(52,211,153,.4);">🥗</div>
     </div>
-    <div class="fab-option" onclick="closeFab();showAddMealSheet()" style="display:flex;align-items:center;gap:8px;">
-      <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">✏️ Añadir macros manualmente</span>
-      <div style="width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">✏️</div>
+    <div class="fab-option" onclick="closeFab();showRestauranteSheet()" style="display:flex;align-items:center;gap:8px;">
+      <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">🍽️ Comer fuera / restaurante</span>
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 10px rgba(251,146,60,.4);">🍽️</div>
+    </div>
+    <div class="fab-option" onclick="closeFab();showTemplatesSheet()" style="display:flex;align-items:center;gap:8px;">
+      <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">📋 Cargar día tipo</span>
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">📋</div>
     </div>
     <div class="fab-option" onclick="closeFab();showAyerSheet()" style="display:flex;align-items:center;gap:8px;">
       <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">📅 Registrar el día de ayer</span>
@@ -1794,7 +1807,7 @@ function showPage(name){
   if(name==='cena'){renderCenaRemaining();renderAlmuerzoRemaining();renderComerHistory();}
   if(name==='entreno'){renderYesterdayWorkout();renderZone2Status();renderOverloadPrescription();}
   if(name==='progreso')renderProgreso();
-  if(name==='config'){initCicloConfig();initNotifStatus();}
+  if(name==='config'){initCicloConfig();initNotifStatus();renderMealTemplates();}
 }
 
 // ═══════════════ UX: DAILY TODOS ═══════════════
@@ -2173,6 +2186,9 @@ function renderHome(){
   checkRaceWeekProtocol();
   updateNavDots();
   renderRepeatYesterdayChip();
+  renderRepeatYesterdayBanner();
+  renderQuickSnacks();
+  renderPostWorkoutBanner();
 }
 
 function dismissOnboard(){
@@ -5994,6 +6010,8 @@ function logActivityFromEntreno() {
     const entry = { tipo, duracion, intensidad: _elogInt, ...extra };
     act.actividades.push(entry);
     saveActivity(act);
+    localStorage.setItem('nc_postworkout_' + dk(), '1');
+    if(typeof renderPostWorkoutBanner === 'function') renderPostWorkoutBanner();
     document.getElementById('elog-duracion').value = '';
     renderEntrenoLogToday();
     renderActivityToday();
@@ -7833,7 +7851,10 @@ function showDescribirSheet() {
         <button onclick="document.getElementById('describir-sheet').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;min-height:44px;min-width:44px;">✕</button>
       </div>
       <textarea id="describir-texto" rows="4" placeholder="Ej: 200g pechuga de pollo a la plancha, 150g arroz blanco cocido, ensalada con tomate y pepino, 1 cucharada aceite de oliva..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px;color:var(--text);font-size:0.9rem;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
-      <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;margin-bottom:14px;">Cuanto más detallado, más preciso. Puedes poner gramos, piezas, cucharadas...</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:-4px;margin-bottom:8px;">
+        <button id="describir-mic-btn" onclick="toggleVoiceInput()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:0.78rem;cursor:pointer;">🎤 Habla en lugar de escribir</button>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:14px;">Cuanto más detallado, más preciso. Puedes poner gramos, piezas, cucharadas...</div>
       <div style="margin-bottom:14px;">
         <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px;">Tipo de comida</div>
         <select id="describir-type" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;">
@@ -7968,6 +7989,9 @@ function showAyerSheet() {
 
       <div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;">🍽️ Comidas de ayer</div>
       <textarea id="ayer-comidas-texto" rows="4" placeholder="Ej: Desayuno: café con leche y tostada con tomate. Almuerzo: menú del día, ensalada, merluza al horno y fruta. Cena: tortilla de 2 huevos con ensalada..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px;color:var(--text);font-size:0.9rem;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;margin-bottom:6px;"></textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:-4px;margin-bottom:8px;">
+        <button id="ayer-mic-btn" onclick="toggleVoiceInputAyer()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:0.78rem;cursor:pointer;">🎤 Habla en lugar de escribir</button>
+      </div>
       <div style="font-size:0.72rem;color:var(--muted);margin-bottom:14px;">Descríbelo como puedas — la IA calculará los macros de cada comida</div>
 
       <div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;">💪 Actividad de ayer (opcional)</div>
@@ -8522,6 +8546,446 @@ function handleURLActions(){
       showToast('💧 Agua añadida');
     }, 500);
   }
+}
+
+// ═══════════════ FEATURE 1: VOZ ═══════════════
+let voiceRecognition = null;
+function toggleVoiceInput(){
+  if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)){
+    showToast('Tu navegador no soporta voz — escribe el texto');
+    return;
+  }
+  const btn = document.getElementById('describir-mic-btn');
+  if(voiceRecognition){
+    voiceRecognition.stop();
+    voiceRecognition = null;
+    if(btn){ btn.innerHTML='🎤 Habla en lugar de escribir'; btn.style.color='var(--muted)'; btn.style.borderColor='var(--border)'; }
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  voiceRecognition = new SR();
+  voiceRecognition.lang = 'es-ES';
+  voiceRecognition.continuous = false;
+  voiceRecognition.interimResults = false;
+  if(btn){ btn.innerHTML='🔴 Escuchando... (toca para parar)'; btn.style.color='var(--red)'; btn.style.borderColor='var(--red)'; }
+  voiceRecognition.onresult = e => {
+    const transcript = e.results[0][0].transcript;
+    const ta = document.getElementById('describir-texto');
+    if(ta) ta.value = (ta.value ? ta.value + '. ' : '') + transcript;
+    voiceRecognition = null;
+    if(btn){ btn.innerHTML='🎤 Habla en lugar de escribir'; btn.style.color='var(--muted)'; btn.style.borderColor='var(--border)'; }
+  };
+  voiceRecognition.onerror = () => {
+    showToast('No pude escucharte — intenta de nuevo');
+    voiceRecognition = null;
+    if(btn){ btn.innerHTML='🎤 Habla en lugar de escribir'; btn.style.color='var(--muted)'; btn.style.borderColor='var(--border)'; }
+  };
+  voiceRecognition.start();
+}
+
+let voiceRecognitionAyer = null;
+function toggleVoiceInputAyer(){
+  if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)){
+    showToast('Tu navegador no soporta voz — escribe el texto');
+    return;
+  }
+  const btn = document.getElementById('ayer-mic-btn');
+  if(voiceRecognitionAyer){
+    voiceRecognitionAyer.stop();
+    voiceRecognitionAyer = null;
+    if(btn){ btn.innerHTML='🎤 Habla en lugar de escribir'; btn.style.color='var(--muted)'; btn.style.borderColor='var(--border)'; }
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  voiceRecognitionAyer = new SR();
+  voiceRecognitionAyer.lang = 'es-ES';
+  voiceRecognitionAyer.continuous = false;
+  voiceRecognitionAyer.interimResults = false;
+  if(btn){ btn.innerHTML='🔴 Escuchando... (toca para parar)'; btn.style.color='var(--red)'; btn.style.borderColor='var(--red)'; }
+  voiceRecognitionAyer.onresult = e => {
+    const transcript = e.results[0][0].transcript;
+    const ta = document.getElementById('ayer-comidas-texto');
+    if(ta) ta.value = (ta.value ? ta.value + '. ' : '') + transcript;
+    voiceRecognitionAyer = null;
+    if(btn){ btn.innerHTML='🎤 Habla en lugar de escribir'; btn.style.color='var(--muted)'; btn.style.borderColor='var(--border)'; }
+  };
+  voiceRecognitionAyer.onerror = () => {
+    showToast('No pude escucharte — intenta de nuevo');
+    voiceRecognitionAyer = null;
+    if(btn){ btn.innerHTML='🎤 Habla en lugar de escribir'; btn.style.color='var(--muted)'; btn.style.borderColor='var(--border)'; }
+  };
+  voiceRecognitionAyer.start();
+}
+
+// ═══════════════ FEATURE 2: DÍAS TIPO / PLANTILLAS ═══════════════
+function renderMealTemplates(){
+  const el = document.getElementById('meal-templates-list');
+  if(!el) return;
+  const templates = safeParse(localStorage.getItem('nc_meal_templates'), []);
+  if(!templates.length){ el.innerHTML = '<div style="font-size:0.78rem;color:var(--muted);">Sin plantillas guardadas todavía</div>'; return; }
+  el.innerHTML = templates.map((t,i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:0.85rem;font-weight:700;">${esc(t.name)}</div>
+        <div style="font-size:0.72rem;color:var(--muted);">${t.meals.length} comidas</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="loadTemplate(${i})" style="padding:6px 14px;border-radius:20px;background:var(--accent);color:#fff;border:none;font-size:0.75rem;font-weight:600;cursor:pointer;">Cargar</button>
+        <button onclick="deleteTemplate(${i})" style="padding:6px 10px;border-radius:20px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);font-size:0.75rem;cursor:pointer;">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function saveCurrentDayAsTemplate(){
+  const meals = getMeals();
+  if(!meals.length){ showToast('No hay comidas registradas hoy'); return; }
+  const name = prompt('Nombre para esta plantilla (ej: "Día normal trabajo"):');
+  if(!name) return;
+  const templates = safeParse(localStorage.getItem('nc_meal_templates'), []);
+  templates.unshift({ name, meals: meals.map(m=>({name:m.name,p:m.p,c:m.c,f:m.f,fib:m.fib||0,type:m.type})) });
+  localStorage.setItem('nc_meal_templates', JSON.stringify(templates.slice(0,10)));
+  renderMealTemplates();
+  showToast('✓ Plantilla "' + name + '" guardada');
+}
+
+function loadTemplate(i){
+  const templates = safeParse(localStorage.getItem('nc_meal_templates'), []);
+  const t = templates[i];
+  if(!t) return;
+  const existing = getMeals();
+  const toAdd = t.meals.map(m => ({...m, time:''}));
+  saveMeals([...existing, ...toAdd]);
+  renderHome();
+  renderCenaRemaining();
+  renderAlmuerzoRemaining();
+  showToast('✓ Plantilla "' + t.name + '" cargada (' + toAdd.length + ' comidas)');
+}
+
+function deleteTemplate(i){
+  const templates = safeParse(localStorage.getItem('nc_meal_templates'), []);
+  templates.splice(i,1);
+  localStorage.setItem('nc_meal_templates', JSON.stringify(templates));
+  renderMealTemplates();
+}
+
+function showTemplatesSheet(){
+  const templates = safeParse(localStorage.getItem('nc_meal_templates'), []);
+  const overlay = document.createElement('div');
+  overlay.id = 'templates-sheet';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:flex-end;';
+  if(!templates.length){
+    overlay.innerHTML = `<div style="background:var(--surface);border-radius:20px 20px 0 0;padding:24px;width:100%;">
+      <div style="font-size:1rem;font-weight:800;margin-bottom:10px;">📋 Días tipo</div>
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">Aún no tienes plantillas. Ve a CONFIG → Días tipo y guarda el día de hoy como plantilla.</div>
+      <button onclick="document.getElementById('templates-sheet').remove()" class="btn btn-secondary" style="width:100%;">Cerrar</button>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+    return;
+  }
+  overlay.innerHTML = `<div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:1rem;font-weight:800;">📋 Cargar día tipo</div>
+      <button onclick="document.getElementById('templates-sheet').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;min-height:44px;min-width:44px;">✕</button>
+    </div>
+    ${templates.map((t,i)=>`
+      <div style="padding:12px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);margin-bottom:10px;">
+        <div style="font-weight:700;margin-bottom:6px;">${esc(t.name)}</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">${t.meals.map(m=>esc(m.name)).join(' · ')}</div>
+        <button onclick="loadTemplate(${i});document.getElementById('templates-sheet').remove()" class="btn btn-primary" style="width:100%;padding:10px;">✓ Cargar estas comidas hoy</button>
+      </div>`).join('')}
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+// ═══════════════ FEATURE 3: REPETIR DÍA ANTERIOR ═══════════════
+function renderRepeatYesterdayBanner(){
+  const el = document.getElementById('repeat-yesterday-banner');
+  if(!el) return;
+  const todayMeals = getMeals();
+  if(todayMeals.length > 0){ el.innerHTML = ''; return; }
+  const ayer = new Date(); ayer.setDate(ayer.getDate()-1);
+  const ayerKey = ayer.toISOString().slice(0,10);
+  const ayerMeals = safeParse(localStorage.getItem('meals_'+ayerKey), []);
+  if(!ayerMeals.length){ el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);margin-bottom:12px;">
+      <div style="font-size:0.82rem;color:var(--muted);">🔁 ¿Hoy comes parecido a ayer?</div>
+      <button onclick="repeatYesterdayMeals()" style="padding:6px 14px;border-radius:20px;background:var(--surface3);color:var(--text);border:1px solid var(--border);font-size:0.75rem;font-weight:600;cursor:pointer;">Copiar</button>
+    </div>`;
+}
+
+function repeatYesterdayMeals(){
+  const ayer = new Date(); ayer.setDate(ayer.getDate()-1);
+  const ayerKey = ayer.toISOString().slice(0,10);
+  const ayerMeals = safeParse(localStorage.getItem('meals_'+ayerKey), []);
+  if(!ayerMeals.length){ showToast('No hay comidas de ayer para copiar'); return; }
+  saveMeals([...getMeals(), ...ayerMeals.map(m=>({...m,time:''}))]);
+  renderHome();
+  renderCenaRemaining();
+  renderAlmuerzoRemaining();
+  renderRepeatYesterdayBanner();
+  showToast('✓ Comidas de ayer copiadas a hoy');
+  vibrate([20,10,20]);
+}
+
+// ═══════════════ FEATURE 4: SNACKS RÁPIDOS ═══════════════
+function renderQuickSnacks(){
+  const el = document.getElementById('quick-snacks-wrap');
+  if(!el) return;
+  const snacks = safeParse(localStorage.getItem('nc_quick_snacks'), [
+    {name:'Yogur griego', p:10, c:4, f:5, fib:0},
+    {name:'Plátano', p:1, c:23, f:0, fib:2},
+    {name:'Frutos secos (30g)', p:5, c:4, f:16, fib:1},
+  ]);
+  if(!snacks.length){ el.innerHTML=''; return; }
+  el.innerHTML = `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between;">
+        <span>⚡ Snacks rápidos</span>
+        <button onclick="showManageSnacksSheet()" style="background:none;border:none;color:var(--muted);font-size:0.72rem;cursor:pointer;text-decoration:underline;">Editar</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${snacks.map((s,i)=>`
+          <button onclick="addQuickSnack(${i})" style="padding:7px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;min-height:36px;display:flex;align-items:center;gap:5px;">
+            ${esc(s.name)}
+            <span style="font-size:0.65rem;color:var(--muted);">P${s.p}</span>
+          </button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function addQuickSnack(i){
+  const snacks = safeParse(localStorage.getItem('nc_quick_snacks'), [
+    {name:'Yogur griego', p:10, c:4, f:5, fib:0},
+    {name:'Plátano', p:1, c:23, f:0, fib:2},
+    {name:'Frutos secos (30g)', p:5, c:4, f:16, fib:1},
+  ]);
+  const s = snacks[i];
+  if(!s) return;
+  const h = new Date().getHours();
+  let type = h < 11 ? 'desayuno' : h < 16 ? 'almuerzo' : h < 18 ? 'merienda' : h < 21 ? 'cena' : 'snack';
+  const meals = getMeals();
+  meals.push({name:s.name, p:s.p, c:s.c, f:s.f, fib:s.fib||0, type, time:new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})});
+  saveMeals(meals);
+  updateRecentMealsCache(s);
+  renderHome();
+  renderCenaRemaining();
+  renderAlmuerzoRemaining();
+  showToast('✓ ' + s.name + ' añadido');
+  vibrate([20]);
+}
+
+function showManageSnacksSheet(){
+  const snacks = safeParse(localStorage.getItem('nc_quick_snacks'), [
+    {name:'Yogur griego', p:10, c:4, f:5, fib:0},
+    {name:'Plátano', p:1, c:23, f:0, fib:2},
+    {name:'Frutos secos (30g)', p:5, c:4, f:16, fib:1},
+  ]);
+  const overlay = document.createElement('div');
+  overlay.id = 'snacks-sheet';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:1rem;font-weight:800;">⚡ Mis snacks rápidos</div>
+        <button onclick="document.getElementById('snacks-sheet').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;min-height:44px;min-width:44px;">✕</button>
+      </div>
+      <div id="snacks-list-manage">
+        ${snacks.map((s,i)=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:0.85rem;font-weight:600;">${esc(s.name)}</div>
+              <div style="font-size:0.7rem;color:var(--muted);">P${s.p}g · C${s.c}g · G${s.f}g</div>
+            </div>
+            <button onclick="deleteQuickSnack(${i})" style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:4px 8px;">✕</button>
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:16px;">
+        <div style="font-weight:700;margin-bottom:10px;font-size:0.85rem;">Añadir snack nuevo</div>
+        <input id="new-snack-name" type="text" placeholder="Nombre (ej: Yogur griego)" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;margin-bottom:8px;box-sizing:border-box;" />
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div><div style="font-size:0.65rem;color:var(--muted);margin-bottom:3px;">Proteína g</div><input type="number" id="new-snack-p" placeholder="0" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;" /></div>
+          <div><div style="font-size:0.65rem;color:var(--muted);margin-bottom:3px;">Carbos g</div><input type="number" id="new-snack-c" placeholder="0" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;" /></div>
+          <div><div style="font-size:0.65rem;color:var(--muted);margin-bottom:3px;">Grasa g</div><input type="number" id="new-snack-f" placeholder="0" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;" /></div>
+        </div>
+        <button onclick="addNewQuickSnack()" class="btn btn-primary" style="width:100%;">+ Añadir snack</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+function deleteQuickSnack(i){
+  const snacks = safeParse(localStorage.getItem('nc_quick_snacks'), [
+    {name:'Yogur griego', p:10, c:4, f:5, fib:0},
+    {name:'Plátano', p:1, c:23, f:0, fib:2},
+    {name:'Frutos secos (30g)', p:5, c:4, f:16, fib:1},
+  ]);
+  snacks.splice(i,1);
+  localStorage.setItem('nc_quick_snacks', JSON.stringify(snacks));
+  document.getElementById('snacks-sheet')?.remove();
+  renderQuickSnacks();
+}
+
+function addNewQuickSnack(){
+  const name = document.getElementById('new-snack-name')?.value.trim();
+  if(!name){ showToast('Escribe el nombre del snack'); return; }
+  const p = parseFloat(document.getElementById('new-snack-p')?.value)||0;
+  const c = parseFloat(document.getElementById('new-snack-c')?.value)||0;
+  const f = parseFloat(document.getElementById('new-snack-f')?.value)||0;
+  const snacks = safeParse(localStorage.getItem('nc_quick_snacks'), [
+    {name:'Yogur griego', p:10, c:4, f:5, fib:0},
+    {name:'Plátano', p:1, c:23, f:0, fib:2},
+    {name:'Frutos secos (30g)', p:5, c:4, f:16, fib:1},
+  ]);
+  if(snacks.length >= 6){ showToast('Máximo 6 snacks rápidos'); return; }
+  snacks.push({name, p, c, f, fib:0});
+  localStorage.setItem('nc_quick_snacks', JSON.stringify(snacks));
+  document.getElementById('snacks-sheet')?.remove();
+  renderQuickSnacks();
+  showToast('✓ ' + name + ' añadido a snacks rápidos');
+}
+
+// ═══════════════ FEATURE 5: MODO RESTAURANTE ═══════════════
+function showRestauranteSheet(){
+  const overlay = document.createElement('div');
+  overlay.id = 'restaurante-sheet';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:flex-end;';
+  const h = new Date().getHours();
+  let defaultType = h<11?'desayuno':h<16?'almuerzo':h<18?'merienda':h<21?'cena':'snack';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:1rem;font-weight:800;">🍽️ Comer fuera</div>
+        <button onclick="document.getElementById('restaurante-sheet').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;min-height:44px;min-width:44px;">✕</button>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;">Describe brevemente lo que pediste — la IA estimará los macros típicos de ese plato en restaurantes españoles.</div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px;">Tipo de cocina</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="cocina-chips">
+          ${['🥗 Mediterránea','🍣 Japonesa','🍕 Italiana','🌮 Mexicana','🥡 Asiática','🥩 Parrilla','🥙 Kebab/árabe','🍔 Americano','🐟 Marisquería','🥘 Tradicional española'].map(c=>`
+            <div onclick="selectCocinaChip(this)" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);font-size:0.78rem;cursor:pointer;white-space:nowrap;">${c}</div>`).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px;">¿Qué pediste?</div>
+        <textarea id="restaurante-plato" rows="3" placeholder="Ej: menú del día — ensalada mixta, merluza al horno con patatas, agua" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px;color:var(--text);font-size:0.9rem;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px;">Tipo de comida</div>
+        <select id="restaurante-type" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;">
+          <option value="desayuno"${defaultType==='desayuno'?' selected':''}>Desayuno</option>
+          <option value="almuerzo"${defaultType==='almuerzo'?' selected':''}>Almuerzo</option>
+          <option value="merienda"${defaultType==='merienda'?' selected':''}>Merienda</option>
+          <option value="cena"${defaultType==='cena'?' selected':''}>Cena</option>
+          <option value="snack"${defaultType==='snack'?' selected':''}>Snack</option>
+        </select>
+      </div>
+      <button id="restaurante-calc-btn" onclick="calcularRestaurante()" class="btn btn-primary" style="width:100%;margin-bottom:10px;">✨ Estimar macros</button>
+      <div id="restaurante-resultado" style="display:none;"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  setTimeout(()=>document.getElementById('restaurante-plato')?.focus(), 100);
+}
+
+function selectCocinaChip(el){
+  document.querySelectorAll('#cocina-chips > div').forEach(c=>{ c.style.background='var(--surface2)'; c.style.borderColor='var(--border)'; c.style.color='var(--text)'; });
+  el.style.background='rgba(129,140,248,.15)';
+  el.style.borderColor='var(--accent)';
+  el.style.color='var(--accent)';
+}
+
+async function calcularRestaurante(){
+  if(!getApiKey()){ showToast('Configura tu API Key primero'); return; }
+  const cocina = document.querySelector('#cocina-chips > div[style*="accent"]')?.textContent || '';
+  const plato = document.getElementById('restaurante-plato')?.value.trim();
+  if(!plato){ showToast('Describe lo que pediste'); return; }
+
+  const btn = document.getElementById('restaurante-calc-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px;"></div> Estimando macros...';
+
+  const prompt = `Eres nutricionista experta en gastronomía española. El usuario ha comido en un restaurante${cocina?' de cocina '+cocina:''}.
+
+PLATO: ${plato}
+
+Estima los macros típicos de este plato en un restaurante español estándar (no casero — las porciones suelen ser más grandes y llevan más aceite).
+
+Responde SOLO en este JSON exacto:
+{"nombre":"nombre corto del plato","proteinas":0,"carbohidratos":0,"grasas":0,"fibra":0,"nota":"1 frase sobre la estimación"}
+
+Redondea a 1 decimal. Sé generoso con las grasas (restaurante usa más aceite que en casa).`;
+
+  try{
+    const res = await callClaudeWithTimeout([{role:'user',content:prompt}]);
+    const json = JSON.parse(res.match(/\{[\s\S]*\}/)?.[0]||'{}');
+    const nombre = json.nombre || plato;
+    const p=json.proteinas||0, c=json.carbohidratos||0, f=json.grasas||0, fib=json.fibra||0;
+
+    document.getElementById('restaurante-resultado').style.display='block';
+    document.getElementById('restaurante-resultado').innerHTML=`
+      <div style="background:var(--surface2);border-radius:14px;padding:14px;">
+        <div style="font-weight:700;margin-bottom:10px;">${esc(nombre)}</div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;">
+          <div style="flex:1;text-align:center;padding:8px;background:var(--surface3);border-radius:10px;">
+            <div style="font-size:0.65rem;color:var(--green);font-weight:700;">PROTEÍNA</div>
+            <div style="font-size:1.1rem;font-weight:800;">${p}g</div>
+          </div>
+          <div style="flex:1;text-align:center;padding:8px;background:var(--surface3);border-radius:10px;">
+            <div style="font-size:0.65rem;color:var(--accent);font-weight:700;">CARBOS</div>
+            <div style="font-size:1.1rem;font-weight:800;">${c}g</div>
+          </div>
+          <div style="flex:1;text-align:center;padding:8px;background:var(--surface3);border-radius:10px;">
+            <div style="font-size:0.65rem;color:var(--orange);font-weight:700;">GRASA</div>
+            <div style="font-size:1.1rem;font-weight:800;">${f}g</div>
+          </div>
+        </div>
+        ${json.nota?`<div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">ℹ️ ${esc(json.nota)}</div>`:''}
+        <button onclick="guardarRestaurante('${esc(nombre).replace(/'/g,"\\'")}',${p},${c},${f},${fib})" class="btn btn-primary" style="width:100%;">✓ Añadir a mi registro</button>
+      </div>`;
+    btn.disabled=false; btn.innerHTML='✨ Recalcular';
+  }catch(e){
+    showToast('Error: '+e.message);
+    btn.disabled=false; btn.innerHTML='✨ Estimar macros';
+  }
+}
+
+function guardarRestaurante(nombre,p,c,f,fib){
+  const type = document.getElementById('restaurante-type')?.value||'almuerzo';
+  const meals=getMeals();
+  meals.push({name:nombre,p,c,f,fib,type,time:new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})});
+  saveMeals(meals);
+  updateRecentMealsCache({name:nombre,p,c,f,fib});
+  document.getElementById('restaurante-sheet')?.remove();
+  renderHome();
+  renderCenaRemaining();
+  renderAlmuerzoRemaining();
+  vibrate([30,20,30]);
+  showToast('✓ '+nombre+' añadido');
+}
+
+// ═══════════════ FEATURE 6: BANNER POST-ENTRENO ═══════════════
+function renderPostWorkoutBanner(){
+  const el = document.getElementById('postworkout-banner');
+  if(!el) return;
+  const done = localStorage.getItem('nc_postworkout_' + dk());
+  if(!done){ el.innerHTML=''; return; }
+  const dismissed = localStorage.getItem('nc_postworkout_dismissed_' + dk());
+  if(dismissed){ el.innerHTML=''; return; }
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:14px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);margin-bottom:12px;">
+      <div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--green);margin-bottom:2px;">💪 Post-entreno</div>
+        <div style="font-size:0.72rem;color:var(--muted);">¿Tomaste snack de recuperación?</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="showDescribirSheet();localStorage.setItem('nc_postworkout_dismissed_'+dk(),'1');renderPostWorkoutBanner();" style="padding:6px 12px;border-radius:20px;background:var(--green);color:#fff;border:none;font-size:0.72rem;font-weight:600;cursor:pointer;">Añadir</button>
+        <button onclick="localStorage.setItem('nc_postworkout_dismissed_'+dk(),'1');renderPostWorkoutBanner();" style="padding:6px 8px;border-radius:20px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem;">✕</button>
+      </div>
+    </div>`;
 }
 </script>
 </body>
