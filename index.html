@@ -1459,6 +1459,10 @@
       <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">✏️ Añadir macros manualmente</span>
       <div style="width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">✏️</div>
     </div>
+    <div class="fab-option" onclick="closeFab();showAyerSheet()" style="display:flex;align-items:center;gap:8px;">
+      <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">📅 Registrar el día de ayer</span>
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">📅</div>
+    </div>
     <div class="fab-option" onclick="closeFab();quickAddWater()" style="display:flex;align-items:center;gap:8px;">
       <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">💧 Añadir agua</span>
       <div style="width:40px;height:40px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 10px rgba(56,189,248,.4);">💧</div>
@@ -7934,6 +7938,111 @@ function guardarDesdeDescribir(nombre, p, c, f, fib) {
   renderAlmuerzoRemaining();
   vibrate([30, 20, 30]);
   showToast('✓ ' + nombre + ' añadido');
+}
+
+function getYesterday() {
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0,10);
+}
+
+function showAyerSheet() {
+  const ayer = getYesterday();
+  const ayerLabel = new Date(ayer + 'T12:00:00').toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
+  const existingMeals = safeParse(localStorage.getItem('meals_' + ayer), []);
+  const existingActivity = safeParse(localStorage.getItem('nc_activity_' + ayer), []);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'ayer-sheet';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:92vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div style="font-size:1rem;font-weight:800;">📅 Registro de ayer</div>
+        <button onclick="document.getElementById('ayer-sheet').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;min-height:44px;min-width:44px;">✕</button>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;text-transform:capitalize;">${ayerLabel}</div>
+
+      ${existingMeals.length ? `<div style="margin-bottom:14px;padding:10px;background:var(--surface2);border-radius:10px;font-size:0.78rem;color:var(--muted);">
+        Ya tienes ${existingMeals.length} comida${existingMeals.length>1?'s':''} registrada${existingMeals.length>1?'s':''} de ayer. Puedes añadir más abajo.
+      </div>` : ''}
+
+      <div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;">🍽️ Comidas de ayer</div>
+      <textarea id="ayer-comidas-texto" rows="4" placeholder="Ej: Desayuno: café con leche y tostada con tomate. Almuerzo: menú del día, ensalada, merluza al horno y fruta. Cena: tortilla de 2 huevos con ensalada..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px;color:var(--text);font-size:0.9rem;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;margin-bottom:6px;"></textarea>
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:14px;">Descríbelo como puedas — la IA calculará los macros de cada comida</div>
+
+      <div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;">💪 Actividad de ayer (opcional)</div>
+      <input type="text" id="ayer-actividad-texto" placeholder="Ej: 45 min de yoga, caminata de 30 min, clase de spinning..." style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;box-sizing:border-box;margin-bottom:16px;" />
+
+      <button id="ayer-calc-btn" onclick="calcularAyerSheet()" class="btn btn-primary" style="width:100%;">✨ Calcular y guardar</button>
+      <div id="ayer-resultado" style="display:none;margin-top:14px;"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  setTimeout(() => document.getElementById('ayer-comidas-texto')?.focus(), 100);
+}
+
+async function calcularAyerSheet() {
+  if(!getApiKey()){ showToast('Configura tu API Key primero'); document.getElementById('ayer-sheet')?.remove(); showPage('config'); return; }
+  const texto = document.getElementById('ayer-comidas-texto')?.value.trim();
+  if(!texto){ showToast('Describe lo que comiste ayer'); return; }
+
+  const btn = document.getElementById('ayer-calc-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px;"></div> Calculando...';
+
+  const prompt = `Eres nutricionista experta. El usuario describe lo que comió ayer en lenguaje libre. Extrae cada comida por separado y calcula sus macros.
+
+DESCRIPCIÓN: ${texto}
+
+Responde SOLO en este JSON exacto, sin texto adicional:
+{"comidas":[{"nombre":"nombre corto","tipo":"desayuno|almuerzo|merienda|cena|snack","proteinas":0,"carbohidratos":0,"grasas":0,"fibra":0}]}
+
+Usa valores reales de tablas nutricionales españolas. Redondea a 1 decimal.`;
+
+  try {
+    const res = await callClaudeWithTimeout([{role:'user',content:prompt}], 25000);
+    const json = JSON.parse(res.match(/\{[\s\S]*\}/)?.[0] || '{}');
+    const comidas = json.comidas || [];
+    if(!comidas.length) throw new Error('No pude identificar comidas — intenta ser más específica');
+
+    const ayer = getYesterday();
+    const existingMeals = safeParse(localStorage.getItem('meals_' + ayer), []);
+    const nuevas = comidas.map(c => ({
+      name: c.nombre, p: c.proteinas||0, c: c.carbohidratos||0, f: c.grasas||0, fib: c.fibra||0,
+      type: c.tipo||'almuerzo', time: ''
+    }));
+    localStorage.setItem('meals_' + ayer, JSON.stringify([...existingMeals, ...nuevas]));
+
+    // Guardar actividad si la escribieron
+    const actTexto = document.getElementById('ayer-actividad-texto')?.value.trim();
+    if(actTexto) {
+      const existingAct = safeParse(localStorage.getItem('nc_activity_' + ayer), []);
+      existingAct.push({ tipo: actTexto, duracion: 0, ts: ayer + 'T12:00:00' });
+      localStorage.setItem('nc_activity_' + ayer, JSON.stringify(existingAct));
+    }
+
+    document.getElementById('ayer-resultado').style.display = 'block';
+    document.getElementById('ayer-resultado').innerHTML = `
+      <div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:14px;">
+        <div style="font-weight:700;color:var(--green);margin-bottom:10px;">✓ ${nuevas.length} comida${nuevas.length>1?'s':''} guardada${nuevas.length>1?'s':''}</div>
+        ${nuevas.map(c=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(52,211,153,.15);font-size:0.8rem;">
+            <span style="flex:1;">${esc(c.name)} <span style="color:var(--muted);font-size:0.7rem;">(${c.type})</span></span>
+            <span style="display:flex;gap:8px;flex-shrink:0;">
+              <span style="color:var(--green);">P${c.p}g</span>
+              <span style="color:var(--accent);">C${c.c}g</span>
+              <span style="color:var(--orange);">G${c.f}g</span>
+            </span>
+          </div>`).join('')}
+        ${actTexto ? `<div style="margin-top:8px;font-size:0.78rem;color:var(--muted);">💪 Actividad anotada: ${esc(actTexto)}</div>` : ''}
+        <button onclick="document.getElementById('ayer-sheet').remove()" class="btn btn-primary" style="width:100%;margin-top:14px;">✓ Cerrar</button>
+      </div>`;
+    btn.style.display = 'none';
+  } catch(e) {
+    showToast('Error: ' + e.message);
+    btn.disabled = false;
+    btn.innerHTML = '✨ Calcular y guardar';
+  }
 }
 
 function quickAddRecentMeal(m) {
