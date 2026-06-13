@@ -1363,12 +1363,16 @@
         </div>
         <div class="form-group">
           <label>Nivel de actividad</label>
-          <select id="cfg-actividad" onchange="saveProfile()">
-            <option value="sedentario">Sedentario</option>
-            <option value="bajo" selected>Bajo (1-2 días/sem)</option>
-            <option value="medio">Medio (3-4 días/sem)</option>
-            <option value="alto">Alto (5+ días/sem)</option>
+          <select id="cfg-actividad" onchange="onActividadChange()">
+            <option value="sedentario">Sedentario (oficina, poco movimiento)</option>
+            <option value="bajo" selected>Bajo (1-2 días/sem de ejercicio)</option>
+            <option value="medio">Medio (3-4 días/sem de ejercicio)</option>
+            <option value="alto">Alto (5+ días/sem de ejercicio)</option>
           </select>
+          <div id="actividad-recalc-hint" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(255,165,0,0.12);border:1px solid var(--orange);border-radius:10px;font-size:0.78rem;color:var(--orange);line-height:1.5;">
+            ⚠️ Has cambiado tu nivel de actividad — tu rango de calorías objetivo ha cambiado. <strong>Recalcula tus macros</strong> para que todo esté ajustado a tu nueva situación.
+            <button onclick="calcularMacrosIA()" style="display:block;margin-top:8px;background:var(--orange);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:0.78rem;font-weight:600;cursor:pointer;">Recalcular macros ahora →</button>
+          </div>
         </div>
       </div>
 
@@ -2798,6 +2802,13 @@ async function recalcGoals(){
   btn.disabled=false;btn.innerHTML='✨ Calcular con IA mis objetivos';
 }
 
+function onActividadChange(){
+  const prev = getProfile().actividad;
+  const next = document.getElementById('cfg-actividad').value;
+  saveProfile();
+  const hint = document.getElementById('actividad-recalc-hint');
+  if(hint) hint.style.display = (prev !== next) ? 'block' : 'none';
+}
 function saveProfile(){
   localStorage.setItem('nc_profile',JSON.stringify({
     peso:parseFloat(document.getElementById('cfg-peso').value)||90,
