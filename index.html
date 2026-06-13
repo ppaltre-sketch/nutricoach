@@ -1243,6 +1243,22 @@
           <button class="btn btn-primary btn-pulse" id="weekly-ai-btn" onclick="getWeeklyAISummary(true)">Preguntar ahora</button>
           <div id="weekly-ai-result" style="display:none;margin-top:14px;"></div>
         </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">📅 Planifica mañana</div>
+          <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Dime qué planeas comer y hacer mañana. La IA comprueba si llegas a tus macros y te avisa si algo falla.</p>
+          <div id="proyeccion-plan-form">
+            <div style="margin-bottom:10px;">
+              <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">🍽️ ¿Qué planeas comer mañana?</div>
+              <textarea id="proyeccion-comida" rows="3" placeholder="Ej: Desayuno tostada con huevo, almuerzo pollo con arroz y verduras, cena ensalada con atún..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-size:0.85rem;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+            </div>
+            <div style="margin-bottom:12px;">
+              <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">💪 ¿Qué ejercicio planeas hacer?</div>
+              <input type="text" id="proyeccion-ejercicio" placeholder="Ej: 40 min de carrera + clase de yoga, o día de descanso..." style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;box-sizing:border-box;" />
+            </div>
+            <button onclick="analizarProyeccion()" class="btn btn-primary" id="proyeccion-btn" style="width:100%;">🔍 Analizar plan</button>
+          </div>
+          <div id="proyeccion-resultado" style="display:none;margin-top:14px;"></div>
+        </div>
         <div class="card">
           <div class="card-title">📊 Últimos 7 días — macros</div>
           <div id="weekly-summary"></div>
@@ -4070,17 +4086,39 @@ Proteína media: ${avgPctP}% del objetivo. Días activos: ${exerciseDays}/7. Agu
 
 Detalle por día (HOY — día en curso, datos parciales, no juzgar como día completo):
 ${daysSummary}
+Balance energético de la semana: ${(()=>{
+  let totalStatus = {exceso:0, optimo:0, bajo:0, muy_bajo:0};
+  for(let i=1;i<=7;i++){
+    const d=new Date(Date.now()-i*86400000).toISOString().slice(0,10);
+    const m=safeParse(localStorage.getItem('meals_'+d),[]);
+    if(m.length>0){
+      const s=getInternalDeficitStatus(m);
+      if(s==='exceso') totalStatus.exceso++;
+      else if(s==='optimo'||s==='bajo') totalStatus.optimo++;
+      else if(s==='muy_bajo'||s==='peligrosamente_bajo') totalStatus.muy_bajo++;
+    }
+  }
+  const parts=[];
+  if(totalStatus.exceso>0) parts.push(`${totalStatus.exceso} días por encima del objetivo`);
+  if(totalStatus.optimo>0) parts.push(`${totalStatus.optimo} días en rango`);
+  if(totalStatus.muy_bajo>0) parts.push(`${totalStatus.muy_bajo} días demasiado bajo`);
+  return parts.join(', ')||'sin datos suficientes';
+})()}
+[INTERNO — usa esto para evaluar el balance energético semanal sin mencionar números al usuario. Si hay días en exceso, menciónalo claramente. Si hay días muy bajos, avisa también: comer muy poco no ayuda a perder volumen de forma sostenible.]
 
-Estructura tu respuesta así (máximo 200 palabras):
+Estructura tu respuesta así (máximo 230 palabras):
 
-## ✅ Esta semana
-[2 cosas concretas que están ayudando a reducir volumen — basadas en datos reales]
+## ✅ Lo que está funcionando
+[1-2 cosas concretas que van bien esta semana — solo si realmente van bien, no inventes positivos]
+
+## ❌ Lo que no está funcionando
+[SÉ DIRECTA. Si la proteína está consistentemente baja, dilo. Si hay pocos días de ejercicio, dilo. Si hay días sin registro, dilo. Si los carbos o la grasa se están disparando, dilo. No endulces. Esta sección es OBLIGATORIA — si todo va bien ponlo, pero si algo falla nómbralo sin rodeos. El objetivo es perder volumen para llegar a talla 40, eso requiere consistencia real.]
 
 ## 🔮 Si sigues así...
-[2-3 proyecciones CONCRETAS sobre volumen y talla con plazos reales. Ejemplos: "En 3-4 semanas notarás que los pantalones te quedan más holgados", "Si mantienes esta proteína, tu cuerpo retendrá menos líquido y notarás menos hinchazón en X semanas". NO menciones ejercicios de fuerza ni marcas de carrera. Foco en cómo se va a ver y sentir el cuerpo.]
+[1-2 proyecciones sobre volumen/talla — realistas. Si va mal, la proyección también debe reflejarlo: "A este ritmo tardarás el doble en notar cambios". Si va bien: "En 3-4 semanas notarás la ropa más suelta".]
 
-## ⚡ 1 cosa para mañana
-[Una sola acción pequeña y concreta orientada a reducir volumen — puede ser de nutrición, movimiento suave o hábito]`;
+## ⚡ 1 cosa concreta para mañana
+[Una acción pequeña y específica. Si hay un fallo recurrente esta semana, la acción debe atacarlo directamente.]`;
 
 
   try{
@@ -4157,6 +4195,59 @@ function renderEvaluacionHoyEnSemana(){
     </div>`;
 }
 
+async function analizarProyeccion(){
+  if(!getApiKey()){ showToast('Configura tu API Key primero'); return; }
+  const comida = document.getElementById('proyeccion-comida')?.value.trim();
+  const ejercicio = document.getElementById('proyeccion-ejercicio')?.value.trim();
+  if(!comida){ showToast('Describe qué planeas comer mañana'); return; }
+
+  const btn = document.getElementById('proyeccion-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></div> Analizando...';
+
+  const goals = getGoals();
+  const tdee = getInternalTDEE();
+  const targetKcal = tdee - 450;
+
+  const prompt = `Eres nutricionista experta y coach directa. Analiza el plan de comida y ejercicio para mañana. NUNCA menciones números de calorías al usuario.
+
+PLAN DE COMIDA: ${comida}
+PLAN DE EJERCICIO: ${ejercicio || 'no especificado'}
+
+OBJETIVOS DIARIOS DE LA USUARIA: P${goals.p}g C${goals.c}g G${goals.f}g
+[INTERNO — objetivo energético aproximado para perder volumen: ${targetKcal} kcal. Calcula si el plan propuesto llega, se queda corto o se pasa, e informa al usuario de forma relativa sin dar el número exacto.]
+
+Responde con esta estructura (máximo 180 palabras):
+
+## ✅ / ❌ Veredicto del plan
+[Una línea directa: si el plan es bueno, regular o tiene problemas serios. Sé honesta.]
+
+## 🍽️ Macros estimados
+[Estima los macros del plan: P Xg / C Xg / G Xg. Di si llega a los objetivos o no y en qué falla. Si la proteína es baja, dilo. Si el balance energético es muy alto o muy bajo para perder volumen, dilo sin dar el número exacto — usa lenguaje relativo: "te vas a quedar corta de energía" o "este plan tiene más de lo que necesitas para perder volumen".]
+
+## 💪 Ejercicio
+[Evalúa brevemente si el ejercicio planeado es adecuado para el objetivo de reducir volumen. Si es insuficiente, dilo.]
+
+## ⚡ Ajuste si lo necesita
+[Si hay algo que cambiar, di exactamente qué y cómo. Si el plan está bien, confirmarlo.]`;
+
+  try {
+    const res = await callClaudeWithTimeout([{role:'user',content:prompt}], 25000);
+    const manana = new Date(); manana.setDate(manana.getDate()+1);
+    const mananaKey = manana.toISOString().slice(0,10);
+    localStorage.setItem('nc_plan_'+mananaKey, JSON.stringify({comida, ejercicio, ts: new Date().toISOString()}));
+
+    document.getElementById('proyeccion-resultado').style.display = 'block';
+    document.getElementById('proyeccion-resultado').innerHTML = `
+      <div class="ai-bubble" style="margin-bottom:10px;">${formatAI(res)}</div>
+      <div style="font-size:0.72rem;color:var(--muted);">Plan guardado — mañana por la mañana verás si lo cumpliste</div>`;
+  } catch(e) {
+    showToast('Error: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '🔍 Analizar plan';
+}
+
 async function generarEvaluacionHoyIA(){
   if(!getApiKey()){ showToast('Configura tu API Key primero'); return; }
   const wrap = document.getElementById('eval-hoy-ia-wrap');
@@ -4172,22 +4263,39 @@ async function generarEvaluacionHoyIA(){
   const mealNames = meals.map(m=>m.name).join(', ');
   const quedanHoras = Math.max(0, 22 - h);
 
-  const prompt = `Eres una coach directa, honesta y sin rollos. Evalúa el día de esta usuaria. Son las ${h}h, quedan unas ${quedanHoras} horas del día. NUNCA menciones calorías ni peso en kilos.
+  const deficitStatus = getInternalDeficitStatus(meals);
+  const kcal = Math.round(getInternalKcal(meals));
+  const tdee = getInternalTDEE();
+  const targetKcal = tdee - 450;
+  const kcalPct = Math.round(kcal / targetKcal * 100);
+
+  const balanceMsg = {
+    'sin_datos': 'sin datos de ingesta todavía',
+    'peligrosamente_bajo': `[INTERNO: ingesta peligrosamente baja (${kcalPct}% del objetivo). Dile claramente que está comiendo muy poco, que eso no ayuda a perder volumen y puede ralentizar el metabolismo. Tono preocupado pero sin alarmar.]`,
+    'muy_bajo': `[INTERNO: ingesta demasiado baja (${kcalPct}% del objetivo). Dile que está comiendo poco para lo que necesita, que así no llega a objetivos de forma sostenible.]`,
+    'bajo': `[INTERNO: ingesta algo por debajo del objetivo (${kcalPct}%). Está bien pero podría comer un poco más, especialmente proteína.]`,
+    'optimo': `[INTERNO: ingesta en rango óptimo para perder volumen (${kcalPct}% del objetivo). Va bien en este aspecto.]`,
+    'exceso': `[INTERNO: ingesta por encima del objetivo (${kcalPct}% del objetivo para hoy a las ${h}h). Si sigue así el día completo, estará por encima de lo que necesita para perder volumen. Díselo claramente pero sin dramatizar.]`
+  }[deficitStatus] || '';
+
+  const prompt = `Eres una coach directa, honesta y sin rollos. Evalúa el día de esta usuaria. Son las ${h}h, quedan unas ${quedanHoras} horas del día. NUNCA menciones números de calorías ni kilos.
 
 OBJETIVO PRINCIPAL: reducir volumen para llegar a talla 40.
 
 Datos de hoy hasta ahora:
-- Comidas registradas: ${meals.length} (${mealNames||'ninguna'})
-- Proteína: ${P}g de ${goals.p}g objetivo
+- Comidas: ${meals.length} (${mealNames||'ninguna'})
+- Proteína: ${P}g de ${goals.p}g objetivo (${goals.p>0?Math.round(P/goals.p*100):0}%)
 - Carbos: ${C}g de ${goals.c}g objetivo
 - Grasa: ${F}g de ${goals.f}g objetivo
 - Agua: ${water}/8 vasos
 - Actividad: ${totalMin>0?totalMin+' min de ejercicio':act.pasos>=3000?act.pasos+' pasos':'sin actividad registrada'}
+- Balance energético: ${balanceMsg}
 
-Responde en máximo 80 palabras, tono directo y sin endulzar. Si algo va mal, dilo claro. Si va bien, dilo también. Incluye:
-1. Una valoración honesta de cómo va el día (bien/regular/mal y por qué)
-2. Si quedan horas útiles, qué puede hacer todavía para salvar el día o rematarlo bien
-No uses listas ni headers. Texto corrido, como si te lo dijera una amiga que sabe de nutrición.`;
+Responde en máximo 90 palabras, tono directo como una amiga que sabe de nutrición. SÉ HONESTA:
+- Si algo va mal (proteína baja, sin moverse, pasada de energía, muy poca ingesta), DILO claramente sin endulzar
+- Si va bien, también dilo
+- Si quedan horas útiles, di qué puede hacer todavía
+No uses listas ni headers. Texto corrido.`;
 
   try {
     const res = await callClaudeWithTimeout([{role:'user',content:prompt}]);
