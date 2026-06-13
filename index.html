@@ -4131,13 +4131,14 @@ function renderEvaluacionHoyEnSemana(){
     return;
   }
 
+  const h = new Date().getHours();
   el.innerHTML = `
     <div style="margin-bottom:12px;">
       ${macroBar(P, goals.p, 'var(--green)', 'Proteína')}
       ${macroBar(C, goals.c, 'var(--accent)', 'Carbos')}
       ${macroBar(F, goals.f, 'var(--orange)', 'Grasa')}
     </div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
       <div style="flex:1;padding:8px;background:var(--surface2);border-radius:10px;text-align:center;">
         <div style="font-size:1rem;">${water>=6?'✅':'💧'}</div>
         <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;">${water}/8 vasos</div>
@@ -4150,7 +4151,59 @@ function renderEvaluacionHoyEnSemana(){
         <div style="font-size:1rem;">${meals.length>=3?'✅':'🍽️'}</div>
         <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;">${meals.length} comida${meals.length!==1?'s':''}</div>
       </div>
+    </div>
+    <div id="eval-hoy-ia-wrap">
+      <button onclick="generarEvaluacionHoyIA()" class="btn btn-secondary" style="width:100%;font-size:0.82rem;">🧠 ¿Cómo voy hoy?</button>
     </div>`;
+}
+
+async function generarEvaluacionHoyIA(){
+  if(!getApiKey()){ showToast('Configura tu API Key primero'); return; }
+  const wrap = document.getElementById('eval-hoy-ia-wrap');
+  if(!wrap) return;
+  wrap.innerHTML = '<div style="font-size:0.8rem;color:var(--muted);text-align:center;padding:8px;">Analizando tu día...</div>';
+
+  const meals = getMeals(), goals = getGoals(), water = getWater();
+  const act = safeParse(localStorage.getItem('nc_activity_'+dk()), {actividades:[],pasos:0});
+  let P=0,C=0,F=0; meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;});
+  P=Math.round(P); C=Math.round(C); F=Math.round(F);
+  const totalMin = act.actividades.reduce((s,a)=>s+parseInt(a.duracion||0),0);
+  const h = new Date().getHours();
+  const mealNames = meals.map(m=>m.name).join(', ');
+  const quedanHoras = Math.max(0, 22 - h);
+
+  const prompt = `Eres una coach directa, honesta y sin rollos. Evalúa el día de esta usuaria. Son las ${h}h, quedan unas ${quedanHoras} horas del día. NUNCA menciones calorías ni peso en kilos.
+
+OBJETIVO PRINCIPAL: reducir volumen para llegar a talla 40.
+
+Datos de hoy hasta ahora:
+- Comidas registradas: ${meals.length} (${mealNames||'ninguna'})
+- Proteína: ${P}g de ${goals.p}g objetivo
+- Carbos: ${C}g de ${goals.c}g objetivo
+- Grasa: ${F}g de ${goals.f}g objetivo
+- Agua: ${water}/8 vasos
+- Actividad: ${totalMin>0?totalMin+' min de ejercicio':act.pasos>=3000?act.pasos+' pasos':'sin actividad registrada'}
+
+Responde en máximo 80 palabras, tono directo y sin endulzar. Si algo va mal, dilo claro. Si va bien, dilo también. Incluye:
+1. Una valoración honesta de cómo va el día (bien/regular/mal y por qué)
+2. Si quedan horas útiles, qué puede hacer todavía para salvar el día o rematarlo bien
+No uses listas ni headers. Texto corrido, como si te lo dijera una amiga que sabe de nutrición.`;
+
+  try {
+    const res = await callClaudeWithTimeout([{role:'user',content:prompt}]);
+    const ts = new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    wrap.innerHTML = `
+      <div style="padding:12px;background:var(--surface2);border-radius:12px;border-left:3px solid var(--accent);">
+        <div style="font-size:0.82rem;line-height:1.6;color:var(--text);">${esc(res)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+          <span style="font-size:0.68rem;color:var(--muted);">Actualizado a las ${ts}</span>
+          <button onclick="generarEvaluacionHoyIA()" style="background:none;border:none;color:var(--muted);font-size:0.72rem;cursor:pointer;">↺ Actualizar</button>
+        </div>
+      </div>`;
+  } catch(e) {
+    wrap.innerHTML = `<button onclick="generarEvaluacionHoyIA()" class="btn btn-secondary" style="width:100%;font-size:0.82rem;">🧠 ¿Cómo voy hoy?</button>`;
+    showToast('Error: ' + e.message);
+  }
 }
 
 function renderWeeklyAICard(){
