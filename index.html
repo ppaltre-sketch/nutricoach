@@ -2381,14 +2381,19 @@ async function calcularMacrosIA(){
   const btn=document.getElementById('ing-btn');
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Calculando macros...';
 
+  const goals=getGoals();
+  const proteinaObjetivoPorComida=Math.round((goals.p||120)/3);
+
   const prompt=`Eres nutricionista experta. Calcula los macros TOTALES de esta comida completa sumando todos los ingredientes.
 
 INGREDIENTES: ${texto}
+OBJETIVO proteína por comida principal: ~${proteinaObjetivoPorComida}g
 
 IMPORTANTE: Devuelve UN SOLO objeto JSON con los macros TOTALES del conjunto. El "nombre" debe describir el plato completo, nunca un ingrediente suelto. El desglose es solo informativo, no son comidas separadas.
+Si la proteína total es menor de ${Math.round(proteinaObjetivoPorComida*0.7)}g, incluye "sugerencia_proteina" con UNA sugerencia concreta y práctica de qué añadir a este plato para subir la proteína (ej: "Añade 2 huevos duros y llegarás a unos 30g de proteína"). Si la proteína es suficiente, pon null.
 
 Responde SOLO en este JSON exacto, sin texto adicional:
-{"nombre":"nombre del plato completo","proteinas":0,"carbohidratos":0,"grasas":0,"fibra":0,"desglose":[{"ingrediente":"nombre","p":0,"c":0,"f":0}]}
+{"nombre":"nombre del plato completo","proteinas":0,"carbohidratos":0,"grasas":0,"fibra":0,"sugerencia_proteina":null,"desglose":[{"ingrediente":"nombre","p":0,"c":0,"f":0}]}
 
 Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima razonablemente. Redondea a 1 decimal.`;
 
@@ -2406,6 +2411,13 @@ Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima
     document.getElementById('ing-meal-f').value=json.grasas??0;
     document.getElementById('ing-meal-fib').value=json.fibra??0;
 
+    // Sugerencia proteína
+    const sugerenciaHtml=json.sugerencia_proteina?`
+      <div style="margin-bottom:10px;padding:10px 12px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:10px;display:flex;align-items:flex-start;gap:8px;">
+        <span style="font-size:1rem;flex-shrink:0;">💡</span>
+        <span style="font-size:0.8rem;color:var(--text);line-height:1.5;">${esc(json.sugerencia_proteina)}</span>
+      </div>`:'';
+
     // Desglose visual
     const desglose=json.desglose||[];
     const desgloseHtml=desglose.length>0?`
@@ -2422,7 +2434,7 @@ Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima
           </div>`).join('')}
       </div>`:'';
 
-    document.getElementById('ing-resultado-inner').innerHTML=desgloseHtml;
+    document.getElementById('ing-resultado-inner').innerHTML=sugerenciaHtml+desgloseHtml;
     document.getElementById('ing-resultado').style.display='block';
     setTimeout(()=>document.getElementById('ing-resultado').scrollIntoView({behavior:'smooth',block:'start'}),100);
 
@@ -8060,14 +8072,19 @@ async function calcularDescribirSheet() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px;"></div> Calculando macros...';
 
+  const goals = getGoals();
+  const proteinaObjetivoPorComida = Math.round((goals.p || 120) / 3);
+
   const prompt = `Eres nutricionista experta. Calcula los macros TOTALES de esta comida completa sumando todos los ingredientes.
 
 INGREDIENTES: ${texto}
+OBJETIVO proteína por comida principal: ~${proteinaObjetivoPorComida}g
 
 IMPORTANTE: Devuelve UN SOLO objeto JSON con los macros TOTALES del conjunto. El "nombre" debe describir el plato completo (ej: "Gazpacho y huevos rellenos"), nunca un ingrediente suelto. El desglose es solo informativo, no son comidas separadas.
+Si la proteína total es menor de ${Math.round(proteinaObjetivoPorComida * 0.7)}g, incluye "sugerencia_proteina" con UNA sugerencia concreta y práctica de qué añadir a este plato para subir la proteína (ej: "Añade 2 huevos duros y llegarás a unos 30g de proteína"). Si la proteína es suficiente, pon null.
 
 Responde SOLO en este JSON exacto, sin texto adicional:
-{"nombre":"nombre del plato completo","proteinas":0,"carbohidratos":0,"grasas":0,"fibra":0,"desglose":[{"ingrediente":"nombre","p":0,"c":0,"f":0}]}
+{"nombre":"nombre del plato completo","proteinas":0,"carbohidratos":0,"grasas":0,"fibra":0,"sugerencia_proteina":null,"desglose":[{"ingrediente":"nombre","p":0,"c":0,"f":0}]}
 
 Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima razonablemente. Redondea a 1 decimal.`;
 
@@ -8080,6 +8097,12 @@ Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima
     const f = json.grasas ?? 0;
     const fib = json.fibra ?? 0;
     const desglose = json.desglose || [];
+
+    const sugerenciaHtml = json.sugerencia_proteina ? `
+      <div style="margin-bottom:12px;padding:10px 12px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:10px;display:flex;align-items:flex-start;gap:8px;">
+        <span style="font-size:1rem;flex-shrink:0;">💡</span>
+        <span style="font-size:0.8rem;color:var(--text);line-height:1.5;">${esc(json.sugerencia_proteina)}</span>
+      </div>` : '';
 
     const desgloseHtml = desglose.length ? `
       <div style="margin-bottom:12px;">
@@ -8113,6 +8136,7 @@ Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima
             <div style="font-size:1.1rem;font-weight:800;">${f}g</div>
           </div>
         </div>
+        ${sugerenciaHtml}
         ${desgloseHtml}
         <button onclick="guardarDesdeDescribir('${esc(nombre).replace(/'/g,"\\'")}',${p},${c},${f},${fib})" class="btn btn-primary" style="width:100%;">✓ Añadir a mi registro</button>
       </div>`;
