@@ -1225,21 +1225,22 @@
           <div class="card-title">📅 Hoja de ruta — Octubre</div>
           <div id="milestone-timeline"></div>
         </div>
-        <div class="card" style="margin-bottom:14px;">
-          <div class="card-title">📊 Resumen de la semana</div>
-          <div id="weekly-score-card">
-            <button class="btn btn-primary" onclick="renderWeeklyScoreAI()" style="margin-bottom:0;">Generar resumen</button>
+        <div class="card" id="evaluacion-hoy-semana" style="margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="card-title" style="margin:0;">📋 Evaluación de hoy</div>
+            <button onclick="showPage('home')" style="font-size:0.72rem;color:var(--accent);background:none;border:none;cursor:pointer;padding:4px 8px;">Ver en HOY →</button>
           </div>
+          <div id="evaluacion-hoy-semana-content"></div>
         </div>
-        <div class="weekly-ai-card" id="weekly-ai-card">
+        <div class="weekly-ai-card" id="weekly-ai-card" style="margin-bottom:14px;">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
             <div style="font-size:1.8rem;">🧠</div>
             <div style="flex:1;">
-              <div style="font-weight:800;font-size:0.95rem;">Análisis inteligente de tu semana</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">La IA analiza patrones, aciertos y te da 3 acciones concretas</div>
+              <div style="font-weight:800;font-size:0.95rem;">¿Cómo va mi semana?</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Análisis + si sigues así, en X tiempo notarás esto</div>
             </div>
           </div>
-          <button class="btn btn-primary" id="weekly-ai-btn" onclick="getWeeklyAISummary()">Ver mi análisis</button>
+          <button class="btn btn-primary btn-pulse" id="weekly-ai-btn" onclick="getWeeklyAISummary(true)">Preguntar ahora</button>
           <div id="weekly-ai-result" style="display:none;margin-top:14px;"></div>
         </div>
         <div class="card">
@@ -3317,7 +3318,7 @@ function setProgresoTab(tab){
   if(tab==='actividad'){renderActivityToday();renderActivityHeatmap();renderLogrosActividad();renderActivityHistory();}
   if(tab==='medidas'){renderTalla40Progress();renderWeeklyRitual();renderBodyComposition();renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
   if(tab==='semana'){
-    renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();
+    renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();renderEvaluacionHoyEnSemana();
     renderRetos();
     // Auto-load weekly score on Sundays
     const isSunday = new Date().getDay() === 0;
@@ -3999,19 +4000,11 @@ function renderMeasuresChart(){
 }
 
 // ═══════════════ WEEKLY AI SUMMARY ═══════════════
-async function getWeeklyAISummary(){
+async function getWeeklyAISummary(force=false){
   if(!getApiKey()){ showToast('Configura tu API Key primero'); showPage('config'); return; }
 
-  const weekKey = getWeekKey();
-  const stored = localStorage.getItem('nc_weekly_summary_'+weekKey);
   const resultEl = document.getElementById('weekly-ai-result');
   const btn = document.getElementById('weekly-ai-btn');
-
-  if(stored){
-    resultEl.innerHTML = `<div class="ai-bubble">${formatAI(stored)}</div><button onclick="regenerateWeeklySummary()" style="margin-top:10px;background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;">↺ Regenerar</button>`;
-    resultEl.style.display = 'block';
-    return;
-  }
 
   btn.disabled = true; btn.innerHTML = '<div class="spinner spinner-accent"></div> Analizando tu semana...';
 
@@ -4048,44 +4041,106 @@ async function getWeeklyAISummary(){
   const avgWater = (days.reduce((s,d)=>s+d.water,0)/7).toFixed(1);
   const daysSummary = days.map(d => `${d.label}: ${d.hasMeals?`${d.mealCount} comidas P${d.pctP}% C${d.pctC}% G${d.pctF}%${d.actMinutes?' actividad '+d.actMinutes+'min':''}`:'-'}${d.checkin?` sueño:${d.checkin.sueno}`:''}`).join('\n');
 
-  const prompt=`Eres una coach de salud y nutrición experta. Analiza esta semana de datos y proporciona un resumen motivador y accionable. NUNCA menciones calorías.
+  // Cintura trend for projection
+  const measures = getMeasures ? getMeasures() : safeParse(localStorage.getItem('nc_measures'),[]);
+  const last2 = measures.filter(m=>m.cintura).slice(-2);
+  const cinturaTrend = last2.length===2 ? (last2[1].cintura - last2[0].cintura).toFixed(1) : null;
 
-Perfil: mujer, ${p.edad} años, ${p.peso}kg, objetivo ${p.pesoObj||69}kg. Actividad: ${p.actividad}.
+  const prompt=`Eres una coach de salud y nutrición experta y muy motivadora. Analiza esta semana y da proyecciones concretas de lo que la usuaria notará si sigue así. NUNCA menciones calorías ni peso en kg.
+
+Perfil: mujer, ${p.edad} años. Objetivo: talla 40, carrera Survivor 10km el 24 de octubre 2026.
 Objetivos diarios: P${goals.p}g C${goals.c}g G${goals.f}g.
-Días con registro: ${daysLogged}/7.
+Días con registro esta semana: ${daysLogged}/7. Hoy es día ${new Date().toLocaleDateString('es-ES',{weekday:'long'})}.
 Cumplimiento medio proteína: ${avgPctP}%, carbos: ${avgPctC}%.
 Días activos: ${exerciseDays}/7.
 Agua media: ${avgWater}/8 vasos.
+${cinturaTrend!==null?`Tendencia cintura última medición: ${cinturaTrend>0?'+':''}${cinturaTrend}cm`:''}
 
-Detalle por día:
+Detalle por día (HOY — día en curso, datos parciales, no juzgar):
 ${daysSummary}
 
-Estructura tu análisis así:
+${getSurvivorContext ? getSurvivorContext() : ''}
 
-## ✅ Lo que fue bien
-[2-3 logros concretos de la semana — sé específica con los datos]
+Estructura tu respuesta así (máximo 220 palabras en total):
 
-## 🔍 Patrón detectado
-[1 patrón concreto observado, ej: "los miércoles sueles fallar en proteína", "los fines de semana sin actividad", etc.]
+## ✅ Esta semana
+[2 logros concretos con datos reales — no inventes]
 
-## 🎯 3 acciones para la próxima semana
-1. [acción concreta y medible]
-2. [acción concreta y medible]
-3. [acción concreta y medible]
+## 🔮 Si sigues así...
+[2-3 proyecciones CONCRETAS y motivadoras con plazos reales. Ejemplos: "En 2-3 semanas notarás que la ropa te queda más suelta", "Si añades 10 min más de movimiento al día, en un mes notarás X". Basa las proyecciones en los datos reales de la semana. Sé específica, no genérica. Menciona la talla 40 o Survivor si encaja.]
 
-## 💪 Para cerrar
-[Frase motivadora personalizada — cálida, directa, sin cursilerías]`;
+## ⚡ 1 cosa para mañana
+[Una sola acción concreta y pequeña que puede hacer mañana mismo]`;
+
 
   try{
     const res = await callClaudeWithTimeout([{role:'user', content: prompt}]);
-    localStorage.setItem('nc_weekly_summary_'+weekKey, res);
-    resultEl.innerHTML = `<div class="ai-bubble">${formatAI(res)}</div><button onclick="regenerateWeeklySummary()" style="margin-top:10px;background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;">↺ Regenerar</button>`;
+    const ts = new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    resultEl.innerHTML = `<div class="ai-bubble">${formatAI(res)}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+        <span style="font-size:0.7rem;color:var(--muted);">Actualizado a las ${ts}</span>
+        <button onclick="getWeeklyAISummary(true)" style="background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;">↺ Preguntar de nuevo</button>
+      </div>`;
     resultEl.style.display='block';
   }catch(e){
-    resultEl.innerHTML=`<div class="status-strip warn">Error: ${esc(e.message)}</div>`;
+    resultEl.innerHTML=`<div class="status-strip warn">Error: ${esc(e.message)}<br><button onclick="getWeeklyAISummary(true)" style="margin-top:8px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;">Reintentar</button></div>`;
     resultEl.style.display='block';
   }
-  btn.disabled=false; btn.innerHTML='Ver mi análisis';
+  btn.disabled=false; btn.innerHTML='↺ Preguntar de nuevo';
+}
+
+function renderEvaluacionHoyEnSemana(){
+  const el = document.getElementById('evaluacion-hoy-semana-content');
+  if(!el) return;
+  const meals = getMeals(), goals = getGoals(), water = getWater();
+  const act = safeParse(localStorage.getItem('nc_activity_'+dk()), {actividades:[],pasos:0});
+  let P=0,C=0,F=0,Fib=0;
+  meals.forEach(m=>{P+=m.p||0;C+=m.c||0;F+=m.f||0;Fib+=m.fib||0;});
+  P=Math.round(P); C=Math.round(C); F=Math.round(F);
+  const totalMin = act.actividades.reduce((s,a)=>s+parseInt(a.duracion||0),0);
+  const pasos = act.pasos||0;
+
+  const macroBar = (val, goal, color, label) => {
+    const pct = goal>0 ? Math.min(100, Math.round(val/goal*100)) : 0;
+    return `<div style="margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.72rem;margin-bottom:3px;">
+        <span style="color:var(--muted);">${label}</span>
+        <span style="color:${color};font-weight:700;">${val}g <span style="color:var(--muted);font-weight:400;">/ ${goal}g</span></span>
+      </div>
+      <div style="background:var(--surface2);border-radius:20px;height:6px;overflow:hidden;">
+        <div style="height:100%;border-radius:20px;background:${color};width:${pct}%;transition:width .4s;"></div>
+      </div>
+    </div>`;
+  };
+
+  const hasActivity = totalMin>=20 || pasos>=5000;
+  const actIcon = hasActivity ? '✅' : '⏳';
+
+  if(!meals.length){
+    el.innerHTML = '<div style="font-size:0.82rem;color:var(--muted);">Sin comidas registradas hoy todavía</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="margin-bottom:12px;">
+      ${macroBar(P, goals.p, 'var(--green)', 'Proteína')}
+      ${macroBar(C, goals.c, 'var(--accent)', 'Carbos')}
+      ${macroBar(F, goals.f, 'var(--orange)', 'Grasa')}
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;padding:8px;background:var(--surface2);border-radius:10px;text-align:center;">
+        <div style="font-size:1rem;">${water>=6?'✅':'💧'}</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;">${water}/8 vasos</div>
+      </div>
+      <div style="flex:1;padding:8px;background:var(--surface2);border-radius:10px;text-align:center;">
+        <div style="font-size:1rem;">${actIcon}</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;">${totalMin>0?totalMin+'min':pasos>0?pasos.toLocaleString('es-ES')+' pasos':'Sin actividad'}</div>
+      </div>
+      <div style="flex:1;padding:8px;background:var(--surface2);border-radius:10px;text-align:center;">
+        <div style="font-size:1rem;">${meals.length>=3?'✅':'🍽️'}</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;">${meals.length} comida${meals.length!==1?'s':''}</div>
+      </div>
+    </div>`;
 }
 
 function renderWeeklyAICard(){
