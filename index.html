@@ -1451,7 +1451,7 @@
       <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">📷 Escanear Wetaca / foto menú</span>
       <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 10px rgba(129,140,248,.4);">📷</div>
     </div>
-    <div class="fab-option" onclick="closeFab();showPage('add');setTimeout(()=>setAddMode('ingredientes'),100)" style="display:flex;align-items:center;gap:8px;">
+    <div class="fab-option" onclick="closeFab();showDescribirSheet()" style="display:flex;align-items:center;gap:8px;">
       <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">🥗 Describir lo que comí (IA calcula macros)</span>
       <div style="width:40px;height:40px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 10px rgba(52,211,153,.4);">🥗</div>
     </div>
@@ -7808,6 +7808,132 @@ function saveFromSheet() {
   renderAlmuerzoRemaining();
   vibrate([30, 20, 30]);
   showToast('✓ ' + name + ' añadido');
+}
+
+function showDescribirSheet() {
+  const h = new Date().getHours();
+  let defaultType = 'almuerzo';
+  if(h < 11) defaultType = 'desayuno';
+  else if(h < 16) defaultType = 'almuerzo';
+  else if(h < 18) defaultType = 'merienda';
+  else if(h < 21) defaultType = 'cena';
+  else defaultType = 'snack';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'describir-sheet';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:92vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:1rem;font-weight:800;">🥗 ¿Qué has comido?</div>
+        <button onclick="document.getElementById('describir-sheet').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;min-height:44px;min-width:44px;">✕</button>
+      </div>
+      <textarea id="describir-texto" rows="4" placeholder="Ej: 200g pechuga de pollo a la plancha, 150g arroz blanco cocido, ensalada con tomate y pepino, 1 cucharada aceite de oliva..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px;color:var(--text);font-size:0.9rem;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;margin-bottom:14px;">Cuanto más detallado, más preciso. Puedes poner gramos, piezas, cucharadas...</div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px;">Tipo de comida</div>
+        <select id="describir-type" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;">
+          <option value="desayuno"${defaultType==='desayuno'?' selected':''}>Desayuno</option>
+          <option value="almuerzo"${defaultType==='almuerzo'?' selected':''}>Almuerzo</option>
+          <option value="merienda"${defaultType==='merienda'?' selected':''}>Merienda</option>
+          <option value="cena"${defaultType==='cena'?' selected':''}>Cena</option>
+          <option value="snack"${defaultType==='snack'?' selected':''}>Snack</option>
+        </select>
+      </div>
+      <button id="describir-calc-btn" onclick="calcularDescribirSheet()" class="btn btn-primary" style="width:100%;margin-bottom:10px;">✨ Calcular macros con IA</button>
+      <div id="describir-resultado" style="display:none;"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  setTimeout(() => document.getElementById('describir-texto')?.focus(), 100);
+}
+
+async function calcularDescribirSheet() {
+  if(!getApiKey()){ showToast('Configura tu API Key primero'); document.getElementById('describir-sheet')?.remove(); showPage('config'); return; }
+  const texto = document.getElementById('describir-texto')?.value.trim();
+  if(!texto){ showToast('Escribe lo que has comido primero'); return; }
+
+  const btn = document.getElementById('describir-calc-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px;"></div> Calculando macros...';
+
+  const prompt = `Eres nutricionista experta. Calcula los macros de esta comida con la mayor precisión posible usando valores nutricionales estándar por 100g.
+
+INGREDIENTES: ${texto}
+
+Responde SOLO en este JSON exacto, sin texto adicional:
+{"nombre":"nombre corto del plato","proteinas":0,"carbohidratos":0,"grasas":0,"fibra":0,"desglose":[{"ingrediente":"nombre","p":0,"c":0,"f":0}]}
+
+Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima razonablemente. Redondea a 1 decimal.`;
+
+  try {
+    const res = await callClaudeWithTimeout([{role:'user',content:prompt}]);
+    const json = JSON.parse(res.match(/\{[\s\S]*\}/)?.[0] || '{}');
+    const nombre = json.nombre || 'Comida';
+    const p = json.proteinas ?? 0;
+    const c = json.carbohidratos ?? 0;
+    const f = json.grasas ?? 0;
+    const fib = json.fibra ?? 0;
+    const desglose = json.desglose || [];
+
+    const desgloseHtml = desglose.length ? `
+      <div style="margin-bottom:12px;">
+        <div style="font-size:0.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Desglose por ingrediente</div>
+        ${desglose.map(d=>`
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.78rem;">
+            <span>${esc(d.ingrediente)}</span>
+            <span style="display:flex;gap:8px;">
+              <span style="color:var(--green)">P${d.p}g</span>
+              <span style="color:var(--accent)">C${d.c}g</span>
+              <span style="color:var(--orange)">G${d.f}g</span>
+            </span>
+          </div>`).join('')}
+      </div>` : '';
+
+    document.getElementById('describir-resultado').style.display = 'block';
+    document.getElementById('describir-resultado').innerHTML = `
+      <div style="background:var(--surface2);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="font-weight:700;margin-bottom:10px;">${esc(nombre)}</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <div style="flex:1;text-align:center;padding:8px;background:var(--surface3);border-radius:10px;">
+            <div style="font-size:0.65rem;color:var(--green);font-weight:700;">PROTEÍNA</div>
+            <div style="font-size:1.1rem;font-weight:800;">${p}g</div>
+          </div>
+          <div style="flex:1;text-align:center;padding:8px;background:var(--surface3);border-radius:10px;">
+            <div style="font-size:0.65rem;color:var(--accent);font-weight:700;">CARBOS</div>
+            <div style="font-size:1.1rem;font-weight:800;">${c}g</div>
+          </div>
+          <div style="flex:1;text-align:center;padding:8px;background:var(--surface3);border-radius:10px;">
+            <div style="font-size:0.65rem;color:var(--orange);font-weight:700;">GRASA</div>
+            <div style="font-size:1.1rem;font-weight:800;">${f}g</div>
+          </div>
+        </div>
+        ${desgloseHtml}
+        <button onclick="guardarDesdeDescribir('${esc(nombre).replace(/'/g,"\\'")}',${p},${c},${f},${fib})" class="btn btn-primary" style="width:100%;">✓ Añadir a mi registro</button>
+      </div>`;
+  } catch(e) {
+    showToast('Error al calcular — ' + e.message);
+    btn.disabled = false;
+    btn.innerHTML = '✨ Calcular macros con IA';
+    return;
+  }
+  btn.disabled = false;
+  btn.innerHTML = '✨ Recalcular';
+}
+
+function guardarDesdeDescribir(nombre, p, c, f, fib) {
+  const type = document.getElementById('describir-type')?.value || 'almuerzo';
+  const meal = { name: nombre, p, c, f, fib, type, time: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) };
+  const meals = getMeals();
+  meals.push(meal);
+  localStorage.setItem('meals_' + dk(), JSON.stringify(meals));
+  updateRecentMealsCache({ name: nombre, p, c, f, fib });
+  document.getElementById('describir-sheet')?.remove();
+  renderHome();
+  renderCenaRemaining();
+  renderAlmuerzoRemaining();
+  vibrate([30, 20, 30]);
+  showToast('✓ ' + nombre + ' añadido');
 }
 
 function quickAddRecentMeal(m) {
