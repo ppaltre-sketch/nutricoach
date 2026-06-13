@@ -1400,12 +1400,6 @@
         <button class="btn btn-secondary" onclick="recalcGoals()" id="recalc-btn">✨ Calcular con IA mis objetivos</button>
       </div>
 
-      <div class="card">
-        <div class="setting-group-title">Recordatorios</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Recibe avisos para registrar tus comidas y tu cena.</p>
-        <button class="btn btn-secondary" id="notif-btn" onclick="requestNotifPermission()">🔔 Activar recordatorios</button>
-        <div id="notif-status" style="font-size:0.78rem;margin-top:8px;"></div>
-      </div>
 
       <div class="card">
         <div class="card-title">🩸 Ciclo menstrual</div>
@@ -1419,18 +1413,6 @@
           <input type="number" id="ciclo-length" value="28" min="21" max="40" onchange="saveCicloConfig()" style="width:100%;" />
         </div>
         <div id="ciclo-status-config" style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:10px;font-size:0.82rem;"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">🔔 Recordatorios</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Activa los recordatorios para no olvidar el agua, las comidas y las medidas semanales.</p>
-        <div id="notif-status-new" style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;"></div>
-        <button class="btn btn-secondary" onclick="enableNotifications()">🔔 Activar recordatorios</button>
-      </div>
-      <div class="card">
-        <div class="card-title">📋 Días tipo</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Guarda las comidas de un día como plantilla y cárgalas de un toque en cualquier momento.</p>
-        <button class="btn btn-secondary" onclick="saveCurrentDayAsTemplate()" style="width:100%;margin-bottom:10px;">💾 Guardar hoy como plantilla</button>
-        <div id="meal-templates-list"></div>
       </div>
       <div class="card">
         <div class="setting-group-title">Restablecer datos</div>
