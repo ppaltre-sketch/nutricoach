@@ -506,6 +506,8 @@
     /* ── WATER FILL ANIMATION ── */
     @keyframes waterFill { 0%{transform:scale(.8);opacity:.5} 60%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1} }
     .glass.filled { animation: waterFill 0.3s ease-out; }
+    @keyframes waterPop { 0%{transform:scale(1)} 50%{transform:scale(1.25)} 100%{transform:scale(1)} }
+    .water-pop { animation: waterPop 0.3s ease; }
 
     /* ── FONT SIZE FIX ── */
     .legend-pct, .water-count, .rem-lbl, .scanned-pill-lbl { font-size: 0.8rem !important; }
@@ -584,7 +586,10 @@
     <div class="page active" id="page-home">
       <div id="time-context-card"></div>
       <div id="survivor-semaforo"></div>
+      <div id="daily-todos" style="display:flex;gap:8px;margin-bottom:12px;"></div>
+      <div id="next-workout-card"></div>
       <div id="streaks-bar"></div>
+      <div id="streak-recovery-msg"></div>
       <div id="ciclo-phase-chip"></div>
       <div id="home-onboard"></div>
       <div id="race-week-banner" style="display:none;margin-bottom:14px;"></div>
@@ -858,6 +863,7 @@
         <div class="ia-tab" id="ia-tab-cena" onclick="setIATab('cena')">🌙 ¿Qué ceno?</div>
         <div class="ia-tab" id="ia-tab-restaurante" onclick="setIATab('restaurante')">🍽️ Restaurante</div>
       </div>
+      <div id="comer-history-section"></div>
       <!-- Almuerzo -->
       <div id="ia-almuerzo-section">
         <div id="almuerzo-remaining"></div>
@@ -1777,10 +1783,90 @@ function showPage(name){
   document.getElementById('fab').style.display=(name==='add')?'none':'flex';
   document.getElementById('scroll-container').scrollTop=0;
   if(name==='home')renderHome();
-  if(name==='cena'){renderCenaRemaining();renderAlmuerzoRemaining();}
+  if(name==='cena'){renderCenaRemaining();renderAlmuerzoRemaining();renderComerHistory();}
   if(name==='entreno'){renderYesterdayWorkout();renderZone2Status();renderOverloadPrescription();}
   if(name==='progreso')renderProgreso();
   if(name==='config'){initCicloConfig();initNotifStatus();}
+}
+
+// ═══════════════ UX: DAILY TODOS ═══════════════
+function renderDailyTodos(){
+  const el=document.getElementById('daily-todos');
+  if(!el)return;
+  const meals=getMeals();
+  const water=getWater();
+  const measures=getMeasures();
+  const todayMeasure=measures.find(m=>m.date===dk());
+  const todos=[
+    {icon:'🍽️',label:'Comida',done:meals.length>=2},
+    {icon:'💧',label:'Agua',done:water>=6},
+    {icon:'📏',label:'Medidas',done:!!todayMeasure},
+  ];
+  el.innerHTML=todos.map(t=>`
+    <div style="flex:1;display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:12px;background:var(--surface2);border:1px solid ${t.done?'var(--green)':'var(--border)'};transition:.3s;">
+      <span style="font-size:1rem;">${t.done?'✅':t.icon}</span>
+      <span style="font-size:0.72rem;color:${t.done?'var(--green)':'var(--muted)'};">${t.label}</span>
+    </div>`).join('');
+}
+
+// ═══════════════ UX: PRÓXIMO ENTRENO ═══════════════
+function getTodayWorkoutLabel(){
+  const dayNames=['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+  const today=dayNames[new Date().getDay()];
+  const plan={
+    lunes:{label:'💪 Fuerza tren superior',dur:'40min'},
+    martes:{label:'🏃 Carrera continua',dur:'30-40min'},
+    miercoles:{label:'💪 Fuerza tren inferior',dur:'40min'},
+    jueves:{label:'🏃 Carrera intervalos',dur:'30min'},
+    viernes:{label:'💪 Circuito funcional',dur:'35min'},
+    sabado:{label:'🌿 Actividad libre / descanso activo',dur:''},
+    domingo:{label:'😴 Descanso',dur:''},
+  };
+  return plan[today]||null;
+}
+
+function renderNextWorkoutCard(){
+  const el=document.getElementById('next-workout-card');
+  if(!el)return;
+  const w=getTodayWorkoutLabel();
+  if(!w||w.label.includes('Descanso')){el.innerHTML='';return;}
+  const activities=safeParse(localStorage.getItem('nc_activity_'+dk()),[]);
+  const logged=activities.length>0;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:14px;background:var(--surface2);border:1px solid ${logged?'var(--green)':'rgba(99,102,241,.25)'};margin-bottom:12px;">
+      <div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:2px;">HOY TOCA</div>
+        <div style="font-size:0.85rem;font-weight:700;color:${logged?'var(--green)':'var(--text)'};">${w.label}</div>
+        ${w.dur?`<div style="font-size:0.7rem;color:var(--muted);">${w.dur}</div>`:''}
+      </div>
+      ${logged
+        ?'<span style="font-size:0.75rem;color:var(--green);font-weight:600;">✓ Hecho</span>'
+        :`<button onclick="showPage('entreno')" style="padding:6px 14px;border-radius:20px;background:var(--accent);color:#fff;border:none;font-size:0.75rem;cursor:pointer;font-weight:600;">Ver</button>`
+      }
+    </div>`;
+}
+
+// ═══════════════ UX: COMER HISTORY ═══════════════
+function saveComerHistory(question,answer){
+  const history=safeParse(localStorage.getItem('nc_comer_history'),[]);
+  history.unshift({q:question,a:answer,ts:new Date().toISOString()});
+  localStorage.setItem('nc_comer_history',JSON.stringify(history.slice(0,5)));
+}
+
+function renderComerHistory(){
+  const el=document.getElementById('comer-history-section');
+  if(!el)return;
+  const history=safeParse(localStorage.getItem('nc_comer_history'),[]);
+  if(!history.length){el.innerHTML='';return;}
+  el.innerHTML=`
+    <div style="margin-bottom:12px;">
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Conversaciones recientes</div>
+      ${history.slice(0,2).map(h=>`
+        <div style="padding:8px 10px;border-radius:10px;background:var(--surface2);margin-bottom:6px;border:1px solid var(--border);">
+          <div style="font-size:0.75rem;font-weight:600;color:var(--accent);margin-bottom:2px;">Tú: ${esc(h.q.slice(0,60))}${h.q.length>60?'…':''}</div>
+          <div style="font-size:0.72rem;color:var(--muted);">${h.a?h.a.replace(/<[^>]*>/g,'').slice(0,80)+'…':''}</div>
+        </div>`).join('')}
+    </div>`;
 }
 
 // ═══════════════ HOME ═══════════════
@@ -2072,6 +2158,8 @@ function renderHome(){
     if(inner) initSwipeDelete(inner, ()=>deleteMeal(i));
   });
   renderSurvivorSemaforo();
+  renderDailyTodos();
+  renderNextWorkoutCard();
   renderStreaks();
   renderNutritionPeriodCard();
   checkRaceWeekProtocol();
@@ -2103,6 +2191,8 @@ function setGlass(n){
   vibrate(20);
   renderWaterTracker();
   flashConfirm(document.getElementById('water-tracker-wrap'));
+  const wEl=document.querySelector('.water-count');
+  if(wEl){wEl.classList.add('water-pop');setTimeout(()=>wEl.classList.remove('water-pop'),300);}
 }
 
 function repeatMeal(m){
@@ -2478,6 +2568,7 @@ Usa ingredientes de supermercado español. Cena realista entre semana. Que sacie
     const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     document.getElementById('cena-result').innerHTML=`<div class="card"><div class="card-title">Tu cena de esta noche</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
     document.getElementById('alternativas-section').style.display='block';
+    saveComerHistory(prefs||'Sugerencia de cena', res);
   }catch(e){
     document.getElementById('cena-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
   }
@@ -2730,6 +2821,7 @@ async function callClaude(messages){
 }
 
 function callClaudeWithTimeout(messages,ms=20000){
+  if(!navigator.onLine) return Promise.reject(new Error('Sin conexión — comprueba tu red'));
   return Promise.race([
     callClaude(messages),
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('La solicitud tardó demasiado — comprueba tu conexión')),ms))
@@ -3170,6 +3262,7 @@ Usa ingredientes de supermercado español o tuppers Wetaca. Práctico para entre
   try{
     const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     document.getElementById('almuerzo-result').innerHTML=`<div class="card"><div class="card-title">Tu almuerzo de hoy</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
+    saveComerHistory(prefs||'Sugerencia de almuerzo', res);
   }catch(e){
     document.getElementById('almuerzo-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
   }
@@ -4437,8 +4530,8 @@ function updateOnlineStatus() {
   const el = document.getElementById('offline-banner');
   if(el) el.style.display = navigator.onLine ? 'none' : 'block';
 }
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
+window.addEventListener('online', ()=>{ updateOnlineStatus(); showToast('✓ Conexión restaurada'); });
+window.addEventListener('offline', ()=>{ updateOnlineStatus(); showToast('📵 Sin conexión — las sugerencias de IA no estarán disponibles'); });
 
 // ═══════════════ FEATURE: SWIPE TO DELETE ═══════════════
 function initSwipeDelete(el, onDelete) {
@@ -6176,6 +6269,16 @@ function renderBodyComposition(){
   const el=document.getElementById('body-comp-section');
   if(!el)return;
 
+  if(!measures||measures.length===0){
+    el.innerHTML=`<div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:3rem;margin-bottom:12px;">📏</div>
+      <div style="font-weight:800;font-size:1rem;margin-bottom:8px;">Sin medidas todavía</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:20px;line-height:1.6;">Registra tu primera medida de cintura para empezar a ver tu progreso hacia talla 40</div>
+      <button onclick="showPage('progreso');setTimeout(()=>setProgresoTab('medidas'),100)" class="btn btn-primary">📏 Registrar medida ahora</button>
+    </div>`;
+    return;
+  }
+
   let signal=null;
   if(measures.length>=3&&upperLog.length>=4){
     const recentWeights=measures.slice(-4).map(m=>m.peso||m.weight||0).filter(Boolean);
@@ -7194,7 +7297,14 @@ function renderStreaks() {
   if (!el) return;
   const { nutriStreak, trainStreak } = computeStreaks();
 
-  if (nutriStreak === 0 && trainStreak === 0) { el.innerHTML = ''; return; }
+  if (nutriStreak === 0 && trainStreak === 0) {
+    el.innerHTML = '';
+    const recEl = document.getElementById('streak-recovery-msg');
+    if (recEl) recEl.innerHTML = `<div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:4px 0 8px;">No pasa nada — hoy es el día 1 de la siguiente racha 💜</div>`;
+    return;
+  }
+  const recEl2 = document.getElementById('streak-recovery-msg');
+  if (recEl2) recEl2.innerHTML = '';
 
   el.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:10px;">
     ${trainStreak > 0 ? `<div style="flex:1;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.25);border-radius:10px;padding:8px 10px;text-align:center;">
