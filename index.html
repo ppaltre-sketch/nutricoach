@@ -4264,12 +4264,47 @@ async function generarEvaluacionHoyIA(){
 
   const balanceMsg = {
     'sin_datos': 'sin datos de ingesta todavía',
-    'peligrosamente_bajo': `[INTERNO: ingesta peligrosamente baja (${kcalPct}% del objetivo). Dile claramente que está comiendo muy poco, que eso no ayuda a perder volumen y puede ralentizar el metabolismo. Tono preocupado pero sin alarmar.]`,
+    'peligrosamente_bajo': `[INTERNO: ingesta peligrosamente baja (${kcalPct}% del objetivo). Dile claramente que está comiendo muy poco, eso no ayuda a perder volumen y puede ralentizar el metabolismo. Tono preocupado pero sin alarmar.]`,
     'muy_bajo': `[INTERNO: ingesta demasiado baja (${kcalPct}% del objetivo). Dile que está comiendo poco para lo que necesita, que así no llega a objetivos de forma sostenible.]`,
-    'bajo': `[INTERNO: ingesta algo por debajo del objetivo (${kcalPct}%). Está bien pero podría comer un poco más, especialmente proteína.]`,
+    'bajo': `[INTERNO: ingesta algo por debajo del objetivo (${kcalPct}%). Podría comer un poco más, especialmente proteína.]`,
     'optimo': `[INTERNO: ingesta en rango óptimo para perder volumen (${kcalPct}% del objetivo). Va bien en este aspecto.]`,
     'exceso': `[INTERNO: ingesta por encima del objetivo (${kcalPct}% del objetivo para hoy a las ${h}h). Si sigue así el día completo, estará por encima de lo que necesita para perder volumen. Díselo claramente pero sin dramatizar.]`
   }[deficitStatus] || '';
+
+  // Macro status: bajo / ok / alto para cada macro
+  const pPct = goals.p > 0 ? P / goals.p : 1;
+  const cPct = goals.c > 0 ? C / goals.c : 1;
+  const fPct = goals.f > 0 ? F / goals.f : 1;
+  const macroStatus = (pct) => pct < 0.75 ? 'bajo' : pct > 1.15 ? 'alto' : 'ok';
+  const pSt = macroStatus(pPct), cSt = macroStatus(cPct), fSt = macroStatus(fPct);
+
+  // Build food suggestion hint based on macro combination
+  const needsP = pSt === 'bajo', excessC = cSt === 'alto', excessF = fSt === 'alto';
+  const needsC = cSt === 'bajo', needsF = fSt === 'bajo', excessP = pSt === 'alto';
+
+  let sugerenciaAlimentos = '';
+  if(meals.length > 0 && quedanHoras >= 1){
+    if(needsP && excessC && excessF)
+      sugerenciaAlimentos = '[INTERNO: proteína muy baja, carbos Y grasa altos. Sugiere 1-2 alimentos muy altos en proteína y casi sin carbos ni grasa: clara de huevo, pechuga a la plancha, atún al natural, proteína en polvo con agua. Menciona esto como sugerencia concreta para lo que queda del día.]';
+    else if(needsP && excessC)
+      sugerenciaAlimentos = '[INTERNO: proteína baja y carbos altos. Sugiere alimentos ricos en proteína bajos en carbos: pechuga, atún, huevos, tofu, queso fresco 0%. Sin añadir más carbos.]';
+    else if(needsP && excessF)
+      sugerenciaAlimentos = '[INTERNO: proteína baja y grasa alta. Sugiere proteína magra muy baja en grasa: pechuga de pollo hervida, clara de huevo, atún al natural, gambas. Sin añadir más grasa.]';
+    else if(needsP)
+      sugerenciaAlimentos = '[INTERNO: proteína baja pero carbos y grasa en rango. Sugiere fuentes de proteína moderadas: pollo, huevos, legumbres, yogur proteico, queso fresco. Puede acompañar con algo de carbo si quiere.]';
+    else if(excessC && excessF && !needsP)
+      sugerenciaAlimentos = '[INTERNO: carbos Y grasa altos, proteína ok. Si come algo más, que sea solo proteína pura: pechuga, atún, clara de huevo. Que evite carbos y grasas añadidas el resto del día.]';
+    else if(excessC && !excessF)
+      sugerenciaAlimentos = '[INTERNO: carbos altos. Que evite pan, arroz, pasta, fruta adicional el resto del día. Si tiene hambre, proteína o verdura sin almidón.]';
+    else if(excessF && !excessC)
+      sugerenciaAlimentos = '[INTERNO: grasa alta. Que evite aceite, frutos secos, quesos grasos, aguacate adicional. Si come algo, que sea proteína magra o verdura.]';
+    else if(needsC && needsF && !needsP)
+      sugerenciaAlimentos = '[INTERNO: carbos y grasa bajos pero proteína ok. Puede añadir algo de energía: frutos secos, aguacate, arroz o patata en pequeña cantidad.]';
+    else if(needsC)
+      sugerenciaAlimentos = '[INTERNO: carbos bajos. Si tiene un entrenamiento pendiente o se siente sin energía, puede añadir algo de carbo: fruta, arroz, avena.]';
+    else if(needsF)
+      sugerenciaAlimentos = '[INTERNO: grasa baja. Puede añadir algo de grasa saludable: aguacate, frutos secos, aceite de oliva, huevo entero.]';
+  }
 
   const prompt = `Eres una coach directa, honesta y sin rollos. Evalúa el día de esta usuaria. Son las ${h}h, quedan unas ${quedanHoras} horas del día. NUNCA menciones números de calorías ni kilos.
 
@@ -4277,15 +4312,17 @@ OBJETIVO PRINCIPAL: reducir volumen para llegar a talla 40.
 
 Datos de hoy hasta ahora:
 - Comidas: ${meals.length} (${mealNames||'ninguna'})
-- Proteína: ${P}g de ${goals.p}g objetivo (${goals.p>0?Math.round(P/goals.p*100):0}%)
-- Carbos: ${C}g de ${goals.c}g objetivo
-- Grasa: ${F}g de ${goals.f}g objetivo
+- Proteína: ${P}g de ${goals.p}g objetivo (${pSt === 'bajo' ? '⚠️ BAJA' : pSt === 'alto' ? 'alta' : 'bien'} — ${goals.p>0?Math.round(P/goals.p*100):0}%)
+- Carbos: ${C}g de ${goals.c}g objetivo (${cSt === 'alto' ? '⚠️ ALTO' : cSt === 'bajo' ? 'bajo' : 'bien'})
+- Grasa: ${F}g de ${goals.f}g objetivo (${fSt === 'alto' ? '⚠️ ALTA' : fSt === 'bajo' ? 'baja' : 'bien'})
 - Agua: ${water}/8 vasos
 - Actividad: ${totalMin>0?totalMin+' min de ejercicio':act.pasos>=3000?act.pasos+' pasos':'sin actividad registrada'}
 - Balance energético: ${balanceMsg}
+${sugerenciaAlimentos ? '- Sugerencia de alimentos: ' + sugerenciaAlimentos : ''}
 
-Responde en máximo 90 palabras, tono directo como una amiga que sabe de nutrición. SÉ HONESTA:
-- Si algo va mal (proteína baja, sin moverse, pasada de energía, muy poca ingesta), DILO claramente sin endulzar
+Responde en máximo 110 palabras, tono directo como una amiga que sabe de nutrición. SÉ HONESTA:
+- Si algo va mal (proteína baja, carbos o grasa altos, sin moverse, balance energético fuera), DILO claramente
+- Si hay sugerencia de alimentos en los datos, inclúyela de forma natural en tu respuesta (qué comer en la próxima comida o snack)
 - Si va bien, también dilo
 - Si quedan horas útiles, di qué puede hacer todavía
 No uses listas ni headers. Texto corrido.`;
