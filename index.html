@@ -4058,31 +4058,29 @@ async function getWeeklyAISummary(force=false){
   const last2 = measures.filter(m=>m.cintura).slice(-2);
   const cinturaTrend = last2.length===2 ? (last2[1].cintura - last2[0].cintura).toFixed(1) : null;
 
-  const prompt=`Eres una coach de salud y nutrición experta y muy motivadora. Analiza esta semana y da proyecciones concretas de lo que la usuaria notará si sigue así. NUNCA menciones calorías ni peso en kg.
+  const prompt=`Eres una coach de salud y nutrición experta y muy motivadora. Analiza esta semana y da proyecciones concretas sobre VOLUMEN Y TALLA. NUNCA menciones calorías ni kilos ni peso en números.
 
-Perfil: mujer, ${p.edad} años. Objetivo: talla 40, carrera Survivor 10km el 24 de octubre 2026.
+CONTEXTO IMPORTANTE: El objetivo PRINCIPAL ahora mismo es reducir volumen y llegar a talla 40. Esto va PRIMERO. La carrera Survivor es un objetivo secundario a largo plazo — NO centres el análisis en rendimiento deportivo ni en ejercicios de fuerza. Céntrate en cómo los hábitos de esta semana están ayudando (o no) a reducir volumen.
+${cinturaTrend!==null?`Tendencia cintura última medición: ${parseFloat(cinturaTrend)>0?'+':''}${cinturaTrend}cm. ${parseFloat(cinturaTrend)<0?'Va en la dirección correcta.':'Sin bajada todavía.'}`:'' }
+
+Perfil: mujer, ${p.edad} años.
 Objetivos diarios: P${goals.p}g C${goals.c}g G${goals.f}g.
 Días con registro esta semana: ${daysLogged}/7. Hoy es día ${new Date().toLocaleDateString('es-ES',{weekday:'long'})}.
-Cumplimiento medio proteína: ${avgPctP}%, carbos: ${avgPctC}%.
-Días activos: ${exerciseDays}/7.
-Agua media: ${avgWater}/8 vasos.
-${cinturaTrend!==null?`Tendencia cintura última medición: ${cinturaTrend>0?'+':''}${cinturaTrend}cm`:''}
+Proteína media: ${avgPctP}% del objetivo. Días activos: ${exerciseDays}/7. Agua media: ${avgWater}/8 vasos.
 
-Detalle por día (HOY — día en curso, datos parciales, no juzgar):
+Detalle por día (HOY — día en curso, datos parciales, no juzgar como día completo):
 ${daysSummary}
 
-${getSurvivorContext ? getSurvivorContext() : ''}
-
-Estructura tu respuesta así (máximo 220 palabras en total):
+Estructura tu respuesta así (máximo 200 palabras):
 
 ## ✅ Esta semana
-[2 logros concretos con datos reales — no inventes]
+[2 cosas concretas que están ayudando a reducir volumen — basadas en datos reales]
 
 ## 🔮 Si sigues así...
-[2-3 proyecciones CONCRETAS y motivadoras con plazos reales. Ejemplos: "En 2-3 semanas notarás que la ropa te queda más suelta", "Si añades 10 min más de movimiento al día, en un mes notarás X". Basa las proyecciones en los datos reales de la semana. Sé específica, no genérica. Menciona la talla 40 o Survivor si encaja.]
+[2-3 proyecciones CONCRETAS sobre volumen y talla con plazos reales. Ejemplos: "En 3-4 semanas notarás que los pantalones te quedan más holgados", "Si mantienes esta proteína, tu cuerpo retendrá menos líquido y notarás menos hinchazón en X semanas". NO menciones ejercicios de fuerza ni marcas de carrera. Foco en cómo se va a ver y sentir el cuerpo.]
 
 ## ⚡ 1 cosa para mañana
-[Una sola acción concreta y pequeña que puede hacer mañana mismo]`;
+[Una sola acción pequeña y concreta orientada a reducir volumen — puede ser de nutrición, movimiento suave o hábito]`;
 
 
   try{
