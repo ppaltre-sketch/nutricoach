@@ -599,9 +599,13 @@
       <div id="home-onboard"></div>
       <div id="race-week-banner" style="display:none;margin-bottom:14px;"></div>
       <div id="reminder-banners"></div>
+      <div id="tdee-calibration-hoy" style="display:none;"></div>
       <div id="hoy-plan-card"></div>
       <div id="nutrition-period-card" style="margin-bottom:10px;"></div>
       <div id="macro-ring-card"></div>
+      <div id="prot-dist-indicator" style="display:none;padding:0 2px;"></div>
+      <div id="sleep-hunger-banner" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:0.75rem;color:var(--muted);line-height:1.5;display:none;align-items:flex-start;gap:8px;"><span style="font-size:1rem;flex-shrink:0;">😴</span><div><strong style="color:var(--text);">Dormiste poco anoche</strong> — hoy tendrás más hambre de lo normal. Es fisiológico (grelina elevada), no es falta de voluntad. Prioriza proteína y no saltes comidas.</div></div>
+      <div id="ciclo-nutricion-banner" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:0.75rem;color:var(--muted);line-height:1.5;display:none;"></div>
       <div id="water-tracker-wrap"></div>
       <div id="daily-score-card"></div>
       <div id="status-messages"></div>
@@ -996,6 +1000,16 @@
             </div>
           </div>
           <button class="btn btn-primary" style="width:100%;" onclick="logActivityFromEntreno()">✅ Guardar entreno</button>
+          <div id="progresion-optional" style="margin-top:12px;padding:12px;background:var(--surface2);border-radius:10px;display:none;">
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">💪 ¿Quieres anotar progresión? (opcional)</div>
+            <input id="prog-ejercicio" type="text" placeholder="Ejercicio (ej: sentadilla)" style="width:100%;margin-bottom:6px;padding:8px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.8rem;">
+            <div style="display:flex;gap:6px;">
+              <input id="prog-peso" type="number" placeholder="Kg" style="width:50%;padding:8px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.8rem;">
+              <input id="prog-reps" type="number" placeholder="Reps" style="width:50%;padding:8px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.8rem;">
+            </div>
+            <button onclick="guardarProgresion()" style="margin-top:8px;width:100%;padding:9px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer;">Guardar progresión</button>
+            <button onclick="document.getElementById('progresion-optional').style.display='none'" style="margin-top:4px;width:100%;padding:7px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-size:0.78rem;cursor:pointer;">Omitir</button>
+          </div>
         </div>
 
         <!-- 2. Sugerencia de hoy -->
@@ -1142,6 +1156,7 @@
         <div class="progress-tab active" id="ptab-actividad" onclick="setProgresoTab('actividad')" style="white-space:nowrap;">🏃 Actividad</div>
         <div class="progress-tab" id="ptab-medidas" onclick="setProgresoTab('medidas')" style="white-space:nowrap;">📏 Medidas</div>
         <div class="progress-tab" id="ptab-semana" onclick="setProgresoTab('semana')" style="white-space:nowrap;">📊 Semana</div>
+        <div class="progress-tab" id="ptab-progresion" onclick="setProgresoTab('progresion')" style="white-space:nowrap;">📈 Progresión</div>
       </div>
 
       <!-- Actividad hoy -->
@@ -1210,6 +1225,14 @@
               <span><svg width="18" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/></svg> Cadera</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Progresión de ejercicios -->
+      <div id="progreso-progresion" style="display:none">
+        <div class="card">
+          <div class="card-title">📈 Progresión de ejercicios</div>
+          <div id="progresion-ejercicios-content"></div>
         </div>
       </div>
 
@@ -1430,6 +1453,7 @@
         </div>
         <div id="ciclo-status-config" style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:10px;font-size:0.82rem;"></div>
       </div>
+      <div id="tdee-calibration-card" style="display:none;"></div>
       <div class="card">
         <div class="setting-group-title">Restablecer datos</div>
         <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3);" onclick="clearToday()">Borrar comidas de hoy</button>
@@ -1697,6 +1721,18 @@ function getInternalDeficitStatus(meals){
   if(kcal<=target*1.10)return'optimo';
   return'exceso';
 }
+function getCicloNutricionContext() {
+  const ciclo = chipState.ciclo;
+  if(!ciclo) return '';
+  const ctx = {
+    folicular: 'Estás en fase folicular: mejor sensibilidad a la insulina, buen momento para el déficit. Toleras bien el entrenamiento intenso.',
+    ovulacion: 'Estás en ovulación: energía alta, puedes entrenar fuerte. Tu cuerpo gestiona bien los carbohidratos ahora.',
+    lutea: 'Estás en fase lútea: es normal tener más hambre (hasta 200kcal más al día es fisiológico). Los cravings no son falta de voluntad, son hormonas. Prioriza carbohidratos complejos y magnesio.',
+    menstruacion: 'Estás menstruando: tu cuerpo necesita más hierro hoy. Come legumbres, carne roja o espinacas si puedes. El cansancio es real, no fuerces el entrenamiento intenso.'
+  };
+  return ctx[ciclo] || '';
+}
+
 function buildCalorieContext(meals){
   const kcal=getInternalKcal(meals);
   const tdee=getInternalTDEE();
@@ -1720,10 +1756,11 @@ function buildCalorieContext(meals){
   }
   if (badSleepDays >= 2) sleepAlert = '\nALERTA: usuaria con sueño insuficiente varios días. No sugerir restricción adicional. Priorizar densidad nutricional.';
 
+  const cicloCtx = getCicloNutricionContext();
   return `[CONTEXTO INTERNO - NO MENCIONAR AL USUARIO]
 Estado déficit: ${status}
 TDEE estimado: ${tdee}kcal. Ingesta hoy: ${Math.round(kcal)}kcal. Objetivo déficit: ${Math.round(target)}kcal.
-Instrucción: ${instrMap[status]||instrMap.optimo}${sleepAlert}
+Instrucción: ${instrMap[status]||instrMap.optimo}${sleepAlert}${cicloCtx?'\nCiclo menstrual: '+cicloCtx:''}
 [FIN CONTEXTO INTERNO]\n\n`;
 }
 const getWater = () => parseInt(localStorage.getItem('water_'+dk())||'0');
@@ -1836,7 +1873,7 @@ function showPage(name){
   if(name==='cena'){renderCenaRemaining();renderAlmuerzoRemaining();renderComerHistory();}
   if(name==='entreno'){renderYesterdayWorkout();renderZone2Status();renderOverloadPrescription();}
   if(name==='progreso')renderProgreso();
-  if(name==='config'){initCicloConfig();initNotifStatus();renderMealTemplates();}
+  if(name==='config'){initCicloConfig();initNotifStatus();renderMealTemplates();renderTDEECalibrationCard();}
 }
 
 // ═══════════════ UX: DAILY TODOS ═══════════════
@@ -2037,6 +2074,53 @@ function renderHome(){
       </div>
     </div>`;
 
+  // ── Proteína por comida indicator ──
+  const protDistEl = document.getElementById('prot-dist-indicator');
+  if(protDistEl){
+    if(meals.length > 0){
+      const mealsWithProtein = meals.filter(m => (m.p||0) >= 25).length;
+      protDistEl.style.display = '';
+      protDistEl.innerHTML = `<div style="font-size:0.72rem;color:var(--muted);padding:4px 0 8px;">💪 Comidas con proteína suficiente (≥25g): <strong style="color:${mealsWithProtein>=2?'var(--green)':'var(--muted)'};">${mealsWithProtein} de ${meals.length}</strong></div>`;
+    } else {
+      protDistEl.style.display = 'none';
+    }
+  }
+
+  // ── Sueño → aviso hambre aumentada ──
+  const sleepHungerEl = document.getElementById('sleep-hunger-banner');
+  if(sleepHungerEl){
+    const yesterday = getYesterday();
+    const sleepRaw = localStorage.getItem('nc_sleep_' + yesterday);
+    let sleepHours = null;
+    if(sleepRaw !== null){
+      // stored as plain number or JSON object
+      const parsed = safeParse(sleepRaw, null);
+      sleepHours = (parsed !== null && typeof parsed === 'object' && parsed.horas !== undefined)
+        ? parseFloat(parsed.horas)
+        : parseFloat(sleepRaw);
+    }
+    if(sleepHours !== null && sleepHours <= 6){
+      sleepHungerEl.style.display='flex';
+    } else {
+      sleepHungerEl.style.display='none';
+    }
+  }
+
+  // ── Ciclo nutrición banner (fase lútea / menstruación) ──
+  const cicloNutrBannerEl = document.getElementById('ciclo-nutricion-banner');
+  if(cicloNutrBannerEl){
+    const cicloActual = chipState.ciclo;
+    if(cicloActual === 'lutea'){
+      cicloNutrBannerEl.style.display='';
+      cicloNutrBannerEl.innerHTML='🌙 <strong style="color:var(--text);">Fase lútea</strong> — Es normal tener más hambre esta semana. Los cravings son hormonales, no falta de voluntad.';
+    } else if(cicloActual === 'menstruacion'){
+      cicloNutrBannerEl.style.display='';
+      cicloNutrBannerEl.innerHTML='🩸 <strong style="color:var(--text);">Menstruación</strong> — Prioriza hierro hoy: legumbres, carne roja o espinacas. El cansancio es real, no te exijas de más.';
+    } else {
+      cicloNutrBannerEl.style.display='none';
+    }
+  }
+
   // ── Water tracker ──
   renderWaterTracker();
 
@@ -2137,6 +2221,22 @@ function renderHome(){
   // Feature 6: Plateau detection (add at end of renderHome)
   checkPlateauDetection();
 
+  // TDEE calibration nudge in HOY
+  const tdeeHoyEl = document.getElementById('tdee-calibration-hoy');
+  if(tdeeHoyEl){
+    const dismissKey = 'nc_tdee_calibration_dismissed_' + dk();
+    if(!localStorage.getItem(dismissKey) && checkTDEECalibration() === 'sin_progreso'){
+      tdeeHoyEl.style.display='';
+      tdeeHoyEl.innerHTML=`<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:0.75rem;color:var(--muted);line-height:1.5;display:flex;gap:8px;align-items:flex-start;">
+        <span style="font-size:1rem;flex-shrink:0;">🔄</span>
+        <div style="flex:1;"><strong style="color:var(--text);">Sin cambios en medidas</strong> — el metabolismo se adapta. Considera revisar tu nivel de actividad.<br><button onclick="showPage('config')" style="margin-top:4px;padding:5px 10px;border-radius:6px;border:none;background:rgba(251,191,36,.2);color:var(--yellow);font-size:0.72rem;font-weight:700;cursor:pointer;">Ver ajustes →</button></div>
+        <button onclick="localStorage.setItem('${dismissKey}','1');document.getElementById('tdee-calibration-hoy').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;flex-shrink:0;padding:2px;">✕</button>
+      </div>`;
+    } else {
+      tdeeHoyEl.style.display='none';
+    }
+  }
+
   // ── Favorites ──
   const favs2=getFavorites();
   const favHtml=favs2.length>0?`
@@ -2205,6 +2305,7 @@ function renderHome(){
               <span class="macro-tag p">P ${m.p}g</span>
               <span class="macro-tag c">C ${m.c}g</span>
               <span class="macro-tag f">G ${m.f}g</span>
+              ${(m.p||0)>=30?`<span style="font-size:0.65rem;background:rgba(34,197,94,.15);color:var(--green);padding:2px 6px;border-radius:6px;font-weight:700;">✓ ${m.p}g prot</span>`:(m.p||0)>0?`<span style="font-size:0.65rem;background:rgba(99,102,241,.1);color:var(--muted);padding:2px 6px;border-radius:6px;">${m.p}g prot</span>`:''}
             </div>
           </div>
           <div class="meal-fav${isFav?' active':''}" onclick='toggleFavorite(${JSON.stringify(m)})' title="Guardar como favorito">⭐</div>
@@ -3451,7 +3552,7 @@ function setEntrenoTab(tab) {
 }
 
 function setProgresoTab(tab){
-  ['actividad','medidas','semana','retos'].forEach(t=>{
+  ['actividad','medidas','semana','retos','progresion'].forEach(t=>{
     const pEl=document.getElementById('progreso-'+t);
     const tEl=document.getElementById('ptab-'+t);
     if(pEl)pEl.style.display=t===tab?'block':'none';
@@ -3459,6 +3560,7 @@ function setProgresoTab(tab){
   });
   if(tab==='actividad'){renderActivityToday();renderActivityHeatmap();renderLogrosActividad();renderActivityHistory();}
   if(tab==='medidas'){renderTalla40Progress();renderWeeklyRitual();renderBodyComposition();renderMeasuresHistory();renderMeasuresChart();renderFotoMensual();checkPlateauDetection();}
+  if(tab==='progresion'){renderProgresionEjercicios();}
   if(tab==='semana'){
     renderConsistenciaScore();renderWeeklySummary();renderWeeklyAICard();renderEvaluacionHoyEnSemana();
     renderRetos();
@@ -5473,7 +5575,7 @@ function showHistorialModal(){
 // ═══════════════════════════════════════════════════════════
 // FEATURE 2: WEEKLY PLANNER
 // ═══════════════════════════════════════════════════════════
-const PLAN_TYPES=['💪 Fuerza','⚡ CrossFit','🏃 Cardio','🧗 ClassPass','🏞️ Madrid Río','🧘 Yoga/Pilates','🎯 Bandas','⚫ Kettlebell','🏊 Natación','😴 Descanso activo','🛌 Descanso'];
+const PLAN_TYPES=['💪 Fuerza','⚡ CrossFit','🏃 Cardio','🧗 ClassPass','🏞️ Outdoor / Aire libre','🧘 Yoga/Pilates','🎯 Bandas','⚫ Kettlebell','🏊 Natación','😴 Descanso activo','🛌 Descanso'];
 const DAY_NAMES=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
 function getWeeklyPlan(weekKey){ return safeParse(localStorage.getItem('nc_weekly_plan_'+(weekKey||getWeekKey())), null); }
@@ -6135,7 +6237,7 @@ showPage=function(name){
 // Override setProgresoTab to add objetivos tab (merged retos+logros)
 const _origSetProgresoTab=setProgresoTab;
 setProgresoTab=function(tab){
-  const tabs=['actividad','medidas','semana','retos','plan','logros','objetivos'];
+  const tabs=['actividad','medidas','semana','retos','plan','logros','objetivos','progresion'];
   if(tab==='objetivos'){
     tabs.forEach(t=>{
       const pEl=document.getElementById('progreso-'+t);
@@ -6691,6 +6793,10 @@ function logActivityFromEntreno() {
     showPostWorkoutNutrition(extra.clase ? extra.clase.id : tipo);
     showToast('✅ Entreno registrado');
     vibrate([30, 20, 30]);
+    // Show progression tracker for strength workouts
+    const isStrength = ['fuerza','Fuerza','bandas','Bandas','kettlebell','Kettlebell','cp-fuerza','cp-hiit','crossfit','CrossFit'].some(k => tipo.toLowerCase().includes(k.toLowerCase())) || (extra.clase && ['fuerza','hiit','crossfit','boxeo','escalada'].includes(extra.clase.id));
+    const progEl = document.getElementById('progresion-optional');
+    if(progEl && isStrength) progEl.style.display='block';
   }
 
   if (isClassPass) {
@@ -6705,6 +6811,81 @@ function logActivityFromEntreno() {
   } else {
     saveElog({});
   }
+}
+
+function checkTDEECalibration(){
+  const medidas = safeParse(localStorage.getItem('nc_measures'), []);
+  if(medidas.length < 3) return null;
+  const sorted = [...medidas].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const last = sorted[sorted.length-1];
+  const first = sorted[0];
+  const daysDiff = (new Date(last.fecha) - new Date(first.fecha)) / (1000*60*60*24);
+  if(daysDiff < 21) return null;
+  if(last.cintura && first.cintura && last.cintura >= first.cintura - 0.5){
+    return 'sin_progreso';
+  }
+  return 'progresando';
+}
+
+function renderTDEECalibrationCard(){
+  const el = document.getElementById('tdee-calibration-card');
+  if(!el) return;
+  const result = checkTDEECalibration();
+  if(result === 'sin_progreso'){
+    el.style.display='';
+    el.innerHTML=`<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="font-weight:700;margin-bottom:6px;">🔄 Revisión de objetivo</div>
+      <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:10px;">Llevas varias semanas sin cambios en medidas. El metabolismo se adapta — puede que necesites ajustar tu nivel de actividad o revisar el plan con un profesional.</div>
+      <button onclick="showPage('config')" style="padding:9px 16px;border-radius:8px;border:none;background:rgba(251,191,36,.2);color:var(--yellow);font-size:0.8rem;font-weight:700;cursor:pointer;">Ver configuración de actividad →</button>
+    </div>`;
+  } else {
+    el.style.display='none';
+  }
+}
+
+function renderProgresionEjercicios(){
+  const el = document.getElementById('progresion-ejercicios-content');
+  if(!el) return;
+  const log = safeParse(localStorage.getItem('nc_progresion'), []);
+  if(!log.length){
+    el.innerHTML='<div style="font-size:0.78rem;color:var(--muted);">Registra pesos y reps después de entrenar para ver tu progresión</div>';
+    return;
+  }
+  // Group by ejercicio
+  const byEx = {};
+  log.forEach(e => {
+    if(!byEx[e.ejercicio]) byEx[e.ejercicio] = [];
+    byEx[e.ejercicio].push(e);
+  });
+  el.innerHTML = Object.entries(byEx).map(([nombre, entries])=>{
+    const sorted = entries.slice(-3);
+    const last = sorted[sorted.length-1];
+    const prev = sorted.length>1 ? sorted[sorted.length-2] : null;
+    let trend = '';
+    if(prev){
+      const betterPeso = last.peso > prev.peso;
+      const betterReps = last.reps > prev.reps;
+      trend = (betterPeso||betterReps) ? '<span style="color:var(--green);">📈</span>' : (last.peso<prev.peso||last.reps<prev.reps) ? '<span style="color:var(--red);">📉</span>' : '<span style="color:var(--muted);">➡️</span>';
+    }
+    const rows = sorted.reverse().map(e=>`<div style="font-size:0.72rem;color:var(--muted);padding:3px 0;">${e.fecha} · ${e.peso?e.peso+'kg':'—'} · ${e.reps?e.reps+' reps':'—'}</div>`).join('');
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="font-weight:700;font-size:0.85rem;margin-bottom:4px;">${esc(nombre)} ${trend}</div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+function guardarProgresion(){
+  const ejercicio = document.getElementById('prog-ejercicio')?.value?.trim();
+  const peso = parseFloat(document.getElementById('prog-peso')?.value) || 0;
+  const reps = parseInt(document.getElementById('prog-reps')?.value) || 0;
+  if(!ejercicio) return showToast('Escribe el nombre del ejercicio');
+  const log = safeParse(localStorage.getItem('nc_progresion'), []);
+  log.push({fecha:dk(), ejercicio, peso, reps});
+  localStorage.setItem('nc_progresion', JSON.stringify(log));
+  const el = document.getElementById('progresion-optional');
+  if(el) el.style.display='none';
+  showToast('Progresión guardada 💪');
 }
 
 function logSurvivorCircuit(){
@@ -7207,18 +7388,19 @@ Formato exacto:
 // FEATURE: CLASSPASS TYPE MODAL
 // ═══════════════════════════════════════════════════════════
 const CLASS_TYPES = [
-  {id:'crossfit', label:'CrossFit / WOD', emoji:'🏋️‍♀️', muscles:'fuerza + cardio, cuerpo completo, potencia', survivor:true},
-  {id:'hiit', label:'HIIT / Funcional', emoji:'⚡', muscles:'cuerpo completo, cardio, fuerza', survivor:true},
-  {id:'boxeo', label:'Boxeo / Kickboxing', emoji:'🥊', muscles:'brazos, core, cardio', survivor:true},
-  {id:'escalada', label:'Escalada / Boulder', emoji:'🧗', muscles:'brazos, espalda, agarre, dedos', survivor:true},
-  {id:'spinning', label:'Spinning / Cycling', emoji:'🚴', muscles:'cardio, piernas, resistencia'},
-  {id:'fuerza', label:'Sala de pesas', emoji:'🏋️', muscles:'fuerza general'},
-  {id:'pilates', label:'Pilates', emoji:'🧘', muscles:'core, estabilidad, flexibilidad'},
-  {id:'yoga', label:'Yoga', emoji:'🕉️', muscles:'flexibilidad, respiración, core'},
+  {id:'cp-fuerza', label:'Fuerza / Musculación', emoji:'💪', muscles:'tren completo', survivor:true},
+  {id:'cp-hiit', label:'HIIT', emoji:'⚡', muscles:'cardio + fuerza', survivor:true},
+  {id:'cp-cardio-baile', label:'Cardio Baile', emoji:'💃', muscles:'cardio'},
+  {id:'cp-yoga', label:'Yoga / Pilates', emoji:'🧘', muscles:'movilidad y core'},
+  {id:'cp-cycling', label:'Cycling / Indoor', emoji:'🚴', muscles:'cardio piernas'},
+  {id:'cp-box', label:'Boxeo / Artes Marciales', emoji:'🥊', muscles:'cardio + tren superior', survivor:true},
+  {id:'cp-natacion', label:'Natación', emoji:'🏊', muscles:'cuerpo completo', survivor:true},
+  {id:'cp-outdoor', label:'Outdoor / Funcional', emoji:'🏞️', muscles:'cuerpo completo'},
+  {id:'crossfit', label:'CrossFit / WOD', emoji:'🏋️‍♀️', muscles:'fuerza + cardio, cuerpo completo', survivor:true},
+  {id:'escalada', label:'Escalada / Boulder', emoji:'🧗', muscles:'brazos, espalda, agarre', survivor:true},
   {id:'barre', label:'Barre / Ballet Fit', emoji:'🩰', muscles:'piernas, glúteos, core'},
-  {id:'natacion', label:'Natación', emoji:'🏊', muscles:'brazos, cardio, cuerpo completo', survivor:true},
   {id:'casa', label:'Entrenamiento en casa', emoji:'🏠', muscles:'peso corporal, bandas, core'},
-  {id:'otro', label:'Otro', emoji:'💪', muscles:'varios'},
+  {id:'cp-otro', label:'Otro', emoji:'🎯', muscles:'variado'},
 ];
 
 function showClassPassTypeModal(callback) {
@@ -7227,7 +7409,7 @@ function showClassPassTypeModal(callback) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;';
   overlay.innerHTML = `
     <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;">
-      <h3 style="margin:0 0 4px;font-size:1rem;">¿Qué tipo de actividad hiciste?</h3>
+      <h3 style="margin:0 0 4px;font-size:1rem;">¿Qué tipo de clase fue?</h3>
       <p style="color:var(--muted);font-size:0.78rem;margin:0 0 4px;">Esto personaliza tus entrenamientos futuros</p>
       <p style="color:var(--orange);font-size:0.72rem;margin:0 0 14px;">🏃 Las marcadas con <strong>★ Survivor</strong> están especialmente recomendadas para octubre</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -7261,8 +7443,9 @@ function selectClassType(id) {
   if (window._classPassCallback) {
     const durEl = document.getElementById('elog-duracion');
     const dur = durEl ? parseInt(durEl.value)||0 : 0;
-    saveClassPassHistory(t.label, dur);
-    window._classPassCallback({id, label: t.label, muscles: t.muscles});
+    const descriptiveLabel = 'ClassPass - ' + t.label;
+    saveClassPassHistory(descriptiveLabel, dur);
+    window._classPassCallback({id, label: descriptiveLabel, muscles: t.muscles});
   }
 }
 
@@ -8060,10 +8243,14 @@ function renderSleepCard() {
   </div>`;
 }
 
+function getSleepData(date){ return safeParse(localStorage.getItem('nc_sleep_'+date), null); }
+function saveSleepData(date, horas){ localStorage.setItem('nc_sleep_'+date, JSON.stringify({horas, fecha:date})); }
+
 function saveSleep(hours) {
   localStorage.setItem('nc_sleep_' + dk(), hours);
   renderSleepCard();
   checkSleepAlert();
+  renderHome(); // refresh hunger banner
 }
 
 function checkSleepAlert() {
