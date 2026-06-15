@@ -6893,6 +6893,7 @@ const CLASS_TYPES = [
 
 function showClassPassTypeModal(callback) {
   const overlay = document.createElement('div');
+  overlay.id = 'classpass-type-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;';
   overlay.innerHTML = `
     <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;">
@@ -6901,7 +6902,7 @@ function showClassPassTypeModal(callback) {
       <p style="color:var(--orange);font-size:0.72rem;margin:0 0 14px;">🏃 Las marcadas con <strong>★ Survivor</strong> están especialmente recomendadas para octubre</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         ${CLASS_TYPES.map(t => `
-          <button onclick="selectClassType('${t.id}','${t.label}','${t.muscles}',this)"
+          <button onclick="selectClassType('${t.id}')"
             style="padding:12px;border-radius:12px;border:1px solid ${t.survivor ? 'rgba(251,146,60,.4)' : 'var(--border)'};background:${t.survivor ? 'rgba(251,146,60,.08)' : 'var(--surface2)'};color:var(--text);cursor:pointer;text-align:left;font-size:0.82rem;line-height:1.4;position:relative;">
             ${t.survivor ? '<span style="position:absolute;top:6px;right:8px;font-size:0.62rem;color:var(--orange);font-weight:800;">★ Survivor</span>' : ''}
             <div style="font-size:1.2rem;margin-bottom:4px;">${t.emoji}</div>
@@ -6909,7 +6910,7 @@ function showClassPassTypeModal(callback) {
             <div style="font-size:0.72rem;color:var(--muted);">${t.muscles}</div>
           </button>`).join('')}
       </div>
-      <button onclick="this.closest('[style*=\'position:fixed\']').remove()"
+      <button onclick="document.getElementById('classpass-type-overlay').remove()"
         style="width:100%;margin-top:12px;padding:12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">Cancelar</button>
     </div>`;
 
@@ -6917,9 +6918,11 @@ function showClassPassTypeModal(callback) {
   document.body.appendChild(overlay);
 }
 
-function selectClassType(id, label, muscles, btn) {
-  const overlay = btn.closest('[style*="position:fixed"]');
-  overlay.remove();
+function selectClassType(id) {
+  const t = CLASS_TYPES.find(x => x.id === id);
+  if(!t) return;
+  const overlay = document.getElementById('classpass-type-overlay');
+  if(overlay) overlay.remove();
   if (id === 'casa') {
     // Home workout: show generator instead of just logging
     showHomeWorkoutModal(window._classPassCallback);
@@ -6928,8 +6931,8 @@ function selectClassType(id, label, muscles, btn) {
   if (window._classPassCallback) {
     const durEl = document.getElementById('elog-duracion');
     const dur = durEl ? parseInt(durEl.value)||0 : 0;
-    saveClassPassHistory(label, dur);
-    window._classPassCallback({id, label, muscles});
+    saveClassPassHistory(t.label, dur);
+    window._classPassCallback({id, label: t.label, muscles: t.muscles});
   }
 }
 
