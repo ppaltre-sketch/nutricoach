@@ -1588,14 +1588,24 @@ function safeParse(json, fallback) {
   catch(e) { console.warn('safeParse:', e.message); return fallback; }
 }
 
+function scrollToEveningSummary(){
+  const el = document.getElementById('evening-summary-card');
+  if(el) el.scrollIntoView({behavior:'smooth'});
+}
 function setPortionScan(portion){
   scanPortion = portion;
-  document.getElementById('portion-full').style.background = portion===1 ? 'var(--accent)' : 'var(--surface2)';
-  document.getElementById('portion-full').style.borderColor = portion===1 ? 'var(--accent)' : 'var(--border)';
-  document.getElementById('portion-full').style.color = portion===1 ? '#fff' : 'var(--text)';
-  document.getElementById('portion-half').style.background = portion===0.5 ? 'var(--accent)' : 'var(--surface2)';
-  document.getElementById('portion-half').style.borderColor = portion===0.5 ? 'var(--accent)' : 'var(--border)';
-  document.getElementById('portion-half').style.color = portion===0.5 ? '#fff' : 'var(--text)';
+  const full = document.getElementById('portion-full');
+  const half = document.getElementById('portion-half');
+  if(full){
+    full.style.background = portion===1 ? 'var(--accent)' : 'var(--surface2)';
+    full.style.borderColor = portion===1 ? 'var(--accent)' : 'var(--border)';
+    full.style.color = portion===1 ? '#fff' : 'var(--text)';
+  }
+  if(half){
+    half.style.background = portion===0.5 ? 'var(--accent)' : 'var(--surface2)';
+    half.style.borderColor = portion===0.5 ? 'var(--accent)' : 'var(--border)';
+    half.style.color = portion===0.5 ? '#fff' : 'var(--text)';
+  }
   if(scannedMacros){
     document.getElementById('s-meal-p').value = Math.round(scannedMacros.p * portion * 10)/10;
     document.getElementById('s-meal-c').value = Math.round(scannedMacros.c * portion * 10)/10;
@@ -4332,7 +4342,7 @@ No uses listas ni headers. Texto corrido.`;
     const ts = new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     wrap.innerHTML = `
       <div style="padding:12px;background:var(--surface2);border-radius:12px;border-left:3px solid var(--accent);">
-        <div style="font-size:0.82rem;line-height:1.6;color:var(--text);">${esc(res)}</div>
+        <div style="font-size:0.82rem;line-height:1.6;color:var(--text);">${formatAI(res)}</div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
           <span style="font-size:0.68rem;color:var(--muted);">Actualizado a las ${ts}</span>
           <button onclick="generarEvaluacionHoyIA()" style="background:none;border:none;color:var(--muted);font-size:0.72rem;cursor:pointer;">↺ Actualizar</button>
@@ -4834,7 +4844,7 @@ function renderTimeContextCard() {
     action = 'Ver progreso'; actionFn = "showPage('progreso')";
   } else if (h >= 20) {
     msg = `🌙 Final del día — ${meals.length >= 2 ? '¡bien registrado hoy!' : 'aún puedes completar el registro'}`;
-    action = 'Resumen del día'; actionFn = "document.getElementById('evening-summary-card')?.scrollIntoView({behavior:'smooth'})";
+    action = 'Resumen del día'; actionFn = "scrollToEveningSummary()";
   } else {
     el.innerHTML = ''; return;
   }
