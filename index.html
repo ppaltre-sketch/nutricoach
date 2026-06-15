@@ -70,8 +70,8 @@
     /* ── WATER TRACKER ── */
     .water-row{display:flex;align-items:center;gap:12px;padding:10px 0 4px;}
     .water-label{font-size:0.78rem;color:var(--muted);font-weight:600;white-space:nowrap;}
-    .water-glasses{display:flex;gap:5px;flex:1;}
-    .glass{font-size:1.25rem;cursor:pointer;opacity:.25;transition:opacity .15s,transform .1s;line-height:1;}
+    .water-glasses{display:flex;flex-wrap:wrap;gap:6px;flex:1;justify-content:center;}
+    .glass{font-size:1.25rem;cursor:pointer;opacity:.25;transition:opacity .15s,transform .1s;line-height:1;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;padding:0;}
     .glass.filled{opacity:1;}
     .glass:active{transform:scale(.85);}
     .water-count{font-size:0.72rem;color:var(--blue);font-weight:700;white-space:nowrap;}
@@ -221,8 +221,8 @@
     .spinner-accent{border-color:rgba(129,140,248,.2);border-top-color:var(--accent);}
 
     /* TOAST */
-    #toast{position:fixed;bottom:calc(var(--nav-h) + 14px);left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface2);color:var(--text);padding:10px 18px;border-radius:10px;font-size:0.83rem;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:999;border:1px solid var(--border);white-space:nowrap;max-width:90vw;text-align:center;}
-    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    #toast{position:fixed;bottom:calc(var(--nav-h) + 14px);left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface2);color:var(--text);padding:10px 18px;border-radius:10px;font-size:0.83rem;font-weight:500;opacity:0;pointer-events:none;transition:opacity .3s,transform .2s;z-index:999;border:1px solid var(--border);white-space:nowrap;max-width:90vw;text-align:center;display:none;align-items:center;}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);display:flex;}
 
     /* EMPTY STATE */
     .empty-state{padding:30px 16px;text-align:center;color:var(--muted);}
@@ -495,9 +495,9 @@
 
     /* ── SWIPE TO DELETE ── */
     .meal-item-wrap { position:relative; overflow:hidden; border-radius:10px; margin-bottom:6px; }
-    .meal-item-delete-bg { position:absolute; right:0; top:0; bottom:0; width:80px; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.8rem; font-weight:700; border-radius:0 10px 10px 0; }
+    .meal-item-delete-bg { position:absolute; right:0; top:0; bottom:0; width:100px; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.8rem; font-weight:700; border-radius:0 10px 10px 0; }
     .meal-item-inner { transition:transform .2s; background:var(--surface2); border-radius:10px; position:relative; }
-    .meal-item-inner.swiped { transform:translateX(-80px); }
+    .meal-item-inner.swiped { transform:translateX(-100px); }
 
     /* ── RING ANIMATION ── */
     @keyframes ringFill { from { stroke-dasharray: 0 999 } }
@@ -1035,31 +1035,27 @@
               <button class="chip" data-val="constipada" onclick="toggleCuerpoChip(this)">🤒 Constipada</button>
             </div>
           </div>
-          <div style="margin-bottom:10px;">
-            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Ciclo</div>
-            <div class="chips" id="chips-ciclo" style="margin:0;">
-              <button class="chip" data-val="menstruacion" onclick="selectChip(this,'ciclo')">🔴 Regla</button>
-              <button class="chip" data-val="folicular" onclick="selectChip(this,'ciclo')">🌱 Post-regla</button>
-              <button class="chip selected" data-val="ovulacion" onclick="selectChip(this,'ciclo')">✨ Ovulación</button>
-              <button class="chip" data-val="lutea" onclick="selectChip(this,'ciclo')">🌙 Pre-regla</button>
-              <button class="chip" data-val="nodice" onclick="selectChip(this,'ciclo')">🤷 No sé</button>
-            </div>
-          </div>
-          <div style="margin-bottom:10px;">
-            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Disponible</div>
-            <div class="chips" id="chips-opciones" style="margin:0;">
-              <button class="chip selected" data-val="paseo"      onclick="toggleChip(this)">🚶 Madrid Río</button>
-              <button class="chip selected" data-val="classpass"  onclick="toggleChip(this)">🏋️ ClassPass</button>
-              <button class="chip selected" data-val="youtube"    onclick="toggleChip(this)">📺 YouTube</button>
-              <button class="chip selected" data-val="bandas"     onclick="toggleChip(this)">🎯 Bandas</button>
-              <button class="chip selected" data-val="kettlebell" onclick="toggleChip(this)">⚫ Kettlebell</button>
-              <button class="chip selected" data-val="cinta"      onclick="toggleChip(this)">🏃 Cinta</button>
-            </div>
-          </div>
-          <!-- chips weather y notas en detalles colapsables -->
+          <!-- chips ciclo, equipo y notas en detalles colapsables -->
           <details style="margin-bottom:10px;">
-            <summary style="font-size:0.78rem;color:var(--muted);cursor:pointer;list-style:none;">+ Más opciones (tiempo, notas)</summary>
+            <summary style="font-size:0.78rem;color:var(--muted);cursor:pointer;list-style:none;">+ Afinar: equipo disponible, tiempo y notas</summary>
             <div style="margin-top:8px;">
+              <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Ciclo</div>
+              <div class="chips" id="chips-ciclo" style="margin:0 0 10px;">
+                <button class="chip" data-val="menstruacion" onclick="selectChip(this,'ciclo')">🔴 Regla</button>
+                <button class="chip" data-val="folicular" onclick="selectChip(this,'ciclo')">🌱 Post-regla</button>
+                <button class="chip selected" data-val="ovulacion" onclick="selectChip(this,'ciclo')">✨ Ovulación</button>
+                <button class="chip" data-val="lutea" onclick="selectChip(this,'ciclo')">🌙 Pre-regla</button>
+                <button class="chip" data-val="nodice" onclick="selectChip(this,'ciclo')">🤷 No sé</button>
+              </div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Disponible</div>
+              <div class="chips" id="chips-opciones" style="margin:0 0 10px;">
+                <button class="chip selected" data-val="paseo"      onclick="toggleChip(this)">🚶 Madrid Río</button>
+                <button class="chip selected" data-val="classpass"  onclick="toggleChip(this)">🏋️ ClassPass</button>
+                <button class="chip selected" data-val="youtube"    onclick="toggleChip(this)">📺 YouTube</button>
+                <button class="chip selected" data-val="bandas"     onclick="toggleChip(this)">🎯 Bandas</button>
+                <button class="chip selected" data-val="kettlebell" onclick="toggleChip(this)">⚫ Kettlebell</button>
+                <button class="chip selected" data-val="cinta"      onclick="toggleChip(this)">🏃 Cinta</button>
+              </div>
               <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Tiempo fuera</div>
               <div class="chips" id="chips-weather" style="margin:0 0 10px;">
                 <button class="chip selected" data-val="soleado" onclick="selectChip(this,'weather')">☀️ Sol</button>
@@ -1504,7 +1500,10 @@
       <div style="width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">💪</div>
     </div>
   </div>
-  <button id="main-fab" onclick="toggleFab()" style="width:54px;height:54px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:1.6rem;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.5);display:flex;align-items:center;justify-content:center;transition:transform .2s;">➕</button>
+  <button id="main-fab" onclick="toggleFab()" style="height:48px;border-radius:24px;background:var(--accent);color:#fff;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.5);display:flex;align-items:center;justify-content:center;gap:6px;padding:0 18px;transition:transform .2s;white-space:nowrap;">
+    <span id="main-fab-icon" style="font-size:1rem;transition:transform .2s;">＋</span>
+    <span>Añadir</span>
+  </button>
 </div>
 <!-- legacy fab alias for showPage hide logic -->
 <button id="fab" style="display:none;"></button>
@@ -2181,11 +2180,11 @@ function renderHome(){
   if(searchWrap) searchWrap.style.display = allHistorical.length >= 3 ? 'block' : 'none';
 
   if(meals.length===0){
-    const es = getEmptyMealsMessage();
-    listEl.innerHTML=`<div style="padding:24px 8px;text-align:center;">
-      <div style="font-size:2.2rem;margin-bottom:10px;">${es.icon}</div>
-      <div style="font-size:0.875rem;color:var(--muted);line-height:1.5;margin-bottom:14px;">${es.msg}</div>
-      <button onclick="showPage('add')" style="padding:10px 20px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:0.85rem;min-height:44px;">${es.btn}</button>
+    listEl.innerHTML=`<div style="text-align:center;padding:20px 12px;border:1.5px dashed rgba(129,140,248,.2);border-radius:12px;margin-bottom:4px;">
+      <div style="font-size:2rem;margin-bottom:8px;">🍽️</div>
+      <div style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:4px;">Aún no has registrado nada hoy</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;line-height:1.5;">Empieza añadiendo tu primera comida — solo tardas unos segundos</div>
+      <button onclick="showAddFoodSheet()" style="padding:9px 20px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer;">🍽️ Añadir primera comida</button>
     </div>`;
     updateNavDots();
     return;
@@ -2251,10 +2250,11 @@ function saveWaterGoal(){
 function renderWaterTracker(){
   const w=getWater();
   const goal=getWaterGoal();
-  const glasses=Array.from({length:goal},(_,i)=>`<span class="glass${i<w?' filled':''}" onclick="setGlass(${i+1})">💧</span>`).join('');
+  const glasses=Array.from({length:goal},(_,i)=>`<button class="glass${i<w?' filled':''}" onclick="setGlass(${i+1})">💧</button>`).join('');
   let waterMsg='';
   if(w>=goal) waterMsg=`<div style="font-size:0.75rem;color:var(--green);font-weight:700;margin-top:6px;text-align:center;">🎉 ¡Objetivo de hidratación completado!</div>`;
   else if(w>=Math.ceil(goal*0.75)) waterMsg=`<div style="font-size:0.75rem;color:var(--accent);margin-top:6px;text-align:center;">💧 Casi — ${goal-w} vaso${goal-w>1?'s':''} más para tu objetivo</div>`;
+  const waterZeroMsg = w === 0 ? `<div style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:8px;">Empieza el día hidratada 💧 — un vaso ahora</div>` : '';
   document.getElementById('water-tracker-wrap').innerHTML=`
     <div class="card" style="padding:12px 16px;">
       <div class="water-row">
@@ -2262,7 +2262,7 @@ function renderWaterTracker(){
         <div class="water-glasses">${glasses}</div>
         <span class="water-count">${w}/${goal}</span>
       </div>
-      ${waterMsg}
+      ${waterZeroMsg}${waterMsg}
     </div>`;
 }
 function renderWaterReminder(){
@@ -2526,7 +2526,7 @@ Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima
     setTimeout(()=>document.getElementById('ing-resultado').scrollIntoView({behavior:'smooth',block:'start'}),100);
 
   }catch(e){
-    showToast('Error al calcular: '+e.message);
+    showToast('Error al calcular: '+e.message, 2600, true);
   }
   btn.disabled=false;btn.innerHTML='Calcular macros con IA';
 }
@@ -2866,7 +2866,7 @@ async function verifyApiKey(){
     showToast('✓ API Key funcionando');
   }catch(e){
     document.getElementById('api-key-status').innerHTML=`<span style="color:var(--red)">✗ Error: ${esc(e.message)}</span>`;
-    showToast('Error de conexión — revisa la key');
+    showToast('Error de conexión — revisa la key', 2600, true);
   }
   btn.disabled=false;btn.innerHTML='<span id="verify-icon">🔗</span> Probar conexión';
 }
@@ -2901,7 +2901,7 @@ async function recalcGoals(){
       saveGoals();showToast('✓ Objetivos calculados y guardados');
       renderGoalsHint();
     }
-  }catch(e){showToast('Error al calcular');}
+  }catch(e){showToast('Error al calcular', 2600, true);}
   btn.disabled=false;btn.innerHTML='✨ Calcular con IA mis objetivos';
 }
 
@@ -3247,7 +3247,7 @@ Responde SOLO JSON sin texto adicional:
       saveRetosData({week:getWeekKey(),retos:json.retos.map(t=>({texto:t,done:false}))});
       renderRetos();showToast('🎯 Retos generados');
     }
-  }catch(e){showToast('Error al generar retos');}
+  }catch(e){showToast('Error al generar retos', 2600, true);}
   btn.disabled=false;btn.innerHTML='↺ Regenerar retos';
 }
 
@@ -3333,7 +3333,7 @@ async function lookupBarcode(code){
     document.getElementById('barcode-result').style.display='block';
     showToast('✓ Producto encontrado');
     setTimeout(()=>document.getElementById('barcode-result').scrollIntoView({behavior:'smooth',block:'start'}),100);
-  }catch(e){showToast('Error buscando producto');}
+  }catch(e){showToast('Error buscando producto', 2600, true);}
   document.getElementById('barcode-scan-status').style.display='none';
 }
 
@@ -3951,7 +3951,7 @@ function quickRepeatMeal(mJson) {
     showToast('✓ ' + m.name + ' añadida');
     renderHome();
     renderQuickMealChips();
-  } catch(e) { showToast('Error al añadir'); }
+  } catch(e) { showToast('Error al añadir', 2600, true); }
 }
 
 function renderHomeSuggestionCard() {
@@ -4105,7 +4105,7 @@ Sugiere UN snack concreto que encaje. Máximo 3-4 líneas: qué comer exactament
     const el = document.getElementById('hambre-result');
     el.style.display = 'block';
     el.textContent = res;
-  }catch(e){ showToast('Error: '+e.message); }
+  }catch(e){ showToast('Error: '+e.message, 2600, true); }
   btn.innerHTML = 'Qué puedo comer';
   btn.disabled = false;
 }
@@ -4456,7 +4456,7 @@ Responde con esta estructura (máximo 180 palabras):
       <div class="ai-bubble" style="margin-bottom:10px;">${formatAI(res)}</div>
       <div style="font-size:0.72rem;color:var(--muted);">Plan guardado — mañana por la mañana verás si lo cumpliste</div>`;
   } catch(e) {
-    showToast('Error: ' + e.message);
+    showToast('Error: ' + e.message, 2600, true);
   }
   btn.disabled = false;
   btn.innerHTML = '🔍 Analizar plan';
@@ -4779,7 +4779,7 @@ Tono: cálido, breve, sin juicio. Menciona 1 cosa buena concreta y 1 pequeño ap
     const res=await callClaudeWithTimeout([{role:'user',content:prompt}]);
     localStorage.setItem('nc_evening_'+dk(),res);
     renderEveningSummary();
-  }catch(e){showToast('Error: '+e.message);}
+  }catch(e){showToast('Error: '+e.message, 2600, true);}
 }
 
 // ═══════════════ FEATURE 6: DÍA DIFÍCIL ═══════════════
@@ -4810,7 +4810,7 @@ Sin calorías, sin presión, sin markdown. Texto corrido, máximo 5-6 frases en 
     renderDiaDificil();
   }catch(e){
     el.innerHTML=`<button class="dia-dificil-btn" onclick="generateDiaDificil()">🆘 Hoy es un día difícil</button>`;
-    showToast('Error: '+e.message);
+    showToast('Error: '+e.message, 2600, true);
   }
 }
 
@@ -4988,7 +4988,7 @@ async function adjustPlateauPlan(){
     if(card){
       card.innerHTML=`<div style="display:flex;gap:8px;align-items:flex-start;"><span>📊</span><div style="font-size:0.82rem;line-height:1.6;">${esc(res)}<br><button onclick="localStorage.setItem('nc_plateau_ack_${dk()}','1');document.getElementById('plateau-card')?.remove();" style="margin-top:8px;background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;">Cerrar ✕</button></div></div>`;
     }
-  }catch(e){showToast('Error: '+e.message);if(btn){btn.disabled=false;btn.innerHTML='Ajustar mi plan';}}
+  }catch(e){showToast('Error: '+e.message, 2600, true);if(btn){btn.disabled=false;btn.innerHTML='Ajustar mi plan';}}
 }
 
 // ═══════════════ FEATURE: HAPTIC ═══════════════
@@ -5001,15 +5001,16 @@ let fabOpen = false;
 function toggleFab() {
   fabOpen = !fabOpen;
   document.getElementById('fab-options').style.display = fabOpen ? 'flex' : 'none';
-  document.getElementById('main-fab').style.transform = fabOpen ? 'rotate(45deg)' : 'rotate(0)';
+  const fabIcon = document.getElementById('main-fab-icon');
+  if(fabIcon) fabIcon.textContent = fabOpen ? '✕' : '＋';
   if (fabOpen) vibrate(30);
 }
 function closeFab() {
   fabOpen = false;
   const fo = document.getElementById('fab-options');
   if(fo) fo.style.display = 'none';
-  const mf = document.getElementById('main-fab');
-  if(mf) mf.style.transform = 'rotate(0)';
+  const fabIcon = document.getElementById('main-fab-icon');
+  if(fabIcon) fabIcon.textContent = '＋';
 }
 function quickAddWater() {
   const w = getWater();
@@ -5276,9 +5277,28 @@ if('serviceWorker' in navigator){
 
 function fileToBase64(f){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.onerror=j;fr.readAsDataURL(f);});}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);
+function showToast(msg, duration=2600, isError=false){
+  const t=document.getElementById('toast');
+  if(!t)return;
+  t.style.display='flex';
+  t.style.alignItems='center';
+  t.style.pointerEvents= isError ? 'auto' : 'none';
+  t.style.background = isError ? 'rgba(239,68,68,.15)' : '';
+  t.style.border = isError ? '1px solid rgba(239,68,68,.3)' : '1px solid var(--border)';
+  t.style.whiteSpace = isError ? 'normal' : 'nowrap';
+  if(isError){
+    t.innerHTML=`<span style="flex:1;">${msg}</span><button onclick="this.closest('#toast').classList.remove('show');setTimeout(()=>{const t=document.getElementById('toast');t.style.display='none';t.style.background='';t.style.border='';},300)" style="background:none;border:none;color:inherit;font-size:1rem;cursor:pointer;padding:0 0 0 8px;opacity:.7;flex-shrink:0;">✕</button>`;
+    t.classList.add('show');
+    clearTimeout(t._t);
+    return;
+  }
+  t.innerHTML=msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>{
+    t.classList.remove('show');
+    setTimeout(()=>{t.style.display='none';t.style.background='';t.style.border='';t.style.pointerEvents='none';},300);
+  },duration);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -5621,7 +5641,7 @@ Usa exactamente este formato JSON, sin texto adicional:
     renderWeeklyPlan();
     showToast('✓ Plan de la semana generado');
   }catch(e){
-    showToast('Error: '+e.message);
+    showToast('Error: '+e.message, 2600, true);
   }
   if(btn){ btn.disabled=false; btn.innerHTML='✨ Generar plan con IA'; }
 }
@@ -5977,7 +5997,7 @@ Propón el plan de 7 días de forma concreta y breve: qué hacer cada día (3-4 
     if(resultEl){
       resultEl.innerHTML=`<div style="font-size:0.8rem;line-height:1.65;color:var(--text);border-top:1px solid rgba(251,146,60,.2);padding-top:10px;margin-top:4px;">${esc(res)}</div>`;
     }
-  }catch(e){showToast('Error: '+e.message);}
+  }catch(e){showToast('Error: '+e.message, 2600, true);}
   btn.disabled=false;btn.innerHTML='Semana de descarga';
 }
 
@@ -6932,7 +6952,7 @@ El plan debe:
     vibrate([30,20,30]);
   }catch(e){
     if(el)el.innerHTML=`<div class="status-strip warn">Error al generar: ${esc(e.message)}</div>`;
-    showToast('Error al generar plan');
+    showToast('Error al generar plan', 2600, true);
   }
 }
 
@@ -8665,7 +8685,7 @@ Usa valores reales de tablas nutricionales. Si no tienes cantidad exacta, estima
         <button onclick="guardarDesdeDescribir('${esc(nombre).replace(/'/g,"\\'")}',${p},${c},${f},${fib})" class="btn btn-primary" style="width:100%;">✓ Añadir a mi registro</button>
       </div>`;
   } catch(e) {
-    showToast('Error al calcular — ' + e.message);
+    showToast('Error al calcular — ' + e.message, 2600, true);
     btn.disabled = false;
     btn.innerHTML = '✨ Calcular macros con IA';
     return;
@@ -8791,7 +8811,7 @@ Usa valores reales de tablas nutricionales españolas. Redondea a 1 decimal.`;
       </div>`;
     btn.style.display = 'none';
   } catch(e) {
-    showToast('Error: ' + e.message);
+    showToast('Error: ' + e.message, 2600, true);
     btn.disabled = false;
     btn.innerHTML = '✨ Calcular y guardar';
   }
@@ -9789,7 +9809,7 @@ Redondea a 1 decimal. Sé generoso con las grasas (restaurante usa más aceite q
       </div>`;
     btn.disabled=false; btn.innerHTML='✨ Recalcular';
   }catch(e){
-    showToast('Error: '+e.message);
+    showToast('Error: '+e.message, 2600, true);
     btn.disabled=false; btn.innerHTML='✨ Estimar macros';
   }
 }
