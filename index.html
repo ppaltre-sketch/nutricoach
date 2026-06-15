@@ -606,6 +606,7 @@
       <div id="prot-dist-indicator" style="display:none;padding:0 2px;"></div>
       <div id="sleep-hunger-banner" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:0.75rem;color:var(--muted);line-height:1.5;display:none;align-items:flex-start;gap:8px;"><span style="font-size:1rem;flex-shrink:0;">😴</span><div><strong style="color:var(--text);">Dormiste poco anoche</strong> — hoy tendrás más hambre de lo normal. Es fisiológico (grelina elevada), no es falta de voluntad. Prioriza proteína y no saltes comidas.</div></div>
       <div id="ciclo-nutricion-banner" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:0.75rem;color:var(--muted);line-height:1.5;display:none;"></div>
+      <div id="modo-evento-banner"></div>
       <div id="water-tracker-wrap"></div>
       <div id="daily-score-card"></div>
       <div id="status-messages"></div>
@@ -881,6 +882,7 @@
         <div class="ia-tab" id="ia-tab-restaurante" onclick="setIATab('restaurante')">🍽️ Restaurante</div>
       </div>
       <div id="comer-history-section"></div>
+      <div id="comer-bebidas-cta" style="margin-bottom:12px;"></div>
       <!-- Almuerzo -->
       <div id="ia-almuerzo-section">
         <div id="almuerzo-remaining"></div>
@@ -1523,6 +1525,10 @@
       <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">💪 Actividad de ayer</span>
       <div style="width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">💪</div>
     </div>
+    <div class="fab-option" onclick="closeFab();showBebidasSheet()" style="display:flex;align-items:center;gap:8px;">
+      <span style="background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:0.78rem;color:var(--text);white-space:nowrap;">🍹 Salgo esta noche</span>
+      <div style="width:40px;height:40px;border-radius:50%;background:rgba(167,139,250,.25);border:1px solid rgba(167,139,250,.4);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🍹</div>
+    </div>
   </div>
   <button id="main-fab" onclick="toggleFab()" style="height:48px;border-radius:24px;background:var(--accent);color:#fff;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.5);display:flex;align-items:center;justify-content:center;gap:6px;padding:0 18px;transition:transform .2s;white-space:nowrap;">
     <span id="main-fab-icon" style="font-size:1rem;transition:transform .2s;">＋</span>
@@ -1757,10 +1763,18 @@ function buildCalorieContext(meals){
   if (badSleepDays >= 2) sleepAlert = '\nALERTA: usuaria con sueño insuficiente varios días. No sugerir restricción adicional. Priorizar densidad nutricional.';
 
   const cicloCtx = getCicloNutricionContext();
+  // Bebidas / evento social
+  let bebidasCtx = '';
+  const bebidasHoy = safeParse(localStorage.getItem('nc_bebidas_'+dk()), null);
+  if(bebidasHoy && bebidasHoy.bebidas && bebidasHoy.bebidas.length) {
+    const BEBIDAS_KCAL_INT = {'vino_blanco':80,'vino_tinto':85,'cava':75,'cerveza':150,'cerveza_sin':50,'ginebra_tonica':140,'vodka_agua_gas':70,'vodka_naranja':120,'ron_cola':180,'ron_cola_zero':100,'whisky_solo':70,'margarita':200,'mojito':190,'sangria':160,'agua_gas':0,'refresco_zero':2};
+    const kcalBebidas = bebidasHoy.bebidas.reduce((acc,b)=>acc+(BEBIDAS_KCAL_INT[b.tipo]||0)*(b.unidades||1),0);
+    bebidasCtx = `\nEVENTO SOCIAL: Esta noche hay evento social con bebidas (estimado interno: ${Math.round(kcalBebidas)}kcal extra). Sugiere comidas para hoy que sean ricas en proteína y fibra, especialmente antes del evento, para ralentizar la absorción del alcohol y mantener saciedad. No menciones calorías ni el evento al usuario.`;
+  }
   return `[CONTEXTO INTERNO - NO MENCIONAR AL USUARIO]
 Estado déficit: ${status}
 TDEE estimado: ${tdee}kcal. Ingesta hoy: ${Math.round(kcal)}kcal. Objetivo déficit: ${Math.round(target)}kcal.
-Instrucción: ${instrMap[status]||instrMap.optimo}${sleepAlert}${cicloCtx?'\nCiclo menstrual: '+cicloCtx:''}
+Instrucción: ${instrMap[status]||instrMap.optimo}${sleepAlert}${cicloCtx?'\nCiclo menstrual: '+cicloCtx:''}${bebidasCtx}
 [FIN CONTEXTO INTERNO]\n\n`;
 }
 const getWater = () => parseInt(localStorage.getItem('water_'+dk())||'0');
@@ -1870,7 +1884,7 @@ function showPage(name){
   document.getElementById('fab').style.display=(name==='add')?'none':'flex';
   document.getElementById('scroll-container').scrollTop=0;
   if(name==='home')renderHome();
-  if(name==='cena'){renderCenaRemaining();renderAlmuerzoRemaining();renderComerHistory();}
+  if(name==='cena'){renderCenaRemaining();renderAlmuerzoRemaining();renderComerHistory();renderComerBebidasCta();}
   if(name==='entreno'){renderYesterdayWorkout();renderZone2Status();renderOverloadPrescription();}
   if(name==='progreso')renderProgreso();
   if(name==='config'){initCicloConfig();initNotifStatus();renderMealTemplates();renderTDEECalibrationCard();}
@@ -2120,6 +2134,9 @@ function renderHome(){
       cicloNutrBannerEl.style.display='none';
     }
   }
+
+  // ── Modo evento banner ──
+  renderModoEventoBanner();
 
   // ── Water tracker ──
   renderWaterTracker();
@@ -10034,6 +10051,409 @@ function renderPostWorkoutBanner(){
         <button onclick="localStorage.setItem('nc_postworkout_dismissed_'+dk(),'1');renderPostWorkoutBanner();" style="padding:6px 8px;border-radius:20px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem;">✕</button>
       </div>
     </div>`;
+}
+
+// ═══════════════ FEATURE: BEBIDAS SOCIALES ═══════════════
+
+const BEBIDAS_KCAL = {
+  'vino_blanco': 80,
+  'vino_tinto': 85,
+  'cava': 75,
+  'cerveza': 150,
+  'cerveza_sin': 50,
+  'ginebra_tonica': 140,
+  'vodka_agua_gas': 70,
+  'vodka_naranja': 120,
+  'ron_cola': 180,
+  'ron_cola_zero': 100,
+  'whisky_solo': 70,
+  'margarita': 200,
+  'mojito': 190,
+  'sangria': 160,
+  'agua_gas': 0,
+  'refresco_zero': 2,
+};
+
+function getBebidasRecomendacion(tipo_noche, apetece, licor_color, mezcla) {
+  if (apetece === 'no_alcohol') {
+    return {
+      titulo: 'Agua con gas + lima + menta',
+      tipo_key: 'agua_gas',
+      explicacion: 'Un mocktail elegante que pasa perfectamente como copa. Sin alcohol, sin drama — y nadie lo nota.',
+      tips: _getTipsNoche(tipo_noche)
+    };
+  }
+  if (apetece === 'burbuja') {
+    return {
+      titulo: 'Cava o Prosecco',
+      tipo_key: 'cava',
+      explicacion: 'Menos azúcar que el champán de imitación y muchas burbujas. Pequeñas copas, disfrutadas despacio.',
+      tips: _getTipsNoche(tipo_noche)
+    };
+  }
+  if (apetece === 'cerveza') {
+    return {
+      titulo: 'Cerveza sin alcohol o Radler light',
+      tipo_key: 'cerveza_sin',
+      explicacion: 'La opción más ligera si te apetece cerveza. La sin sabe prácticamente igual y no interrumpe tu progreso.',
+      tips: _getTipsNoche(tipo_noche)
+    };
+  }
+  if (apetece === 'fresco') {
+    const usaAgua = !mezcla || mezcla.includes('agua_gas') || mezcla.includes('sin_preferencia');
+    if (usaAgua) {
+      return {
+        titulo: 'Vodka con agua con gas y lima',
+        tipo_key: 'vodka_agua_gas',
+        explicacion: 'La opción más ligera con alcohol. Fresca, fácil de beber despacio y muy versátil.',
+        tips: _getTipsNoche(tipo_noche)
+      };
+    }
+    return {
+      titulo: 'Ginebra con tónica slimline',
+      tipo_key: 'ginebra_tonica',
+      explicacion: 'Pide tónica slimline si la tienen — menos azúcar que la normal. Añade una rodaja de pepino o lima.',
+      tips: _getTipsNoche(tipo_noche)
+    };
+  }
+  if (apetece === 'licor') {
+    const esBlanco = licor_color !== 'marron';
+    const m = mezcla || [];
+    if (esBlanco) {
+      if (m.includes('cola')) {
+        return {
+          titulo: 'Vodka con Coca-Cola Zero',
+          tipo_key: 'ron_cola_zero',
+          explicacion: 'Elige Zero en vez de normal — mismo sabor, sin el azúcar del refresco.',
+          tips: _getTipsNoche(tipo_noche)
+        };
+      }
+      if (m.includes('tonica')) {
+        return {
+          titulo: 'Ginebra con tónica slimline',
+          tipo_key: 'ginebra_tonica',
+          explicacion: 'Clásica y elegante. Pide tónica slimline si hay — tiene mucho menos azúcar.',
+          tips: _getTipsNoche(tipo_noche)
+        };
+      }
+      return {
+        titulo: 'Vodka con agua con gas',
+        tipo_key: 'vodka_agua_gas',
+        explicacion: 'La opción más ligera con alcohol. Añade lima o limón para darle sabor sin calorías extra.',
+        tips: _getTipsNoche(tipo_noche)
+      };
+    } else {
+      if (m.includes('cola')) {
+        return {
+          titulo: 'Ron con Coca-Cola Zero',
+          tipo_key: 'ron_cola_zero',
+          explicacion: 'Cambia la normal por Zero — mismo sabor caramelado, sin el azúcar del refresco.',
+          tips: _getTipsNoche(tipo_noche)
+        };
+      }
+      return {
+        titulo: 'Whisky solo o con hielo',
+        tipo_key: 'whisky_solo',
+        explicacion: 'Saboréalo despacio. Sin mezcla ni azúcar añadido — es la forma más limpia de tomarlo.',
+        tips: _getTipsNoche(tipo_noche)
+      };
+    }
+  }
+  // fallback
+  return {
+    titulo: 'Agua con gas con lima',
+    tipo_key: 'agua_gas',
+    explicacion: 'Siempre puedes empezar con agua con gas — hidratas, y te da tiempo a ver qué apetece.',
+    tips: _getTipsNoche(tipo_noche)
+  };
+}
+
+function _getTipsNoche(tipo_noche) {
+  const base = 'Come algo antes si puedes — el alcohol en ayunas se absorbe más rápido y da más hambre después.';
+  const map = {
+    'cena':     'Pide agua entre copas, te hidrata y reduce el total de la noche.',
+    'fiesta':   'Alterna una bebida con alcohol y una sin. El agua con gas pasa perfectamente como copa.',
+    'drinks':   'Elige tónica slimline si hay, tiene menos azúcar que la normal.',
+    'empresa':  'En eventos de empresa nadie cuenta lo que bebes — elige con calma lo que más te apetezca.',
+    'celebracion': 'Es una celebración, disfrútala. La constancia es lo que importa, no una noche.',
+  };
+  return [map[tipo_noche] || '', base].filter(Boolean);
+}
+
+function renderModoEventoBanner() {
+  const el = document.getElementById('modo-evento-banner');
+  if (!el) return;
+  const data = safeParse(localStorage.getItem('nc_bebidas_' + dk()), null);
+  if (data && data.modo_evento) {
+    el.style.marginBottom = '12px';
+    el.innerHTML = `
+      <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.2rem;">🎉</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--text);">Modo evento activo</div>
+          <div style="font-size:0.72rem;color:var(--muted);">Disfruta sin culpa. Mañana volvemos a la rutina 💜</div>
+        </div>
+        <button onclick="verBebidasHoy()" style="margin-left:auto;font-size:0.7rem;color:var(--accent);background:none;border:none;cursor:pointer;white-space:nowrap;padding:4px 0;">Ver →</button>
+      </div>`;
+  } else {
+    el.style.marginBottom = '';
+    el.innerHTML = '';
+  }
+}
+
+function renderComerBebidasCta() {
+  const el = document.getElementById('comer-bebidas-cta');
+  if (!el) return;
+  const data = safeParse(localStorage.getItem('nc_bebidas_' + dk()), null);
+  if (data && data.modo_evento) {
+    el.innerHTML = `
+      <button onclick="verBebidasHoy()" style="width:100%;padding:11px;border-radius:12px;border:1px solid rgba(167,139,250,.35);background:rgba(167,139,250,.08);color:var(--accent);font-size:0.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+        🎉 Modo evento activo — ver recomendación
+      </button>`;
+  } else {
+    el.innerHTML = `
+      <button onclick="showBebidasSheet()" style="width:100%;padding:11px;border-radius:12px;border:1px dashed rgba(167,139,250,.35);background:rgba(167,139,250,.06);color:var(--accent);font-size:0.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+        🍹 Modo evento / salgo esta noche
+      </button>`;
+  }
+}
+
+let _bebidasState = {};
+
+function showBebidasSheet(prefill) {
+  _bebidasState = prefill || { step: 1 };
+  if (!_bebidasState.step) _bebidasState.step = 1;
+  _renderBebidasSheet();
+}
+
+function _renderBebidasSheet() {
+  document.getElementById('bebidas-sheet')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'bebidas-sheet';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:flex;align-items:flex-end;';
+
+  const step = _bebidasState.step || 1;
+  let innerHtml = '';
+
+  if (step === 1) {
+    innerHtml = `
+      <div style="font-size:1rem;font-weight:800;margin-bottom:4px;">🍹 Salgo esta noche</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;">¿Qué tipo de noche es?</div>
+      <div class="chips" style="margin-bottom:20px;">
+        ${_bebidasChip('cena','🍽️ Cena con amigos/familia','tipo_noche')}
+        ${_bebidasChip('fiesta','🎉 Fiesta / Boda','tipo_noche')}
+        ${_bebidasChip('drinks','🍸 Drinks / Después de trabajo','tipo_noche')}
+        ${_bebidasChip('empresa','📅 Evento empresa','tipo_noche')}
+        ${_bebidasChip('celebracion','🎄 Celebración','tipo_noche')}
+      </div>
+      <button onclick="_bebidasNext()" class="btn btn-primary" id="bebidas-next-btn" ${!_bebidasState.tipo_noche?'disabled':''}>Siguiente →</button>`;
+  } else if (step === 2) {
+    innerHtml = `
+      <div style="font-size:1rem;font-weight:800;margin-bottom:4px;">🍹 ¿Qué te apetece beber?</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;">Sin compromiso, solo dinos lo que te pide el cuerpo</div>
+      <div class="chips" style="margin-bottom:20px;">
+        ${_bebidasChip('burbuja','🥂 Algo con burbuja','apetece')}
+        ${_bebidasChip('fresco','🍋 Algo fresco / afrutado','apetece')}
+        ${_bebidasChip('licor','🥃 Algo con carácter (licor)','apetece')}
+        ${_bebidasChip('cerveza','🍺 Cerveza','apetece')}
+        ${_bebidasChip('no_alcohol','😌 Prefiero no beber alcohol','apetece')}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="_bebidasBack()" class="btn btn-secondary" style="max-width:80px;">← Volver</button>
+        <button onclick="_bebidasNext()" class="btn btn-primary" id="bebidas-next-btn" ${!_bebidasState.apetece?'disabled':''}>Siguiente →</button>
+      </div>`;
+  } else if (step === 3) {
+    innerHtml = `
+      <div style="font-size:1rem;font-weight:800;margin-bottom:4px;">🥃 ¿Blanco o marrón?</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;">El color del licor cambia bastante las opciones</div>
+      <div class="chips" style="margin-bottom:20px;">
+        ${_bebidasChip('blanco','⚪ Blanco (vodka, ginebra, tequila)','licor_color')}
+        ${_bebidasChip('marron','🟤 Marrón (ron, whisky, bourbon)','licor_color')}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="_bebidasBack()" class="btn btn-secondary" style="max-width:80px;">← Volver</button>
+        <button onclick="_bebidasNext()" class="btn btn-primary" id="bebidas-next-btn" ${!_bebidasState.licor_color?'disabled':''}>Siguiente →</button>
+      </div>`;
+  } else if (step === 4) {
+    innerHtml = `
+      <div style="font-size:1rem;font-weight:800;margin-bottom:4px;">🫧 ¿Con qué lo mezclas?</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;">Puedes elegir varias opciones</div>
+      <div class="chips" style="margin-bottom:20px;" id="mezcla-chips">
+        ${_bebidasChipMulti('agua_gas','Agua con gas')}
+        ${_bebidasChipMulti('tonica','Tónica')}
+        ${_bebidasChipMulti('cola','Coca-Cola / Zero')}
+        ${_bebidasChipMulti('zumo','Zumo de naranja')}
+        ${_bebidasChipMulti('solo','Solo / on the rocks')}
+        ${_bebidasChipMulti('sin_preferencia','Sin preferencia')}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="_bebidasBack()" class="btn btn-secondary" style="max-width:80px;">← Volver</button>
+        <button onclick="_bebidasGoToRecomendacion()" class="btn btn-primary">Ver recomendación ✨</button>
+      </div>`;
+  } else if (step === 5) {
+    const rec = _bebidasState.recomendacion;
+    const tipsHtml = rec && rec.tips ? rec.tips.map(t=>`<div style="display:flex;gap:8px;margin-bottom:8px;"><span style="color:var(--accent);flex-shrink:0;">→</span><span>${esc(t)}</span></div>`).join('') : '';
+    innerHtml = `
+      <div style="font-size:1rem;font-weight:800;margin-bottom:4px;">✨ Tu recomendación</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Basada en lo que nos has contado</div>
+      <div style="background:var(--surface2);border-radius:14px;padding:16px;margin-bottom:12px;">
+        <div style="font-size:1.4rem;margin-bottom:6px;">🍹</div>
+        <div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${esc(rec?.titulo||'')}</div>
+        <div style="font-size:0.78rem;color:var(--muted);line-height:1.6;">${esc(rec?.explicacion||'')}</div>
+      </div>
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Consejos para esta noche</div>
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:18px;">${tipsHtml}</div>
+      <div style="display:flex;gap:8px;flex-direction:column;">
+        <button onclick="_bebidasGuardar()" class="btn btn-primary">✓ Anotado, me lo llevo</button>
+        <button onclick="document.getElementById('bebidas-sheet').remove()" class="btn btn-ghost" style="font-size:0.82rem;">Solo consulta, no anoto</button>
+      </div>`;
+  }
+
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:92vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="display:flex;gap:6px;">${[1,2,3,4,5].map(i=>`<div style="width:${i===step?24:8}px;height:6px;border-radius:99px;background:${i===step?'var(--accent)':i<step?'rgba(129,140,248,.4)':'var(--surface3)'}; transition:width .2s;"></div>`).join('')}</div>
+        <button onclick="document.getElementById('bebidas-sheet').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;min-height:44px;min-width:44px;">✕</button>
+      </div>
+      ${innerHtml}
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+}
+
+function _bebidasChip(value, label, field) {
+  const sel = _bebidasState[field] === value;
+  return `<span class="chip${sel?' selected':''}" onclick="_bebidasSelect('${field}','${value}',this)">${label}</span>`;
+}
+
+function _bebidasChipMulti(value, label) {
+  const arr = _bebidasState.mezcla || [];
+  const sel = arr.includes(value);
+  return `<span class="chip${sel?' selected':''}" onclick="_bebidasToggleMezcla('${value}',this)">${label}</span>`;
+}
+
+function _bebidasSelect(field, value, el) {
+  _bebidasState[field] = value;
+  // Update chip UI
+  el.closest('.chips').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  // Enable next button
+  const btn = document.getElementById('bebidas-next-btn');
+  if (btn) btn.disabled = false;
+  vibrate(20);
+}
+
+function _bebidasToggleMezcla(value, el) {
+  if (!_bebidasState.mezcla) _bebidasState.mezcla = [];
+  const idx = _bebidasState.mezcla.indexOf(value);
+  if (idx >= 0) {
+    _bebidasState.mezcla.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    _bebidasState.mezcla.push(value);
+    el.classList.add('selected');
+  }
+  vibrate(20);
+}
+
+function _bebidasNext() {
+  const step = _bebidasState.step || 1;
+  if (step === 1 && !_bebidasState.tipo_noche) return;
+  if (step === 2 && !_bebidasState.apetece) return;
+  if (step === 3 && !_bebidasState.licor_color) return;
+
+  if (step === 2) {
+    // Skip step 3 (licor color) if not licor
+    if (_bebidasState.apetece !== 'licor') {
+      _bebidasState.step = 4;
+      _bebidasState.licor_color = null;
+    } else {
+      _bebidasState.step = 3;
+    }
+  } else {
+    _bebidasState.step = step + 1;
+  }
+  _renderBebidasSheet();
+}
+
+function _bebidasBack() {
+  const step = _bebidasState.step || 1;
+  if (step === 4 && _bebidasState.apetece !== 'licor') {
+    _bebidasState.step = 2;
+  } else {
+    _bebidasState.step = Math.max(1, step - 1);
+  }
+  _renderBebidasSheet();
+}
+
+function _bebidasGoToRecomendacion() {
+  _bebidasState.recomendacion = getBebidasRecomendacion(
+    _bebidasState.tipo_noche,
+    _bebidasState.apetece,
+    _bebidasState.licor_color,
+    _bebidasState.mezcla || []
+  );
+  _bebidasState.step = 5;
+  _renderBebidasSheet();
+}
+
+function _bebidasGuardar() {
+  const rec = _bebidasState.recomendacion;
+  const bebida = {
+    tipo: rec?.tipo_key || 'agua_gas',
+    cantidad: '1 copa',
+    unidades: 1
+  };
+  const data = {
+    evento: _bebidasState.tipo_noche,
+    bebidas: [bebida],
+    recomendacion_aceptada: true,
+    recomendacion_titulo: rec?.titulo,
+    recomendacion_explicacion: rec?.explicacion,
+    tips: rec?.tips,
+    modo_evento: true
+  };
+  localStorage.setItem('nc_bebidas_' + dk(), JSON.stringify(data));
+  document.getElementById('bebidas-sheet')?.remove();
+  renderModoEventoBanner();
+  renderComerBebidasCta();
+  vibrate([30, 20, 50]);
+  showToast('¡Que lo pases genial! 🎉');
+}
+
+function verBebidasHoy() {
+  const data = safeParse(localStorage.getItem('nc_bebidas_' + dk()), null);
+  if (!data) return;
+
+  document.getElementById('ver-bebidas-sheet')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'ver-bebidas-sheet';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:flex;align-items:flex-end;';
+
+  const tipsHtml = (data.tips || []).map(t => `<div style="display:flex;gap:8px;margin-bottom:8px;"><span style="color:var(--accent);flex-shrink:0;">→</span><span>${esc(t)}</span></div>`).join('');
+
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:92vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:1rem;font-weight:800;">🎉 Esta noche</div>
+        <button onclick="document.getElementById('ver-bebidas-sheet').remove()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;min-height:44px;min-width:44px;">✕</button>
+      </div>
+      <div style="background:var(--surface2);border-radius:14px;padding:16px;margin-bottom:12px;">
+        <div style="font-size:1.4rem;margin-bottom:6px;">🍹</div>
+        <div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${esc(data.recomendacion_titulo || '')}</div>
+        <div style="font-size:0.78rem;color:var(--muted);line-height:1.6;">${esc(data.recomendacion_explicacion || '')}</div>
+      </div>
+      ${tipsHtml ? `<div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Consejos para esta noche</div>
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:18px;">${tipsHtml}</div>` : ''}
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('ver-bebidas-sheet').remove();showBebidasSheet()" class="btn btn-secondary" style="font-size:0.82rem;">✏️ Modificar</button>
+        <button onclick="document.getElementById('ver-bebidas-sheet').remove()" class="btn btn-primary" style="font-size:0.82rem;">Cerrar</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
 }
 </script>
 </body>
