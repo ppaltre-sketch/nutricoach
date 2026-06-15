@@ -585,6 +585,8 @@
     <!-- ═══ HOME ═══ -->
     <div class="page active" id="page-home">
       <div id="time-context-card"></div>
+      <div id="evening-prompt-hoy" style="margin-bottom:12px;"></div>
+      <div id="home-suggestion-card" style="margin-bottom:12px;display:none;"></div>
       <div id="survivor-semaforo"></div>
       <div id="daily-todos" style="display:flex;gap:8px;margin-bottom:12px;"></div>
       <div id="repeat-yesterday-banner"></div>
@@ -618,6 +620,10 @@
           <input type="text" id="meal-search-input" placeholder="🔍 Buscar en historial..." oninput="filterMealHistory()" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;" />
         </div>
         <div id="repeat-yesterday-chip" style="margin-bottom:8px;"></div>
+        <div id="quick-meal-chips" style="margin-bottom:10px;display:none;"></div>
+        <button onclick="showAddFoodSheet()" style="width:100%;padding:13px;border-radius:12px;border:2px dashed rgba(129,140,248,.35);background:rgba(129,140,248,.06);color:var(--accent);font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;" id="add-food-cta-hoy">
+          <span style="font-size:1.1rem;">🍽️</span> Añadir comida
+        </button>
         <div id="meals-list"></div>
       </div>
       <div id="hoy-extras-toggle"></div>
@@ -2204,6 +2210,9 @@ function renderHome(){
   renderRepeatYesterdayBanner();
   renderQuickSnacks();
   renderPostWorkoutBanner();
+  renderQuickMealChips();
+  renderHomeSuggestionCard();
+  renderEveningPrompt();
 }
 
 function dismissOnboard(){
@@ -3818,12 +3827,112 @@ function checkSetupFromURL(){
 // ═══════════════ MORNING CHECK-IN ═══════════════
 let checkinState = {sueno: null, hambre: null, cuerpo: null};
 
+function renderEveningPrompt() {
+  const el = document.getElementById('evening-prompt-hoy');
+  if (!el) return;
+  const h = new Date().getHours();
+  const done = localStorage.getItem('nc_evening_checkin_' + dk());
+  if (h < 19 || done) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(129,140,248,.05));border:1px solid rgba(129,140,248,.2);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div>
+        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:2px;">🌙 ¿Cómo ha ido el día?</div>
+        <div style="font-size:0.75rem;color:var(--muted);">Toca para ver tu evaluación y cerrar el día</div>
+      </div>
+      <button onclick="scrollToEveningSection()" style="padding:8px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px;">Ver →</button>
+    </div>`;
+}
+
+function scrollToEveningSection() {
+  const targets = ['evening-summary-card','evening-checkin-wrap','eval-hoy-ia-wrap','evaluacion-hoy-section'];
+  for (const id of targets) {
+    const el = document.getElementById(id);
+    if (el) { el.scrollIntoView({behavior:'smooth'}); return; }
+  }
+}
+
+function renderQuickMealChips() {
+  const el = document.getElementById('quick-meal-chips');
+  if (!el) return;
+  const todayMeals = getMeals().map(m => m.name.toLowerCase());
+  const seen = new Set(todayMeals);
+  const recent = [];
+  for (let i = 1; i <= 7 && recent.length < 4; i++) {
+    const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    const meals = getMeals(d);
+    for (const m of meals) {
+      const key = m.name.toLowerCase();
+      if (!seen.has(key) && recent.length < 4) {
+        seen.add(key);
+        recent.push(m);
+      }
+    }
+  }
+  if (!recent.length) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:600;">⚡ Repetir rápido</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      ${recent.map(m => `
+        <button onclick="quickRepeatMeal(${JSON.stringify(JSON.stringify(m))})" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;">
+          ${esc(m.name)}
+        </button>`).join('')}
+    </div>`;
+}
+
+function quickRepeatMeal(mJson) {
+  try {
+    const m = JSON.parse(mJson);
+    const meals = getMeals();
+    meals.push({
+      ...m,
+      time: new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'}),
+      id: Date.now()
+    });
+    localStorage.setItem('meals_' + dk(), JSON.stringify(meals));
+    vibrate([30,20,30]);
+    showToast('✓ ' + m.name + ' añadida');
+    renderHome();
+    renderQuickMealChips();
+  } catch(e) { showToast('Error al añadir'); }
+}
+
+function renderHomeSuggestionCard() {
+  const el = document.getElementById('home-suggestion-card');
+  if (!el) return;
+  const h = new Date().getHours();
+  const min = new Date().getMinutes();
+  const hh = h + min/60;
+
+  let label, fn, timeLabel;
+  if (hh >= 12 && hh < 14.5) {
+    label = '🥗 ¿Qué almuerzo hoy?';
+    fn = 'getAlmuerzoSuggestion';
+    timeLabel = 'Sugerencia de almuerzo';
+  } else if (hh >= 18 && hh < 21) {
+    label = '🌙 ¿Qué ceno hoy?';
+    fn = 'getCenaSuggestion';
+    timeLabel = 'Sugerencia de cena';
+  } else {
+    el.style.display = 'none';
+    return;
+  }
+
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="font-size:0.85rem;font-weight:600;color:var(--text);">${label}</div>
+      <button onclick="showPage('cena');setTimeout(()=>${fn}&&${fn}(),200)" style="padding:7px 12px;border-radius:10px;border:none;background:var(--green);color:#0f172a;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px;">Ver →</button>
+    </div>`;
+}
+
 function checkMorningCheckin(){
   const key = 'nc_checkin_' + dk();
   if(localStorage.getItem(key)) return; // already done today
-  // Show only between 5:00 and 12:00
+  // Show any time from 5:00 onwards (no upper time gate)
   const h = new Date().getHours();
-  if(h >= 5 && h < 12){
+  if(h >= 5){
     document.getElementById('checkin-overlay').style.display = 'flex';
   }
 }
