@@ -1011,12 +1011,18 @@
             </div>
           </div>
           <div style="margin-bottom:10px;">
-            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Cuerpo hoy</div>
-            <div class="chips" id="chips-cuerpo" style="margin:0;">
-              <button class="chip selected" data-val="bien" onclick="selectChip(this,'cuerpo')">✅ Bien</button>
-              <button class="chip" data-val="agujetas" onclick="selectChip(this,'cuerpo')">😬 Agujetas</button>
-              <button class="chip" data-val="cansada" onclick="selectChip(this,'cuerpo')">😴 Cansada</button>
-              <button class="chip" data-val="molestia" onclick="selectChip(this,'cuerpo')">🤕 Molestia</button>
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">Cuerpo hoy <span style="font-size:0.68rem;opacity:.6;">(puedes marcar varios)</span></div>
+            <div class="chips" id="chips-cuerpo" style="margin:0 0 6px;flex-wrap:wrap;">
+              <button class="chip selected" data-val="bien" onclick="toggleCuerpoChip(this)">✅ Bien</button>
+              <button class="chip" data-val="cansada" onclick="toggleCuerpoChip(this)">😴 Cansada</button>
+              <button class="chip" data-val="estresada" onclick="toggleCuerpoChip(this)">😰 Estresada</button>
+              <button class="chip" data-val="agujetas_piernas" onclick="toggleCuerpoChip(this)">🦵 Agujetas piernas</button>
+              <button class="chip" data-val="agujetas_brazos" onclick="toggleCuerpoChip(this)">💪 Agujetas brazos</button>
+              <button class="chip" data-val="agujetas_espalda" onclick="toggleCuerpoChip(this)">🔙 Agujetas espalda</button>
+              <button class="chip" data-val="molestia_rodilla" onclick="toggleCuerpoChip(this)">🦵 Molestia rodilla</button>
+              <button class="chip" data-val="molestia_espalda" onclick="toggleCuerpoChip(this)">🤕 Dolor espalda</button>
+              <button class="chip" data-val="hinchada" onclick="toggleCuerpoChip(this)">💧 Hinchada</button>
+              <button class="chip" data-val="constipada" onclick="toggleCuerpoChip(this)">🤒 Constipada</button>
             </div>
           </div>
           <div style="margin-bottom:10px;">
@@ -1581,7 +1587,7 @@
 
 <script>
 // ═══════════════ STATE ═══════════════
-let chipState = {energia:'alta', tiempo:'30', weather:'soleado', cuerpo:'bien', intensidad:'suave', ciclo:'ovulacion'};
+let chipState = {energia:'alta', tiempo:'30', weather:'soleado', cuerpo:'bien', cuerpoArr:['bien'], intensidad:'suave', ciclo:'ovulacion'};
 let chipOpciones = new Set(['paseo','classpass','youtube','bandas','kettlebell','cinta']);
 let scannedMacros = null;
 let scanPortion = 1; // 1 = completa, 0.5 = mitad
@@ -2674,15 +2680,22 @@ async function getEntrenoSuggestion(){
 
 Clienta: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Vive junto a Madrid Río. Tiene ClassPass.
 Objetivo: reducir peso y volumen, ganar fuerza, relación sana con el ejercicio.
-Energía mental: ${chipState.energia} | Estado físico: ${chipState.cuerpo} | Tiempo: ${chipState.tiempo} min | Tiempo exterior: ${chipState.weather}
+Energía mental: ${chipState.energia} | Tiempo disponible: ${chipState.tiempo} min | Tiempo exterior: ${chipState.weather}
+Estado físico hoy: ${(chipState.cuerpoArr&&chipState.cuerpoArr.length?chipState.cuerpoArr:['bien']).join(', ')}
 Fase ciclo menstrual: ${chipState.ciclo==='menstruacion'?'MENSTRUACIÓN (fase 1) — priorizar descanso activo, yoga, estiramientos, nada de alta intensidad, respetar el cuerpo':chipState.ciclo==='folicular'?'FASE FOLICULAR post-regla (fase 2) — energía creciente, buen momento para aumentar intensidad y cargas, el cuerpo responde muy bien al entrenamiento':chipState.ciclo==='ovulacion'?'OVULACIÓN (fase 3) — pico de energía y fuerza, momento ideal para entrenamientos intensos, HIIT, fuerza máxima':chipState.ciclo==='lutea'?'FASE LÚTEA pre-regla (fase 4) — energía bajando, posible retención e hinchazón, preferir fuerza moderada y pilates sobre cardio intenso, escuchar el cuerpo':'No especificada — propón entrenamiento equilibrado'}
 Opciones disponibles: ${opciones||'no especificadas'}
 ${notas?'Petición especial: '+notas:''}
 ${meals.length>0?'Ha comido hoy: '+meals.map(m=>m.name).join(', '):''}
 ${lastW?'Último entreno: '+lastW+' — propón algo diferente o complementario':''}
-${chipState.cuerpo==='agujetas'?'IMPORTANTE: tiene agujetas — evita trabajar los mismos grupos musculares, prioriza movilidad o un grupo diferente.':''}
-${chipState.cuerpo==='molestia'?'IMPORTANTE: tiene alguna molestia física — propón algo de bajo impacto, sin forzar, que le siente bien.':''}
-${chipState.cuerpo==='cansada'?'IMPORTANTE: cuerpo cansado — sesión suave o de recuperación activa, nada intenso hoy.':''}
+${(chipState.cuerpoArr||[]).includes('agujetas_piernas')?'IMPORTANTE: agujetas en piernas — evita sentadillas, lunges, carrera. Trabaja tren superior o movilidad.':''}
+${(chipState.cuerpoArr||[]).includes('agujetas_brazos')?'IMPORTANTE: agujetas en brazos/hombros — evita press, remo, jalones. Trabaja cardio suave o tren inferior.':''}
+${(chipState.cuerpoArr||[]).includes('agujetas_espalda')?'IMPORTANTE: agujetas en espalda — nada de peso en espalda, prioriza movilidad de columna y core suave.':''}
+${(chipState.cuerpoArr||[]).includes('molestia_rodilla')?'IMPORTANTE: molestia en rodilla — sin impacto, sin sentadillas profundas. Natación, bici suave, tren superior.':''}
+${(chipState.cuerpoArr||[]).includes('molestia_espalda')?'IMPORTANTE: dolor de espalda — nada de carga axial ni peso muerto. Movilidad suave o core muy controlado.':''}
+${(chipState.cuerpoArr||[]).includes('cansada')?'IMPORTANTE: cuerpo cansado — sesión suave o recuperación activa. Que el entreno la deje bien, no agotada.':''}
+${(chipState.cuerpoArr||[]).includes('estresada')?'IMPORTANTE: estresada — prioriza yoga, pilates, paseo largo. Nada competitivo ni de alta intensidad.':''}
+${(chipState.cuerpoArr||[]).includes('hinchada')?'IMPORTANTE: se siente hinchada — evitar impacto fuerte. Yoga, pilates o caminar son buena opción.':''}
+${(chipState.cuerpoArr||[]).includes('constipada')?'IMPORTANTE: constipada — propón algo muy suave o descanso activo ligero.':''}
 ${chipState.ciclo==='menstruacion'?'RECUERDA: está con la regla — sé empática, nada de presión, validar que descansar también es entreno.':''}
 ${daysSinceWorkout>=5?'IMPORTANTE: lleva '+daysSinceWorkout+' días sin entrenar — propón vuelta gradual y motivadora, que dé ganas de volver mañana.':''}
 ${daysSinceWorkout>=3&&daysSinceWorkout<5?'Lleva unos días sin entrenar — propón algo motivador que la enganche de nuevo.':''}
@@ -2734,6 +2747,35 @@ function toggleChip(el){
   const v=el.dataset.val;
   if(chipOpciones.has(v)){chipOpciones.delete(v);el.classList.remove('selected');}
   else{chipOpciones.add(v);el.classList.add('selected');}
+}
+function toggleCuerpoChip(el){
+  const v = el.dataset.val;
+  const arr = chipState.cuerpoArr;
+  // Si pulsa "bien", deselecciona todo lo demás
+  if(v === 'bien'){
+    chipState.cuerpoArr = ['bien'];
+    chipState.cuerpo = 'bien';
+    document.querySelectorAll('#chips-cuerpo .chip').forEach(c => {
+      c.classList.toggle('selected', c.dataset.val === 'bien');
+    });
+    return;
+  }
+  // Si pulsa cualquier otra cosa, quita "bien"
+  const bienChip = document.querySelector('#chips-cuerpo .chip[data-val="bien"]');
+  if(bienChip) bienChip.classList.remove('selected');
+  const idx = arr.indexOf(v);
+  if(idx > -1){ arr.splice(idx,1); el.classList.remove('selected'); }
+  else { arr.push(v); el.classList.add('selected'); }
+  // Si queda vacío, vuelve a "bien"
+  if(arr.length === 0 || (arr.length === 1 && arr[0] === 'bien')){
+    chipState.cuerpoArr = ['bien'];
+    chipState.cuerpo = 'bien';
+    if(bienChip) bienChip.classList.add('selected');
+  } else {
+    const filtered = arr.filter(x => x !== 'bien');
+    chipState.cuerpoArr = filtered;
+    chipState.cuerpo = filtered[0] || 'bien';
+  }
 }
 
 // ═══════════════ CONFIG ═══════════════
@@ -7208,15 +7250,22 @@ getEntrenoSuggestion=async function(){
 
 Clienta: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm, actividad ${p.actividad}. Vive junto a Madrid Río. Tiene ClassPass.
 Objetivo: reducir peso y volumen, ganar fuerza, relación sana con el ejercicio.
-Energía mental: ${chipState.energia} | Estado físico: ${chipState.cuerpo} | Tiempo: ${chipState.tiempo} min | Tiempo exterior: ${chipState.weather}
+Energía mental: ${chipState.energia} | Tiempo disponible: ${chipState.tiempo} min | Tiempo exterior: ${chipState.weather}
+Estado físico hoy: ${(chipState.cuerpoArr&&chipState.cuerpoArr.length?chipState.cuerpoArr:['bien']).join(', ')}
 Fase ciclo menstrual: ${chipState.ciclo==='menstruacion'?'MENSTRUACIÓN (fase 1) — priorizar descanso activo, yoga, estiramientos, nada de alta intensidad, respetar el cuerpo':chipState.ciclo==='folicular'?'FASE FOLICULAR post-regla (fase 2) — energía creciente, buen momento para aumentar intensidad y cargas, el cuerpo responde muy bien al entrenamiento':chipState.ciclo==='ovulacion'?'OVULACIÓN (fase 3) — pico de energía y fuerza, momento ideal para entrenamientos intensos, HIIT, fuerza máxima':chipState.ciclo==='lutea'?'FASE LÚTEA pre-regla (fase 4) — energía bajando, posible retención e hinchazón, preferir fuerza moderada y pilates sobre cardio intenso, escuchar el cuerpo':'No especificada — propón entrenamiento equilibrado'}
 Opciones disponibles: ${opciones||'no especificadas'}
 ${notas?'Petición especial: '+notas:''}
 ${meals.length>0?'Ha comido hoy: '+meals.map(m=>m.name).join(', '):''}
 ${lastW?'Último entreno: '+lastW+' — propón algo diferente o complementario':''}
-${chipState.cuerpo==='agujetas'?'IMPORTANTE: tiene agujetas — evita trabajar los mismos grupos musculares, prioriza movilidad o un grupo diferente.':''}
-${chipState.cuerpo==='molestia'?'IMPORTANTE: tiene alguna molestia física — propón algo de bajo impacto, sin forzar, que le siente bien.':''}
-${chipState.cuerpo==='cansada'?'IMPORTANTE: cuerpo cansado — sesión suave o de recuperación activa, nada intenso hoy.':''}
+${(chipState.cuerpoArr||[]).includes('agujetas_piernas')?'IMPORTANTE: agujetas en piernas — evita sentadillas, lunges, carrera. Trabaja tren superior o movilidad.':''}
+${(chipState.cuerpoArr||[]).includes('agujetas_brazos')?'IMPORTANTE: agujetas en brazos/hombros — evita press, remo, jalones. Trabaja cardio suave o tren inferior.':''}
+${(chipState.cuerpoArr||[]).includes('agujetas_espalda')?'IMPORTANTE: agujetas en espalda — nada de peso en espalda, prioriza movilidad de columna y core suave.':''}
+${(chipState.cuerpoArr||[]).includes('molestia_rodilla')?'IMPORTANTE: molestia en rodilla — sin impacto, sin sentadillas profundas. Natación, bici suave, tren superior.':''}
+${(chipState.cuerpoArr||[]).includes('molestia_espalda')?'IMPORTANTE: dolor de espalda — nada de carga axial ni peso muerto. Movilidad suave o core muy controlado.':''}
+${(chipState.cuerpoArr||[]).includes('cansada')?'IMPORTANTE: cuerpo cansado — sesión suave o recuperación activa. Que el entreno la deje bien, no agotada.':''}
+${(chipState.cuerpoArr||[]).includes('estresada')?'IMPORTANTE: estresada — prioriza yoga, pilates, paseo largo. Nada competitivo ni de alta intensidad.':''}
+${(chipState.cuerpoArr||[]).includes('hinchada')?'IMPORTANTE: se siente hinchada — evitar impacto fuerte. Yoga, pilates o caminar son buena opción.':''}
+${(chipState.cuerpoArr||[]).includes('constipada')?'IMPORTANTE: constipada — propón algo muy suave o descanso activo ligero.':''}
 ${chipState.ciclo==='menstruacion'?'RECUERDA: está con la regla — sé empática, nada de presión, validar que descansar también es entreno.':''}
 ${daysSinceWorkout>=5?'IMPORTANTE: lleva '+daysSinceWorkout+' días sin entrenar — propón vuelta gradual y motivadora, que dé ganas de volver mañana.':''}
 ${daysSinceWorkout>=3&&daysSinceWorkout<5?'Lleva unos días sin entrenar — propón algo motivador que la enganche de nuevo.':''}
