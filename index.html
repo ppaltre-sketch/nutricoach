@@ -5289,7 +5289,7 @@ function showHistorialModal(){
 // ═══════════════════════════════════════════════════════════
 // FEATURE 2: WEEKLY PLANNER
 // ═══════════════════════════════════════════════════════════
-const PLAN_TYPES=['Fuerza','CrossFit','Cardio','ClassPass','Madrid Río','Yoga/Pilates','Descanso activo','Descanso'];
+const PLAN_TYPES=['💪 Fuerza','⚡ CrossFit','🏃 Cardio','🧗 ClassPass','🏞️ Madrid Río','🧘 Yoga/Pilates','🎯 Bandas','⚫ Kettlebell','🏊 Natación','😴 Descanso activo','🛌 Descanso'];
 const DAY_NAMES=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
 function getWeeklyPlan(weekKey){ return safeParse(localStorage.getItem('nc_weekly_plan_'+(weekKey||getWeekKey())), null); }
@@ -5316,9 +5316,10 @@ function renderWeeklyPlan(){
   const todayDayIdx=(new Date().getDay()+6)%7; // Mon=0
 
   // Count completed vs planned training days
-  const trainingDays=plan.filter(d=>d.type&&d.type!=='Descanso'&&d.type!=='Descanso activo').length;
+  const trainingDays=plan.filter(d=>{const t=Array.isArray(d.types)?d.types:(d.type?[d.type]:[]);return t.length>0&&!t.every(x=>x.includes('Descanso'));}).length;
   const completedDays=plan.filter((d,i)=>{
-    if(!d.type||d.type==='Descanso')return false;
+    const t=Array.isArray(d.types)?d.types:(d.type?[d.type]:[]);
+    if(!t.length||t.every(x=>x.includes('Descanso')))return false;
     // check if session logged that day
     const dayDate=new Date(weekKey);dayDate.setDate(dayDate.getDate()+i);
     const dayKey=dayDate.toISOString().split('T')[0];
@@ -5342,34 +5343,123 @@ function renderWeeklyPlan(){
     const dayKey=dayDate.toISOString().split('T')[0];
     const hasActivity=getSessionExercises(dayKey).length>0||
       safeParse(localStorage.getItem('nc_activity_'+dayKey), {"actividades":[]}).actividades.length>0;
-    const d=plan[i]||{type:'',done:false};
+    const d=plan[i]||{types:[],done:false};
+    // backwards compat: migrate old single-type string
+    const types=Array.isArray(d.types)?d.types:(d.type?[d.type]:[]);
     const isDone=d.done||hasActivity;
+    const isDescanso=types.some(t=>t.includes('Descanso'));
     return `
-      <div class="wplan-day${isToday?' today':''}">
-        <div class="wplan-day-name">${name}${isToday?'<br><span style="color:var(--accent);font-size:0.6rem;">HOY</span>':''}</div>
-        <div class="wplan-type-chips">
-          ${PLAN_TYPES.map(t=>`<span class="wplan-type-chip${d.type===t?' selected':''}" onclick="setPlanDayType(${i},'${t}')">${t}</span>`).join('')}
+      <div class="wplan-day${isToday?' today':''}" style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div class="wplan-day-name" style="font-weight:700;font-size:0.82rem;">${name}${isToday?'&nbsp;<span style="color:var(--accent);font-size:0.65rem;font-weight:800;">HOY</span>':''}</div>
+          <div class="wplan-done${isDone?' done':''}" onclick="togglePlanDone(${i})" style="min-width:28px;min-height:28px;border-radius:50%;border:2px solid ${isDone?'var(--green)':'var(--border)'};background:${isDone?'rgba(52,211,153,.15)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.8rem;color:var(--green);">${isDone?'✓':''}</div>
         </div>
-        <div class="wplan-done${isDone?' done':''}" onclick="togglePlanDone(${i})">${isDone?'✓':''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${PLAN_TYPES.map(t=>{
+            const sel=types.includes(t);
+            return `<span onclick="setPlanDayType(${i},'${t}')" style="padding:4px 10px;border-radius:14px;font-size:0.72rem;cursor:pointer;border:1px solid ${sel?'var(--accent)':'var(--border)'};background:${sel?'rgba(129,140,248,.18)':'var(--surface2)'};color:${sel?'var(--accent)':'var(--muted)'};font-weight:${sel?'700':'400'};transition:all .15s;">${t}</span>`;
+          }).join('')}
+        </div>
+        ${types.length&&!isDescanso?`<div style="font-size:0.7rem;color:var(--muted);margin-top:5px;">Planificado: ${types.join(' + ')}</div>`:''}
       </div>`;
   }).join('');
 }
 
 function setPlanDayType(dayIdx,type){
   const weekKey=getMondayDate();
-  let plan=getWeeklyPlan(weekKey)||DAY_NAMES.map(()=>({type:'',done:false}));
-  plan[dayIdx].type=plan[dayIdx].type===type?'':type;
+  let plan=getWeeklyPlan(weekKey)||DAY_NAMES.map(()=>({types:[],done:false}));
+  const d=plan[dayIdx]||{types:[],done:false};
+  // backwards compat
+  if(!Array.isArray(d.types)) d.types=d.type?[d.type]:[];
+  const restTypes=['😴 Descanso activo','🛌 Descanso'];
+  const isRest=restTypes.includes(type);
+  const idx=d.types.indexOf(type);
+  if(idx>-1){
+    d.types.splice(idx,1);
+  } else {
+    // If selecting a rest type, clear other selections (and vice versa)
+    if(isRest) d.types=d.types.filter(t=>restTypes.includes(t));
+    else d.types=d.types.filter(t=>!restTypes.includes(t));
+    d.types.push(type);
+  }
+  plan[dayIdx]=d;
   saveWeeklyPlan(plan,weekKey);
   renderWeeklyPlan();
 }
 
 function togglePlanDone(dayIdx){
   const weekKey=getMondayDate();
-  let plan=getWeeklyPlan(weekKey)||DAY_NAMES.map(()=>({type:'',done:false}));
+  let plan=getWeeklyPlan(weekKey)||DAY_NAMES.map(()=>({types:[],done:false}));
+  if(!Array.isArray(plan[dayIdx].types)) plan[dayIdx].types=plan[dayIdx].type?[plan[dayIdx].type]:[];
   plan[dayIdx].done=!plan[dayIdx].done;
   saveWeeklyPlan(plan,weekKey);
   renderWeeklyPlan();
   checkAndUnlockAchievements();
+}
+
+async function generarPlanSemanalIA(){
+  if(!getApiKey()){ showToast('Configura tu API Key primero'); return; }
+  const btn=document.getElementById('plan-ia-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='<div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></div> Generando...'; }
+
+  const p=getProfile();
+  const weekKey=getMondayDate();
+  const today=new Date().getDay(); // 0=dom
+  const todayIdx=(today+6)%7; // Mon=0
+
+  // gather last 7 days activity
+  const actDays=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(weekKey);d.setDate(d.getDate()+i);
+    const key=d.toISOString().slice(0,10);
+    const act=safeParse(localStorage.getItem('nc_activity_'+key),{actividades:[],pasos:0});
+    if(act.actividades.length>0) actDays.push(DAY_NAMES[i]+': '+act.actividades.map(a=>a.tipo).join(', '));
+  }
+
+  const ciclo=chipState.ciclo||localStorage.getItem('nc_ciclo_hoy')||'nodice';
+  const energia=chipState.energia||'media';
+  const cuerpo=(chipState.cuerpoArr&&chipState.cuerpoArr.length?chipState.cuerpoArr:['bien']).join(', ');
+  const opciones=[...chipOpciones].join(', ')||'todas';
+
+  const prompt=`Eres entrenadora personal experta en fitness femenino y pérdida de volumen. Diseña el plan de entrenamiento para esta semana (lunes a domingo).
+
+Clienta: mujer, ${p.edad} años, ${p.peso}kg, ${p.altura}cm. Objetivo: reducir volumen/talla 40. Tiene ClassPass y Madrid Río cerca.
+Hoy es ${DAY_NAMES[todayIdx]}. Energía actual: ${energia}. Estado físico: ${cuerpo}. Ciclo: ${ciclo}.
+Opciones disponibles: ${opciones}.
+${actDays.length?'Ya entrenó esta semana: '+actDays.join(' | '):'Sin entrenamientos esta semana aún.'}
+
+Diseña el plan para los 7 días. Para cada día indica el tipo de entrenamiento (o Descanso). Sé específica pero concisa.
+Usa exactamente este formato JSON, sin texto adicional:
+{"plan":[
+  {"dia":"Lun","tipos":["💪 Fuerza"],"nota":"30 min tren superior con bandas"},
+  {"dia":"Mar","tipos":["🏞️ Madrid Río"],"nota":"45 min ritmo suave"},
+  {"dia":"Mié","tipos":["😴 Descanso activo"],"nota":"paseo o estiramientos"},
+  {"dia":"Jue","tipos":["🧗 ClassPass"],"nota":"Pilates o yoga"},
+  {"dia":"Vie","tipos":["💪 Fuerza","🎯 Bandas"],"nota":"Tren inferior + bandas"},
+  {"dia":"Sáb","tipos":["🏃 Cardio"],"nota":"Madrid Río o cinta 40 min"},
+  {"dia":"Dom","tipos":["🛌 Descanso"],"nota":"Recuperación total"}
+]}`;
+
+  try{
+    const res=await callClaudeWithTimeout([{role:'user',content:prompt}],25000);
+    const json=JSON.parse(res.match(/\{[\s\S]*\}/)?.[0]||'{}');
+    if(!json.plan||!json.plan.length) throw new Error('Respuesta inválida');
+
+    let plan=getWeeklyPlan(weekKey)||DAY_NAMES.map(()=>({types:[],done:false}));
+    json.plan.forEach((d,i)=>{
+      if(!plan[i]) plan[i]={types:[],done:false};
+      if(!Array.isArray(plan[i].types)) plan[i].types=[];
+      // Only fill days that haven't been done yet
+      if(!plan[i].done) plan[i].types=d.tipos||[];
+      if(d.nota) plan[i].nota=d.nota;
+    });
+    saveWeeklyPlan(plan,weekKey);
+    renderWeeklyPlan();
+    showToast('✓ Plan de la semana generado');
+  }catch(e){
+    showToast('Error: '+e.message);
+  }
+  if(btn){ btn.disabled=false; btn.innerHTML='✨ Generar plan con IA'; }
 }
 
 // ═══════════════════════════════════════════════════════════
