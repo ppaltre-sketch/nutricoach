@@ -587,6 +587,7 @@
       <div id="time-context-card"></div>
       <div id="evening-prompt-hoy" style="margin-bottom:12px;"></div>
       <div id="home-suggestion-card" style="margin-bottom:12px;display:none;"></div>
+      <div id="water-reminder-hoy" style="display:none;"></div>
       <div id="survivor-semaforo"></div>
       <div id="daily-todos" style="display:flex;gap:8px;margin-bottom:12px;"></div>
       <div id="repeat-yesterday-banner"></div>
@@ -600,18 +601,21 @@
       <div id="reminder-banners"></div>
       <div id="hoy-plan-card"></div>
       <div id="nutrition-period-card" style="margin-bottom:10px;"></div>
-      <div id="streak-card"></div>
-      <div id="recovery-card" style="margin-bottom:10px;"></div>
       <div id="macro-ring-card"></div>
       <div id="water-tracker-wrap"></div>
-      <div id="sleep-card" style="margin-bottom:10px;"></div>
-      <div id="daily-check-card"></div>
-      <div id="hambre-card"></div>
-      <div id="status-messages"></div>
-      <div id="empujon-card-wrap"></div>
       <div id="daily-score-card"></div>
+      <div id="status-messages"></div>
       <div id="recent-meals-strip"></div>
-      <div id="reto21-card"></div>
+      <div id="home-secondary-toggle" style="margin-bottom:8px;"></div>
+      <div id="home-secondary-content" style="display:none;">
+        <div id="streak-card"></div>
+        <div id="recovery-card" style="margin-bottom:10px;"></div>
+        <div id="sleep-card" style="margin-bottom:10px;"></div>
+        <div id="daily-check-card"></div>
+        <div id="hambre-card"></div>
+        <div id="empujon-card-wrap"></div>
+        <div id="reto21-card"></div>
+      </div>
       <div id="quick-repeat-section"></div>
       <div id="macro-alerts-wrap"></div>
       <div class="card">
@@ -1374,6 +1378,10 @@
           <input type="number" inputmode="decimal" id="cfg-peso-obj" value="69" oninput="saveProfile()" placeholder="Ej: 69" />
         </div>
         <div class="form-group">
+          <label>Objetivo de agua (vasos/día)</label>
+          <input type="number" inputmode="decimal" id="cfg-water-goal" value="8" min="4" max="16" oninput="saveWaterGoal()" style="width:100%;" />
+        </div>
+        <div class="form-group">
           <label>Nivel de actividad</label>
           <select id="cfg-actividad" onchange="onActividadChange()">
             <option value="sedentario">Sedentario (oficina, poco movimiento)</option>
@@ -1769,6 +1777,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('cfg-sexo').value=p.sexo;
   document.getElementById('cfg-actividad').value=p.actividad;
   document.getElementById('cfg-peso-obj').value=p.pesoObj||69;
+  document.getElementById('cfg-water-goal').value=getWaterGoal();
   const g=getGoalsBase();
   document.getElementById('cfg-goal-p').value=g.p;
   document.getElementById('cfg-goal-c').value=g.c;
@@ -1965,8 +1974,16 @@ function renderHome(){
   }
 
   const pctP=P/goals.p, pctC=C/goals.c, pctF=F/goals.f;
+  const allComplete = pctP>=0.95 && pctC>=0.95 && pctF>=0.95 && meals.length>0;
+  const celebKey='nc_ring_celebrated_'+dk();
+  if(allComplete && !localStorage.getItem(celebKey)){
+    localStorage.setItem(celebKey,'1');
+    setTimeout(()=>showToast('🎉 ¡Macros del día completados! Gran trabajo'),300);
+    vibrate([50,30,50,30,50]);
+  }
+  const ringStyle=allComplete?'box-shadow:0 0 20px rgba(52,211,153,.3);border-color:rgba(52,211,153,.3);':'';
   const ringHtml=`
-    <div class="ring-container">
+    <div class="ring-container" style="${ringStyle}">
       <svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
         ${arcBg(offsets[0])}${arcBg(offsets[1])}${arcBg(offsets[2])}
         ${arcFill(pctP,'var(--green)',offsets[0])}
@@ -1974,8 +1991,8 @@ function renderHome(){
         ${arcFill(pctF,'var(--orange)',offsets[2])}
       </svg>
       <div class="ring-center">
-        <div class="ring-status">${ringStatusEmoji}</div>
-        <div class="ring-lbl">${ringStatusLbl}</div>
+        <div class="ring-status">${allComplete?'🎉':ringStatusEmoji}</div>
+        <div class="ring-lbl">${allComplete?'¡listo!':ringStatusLbl}</div>
       </div>
     </div>`;
 
@@ -2021,20 +2038,8 @@ function renderHome(){
       </div>
     </div>`;
 
-  // ── Streak ──
-  renderStreak();
-
-  // ── Recovery card ──
-  renderRecoveryCard();
-
   // ── Water tracker ──
   renderWaterTracker();
-
-  // ── Sleep card ──
-  renderSleepCard();
-
-  // ── Daily check ──
-  renderDailyCheck(meals,goals,getWater(),energyStatus);
 
   // ── Daily Score ──
   renderDailyScore();
@@ -2042,14 +2047,29 @@ function renderHome(){
   // ── Recent meals strip ──
   renderRecentMealsStrip();
 
-  // ── Reto 21 días ──
-  renderReto21();
+  // ── Secondary toggle button ──
+  renderHomeSecondaryToggle();
 
-  // ── Empujón button ──
-  renderEmpujonButton();
-
-  // ── Hambre card ──
-  renderHambreCard();
+  // ── Secondary cards (only if expanded) ──
+  const secOpen = localStorage.getItem('nc_home_secondary_open') === '1';
+  const secContent = document.getElementById('home-secondary-content');
+  if(secContent) secContent.style.display = secOpen ? 'block' : 'none';
+  if(secOpen){
+    // ── Streak ──
+    renderStreak();
+    // ── Recovery card ──
+    renderRecoveryCard();
+    // ── Sleep card ──
+    renderSleepCard();
+    // ── Daily check ──
+    renderDailyCheck(meals,goals,getWater(),energyStatus);
+    // ── Empujón button ──
+    renderEmpujonButton();
+    // ── Hambre card ──
+    renderHambreCard();
+    // ── Reto 21 días ──
+    renderReto21();
+  }
 
   // ── Hoy Extras (evening summary, etc.) ──
   renderHoyExtras();
@@ -2213,6 +2233,7 @@ function renderHome(){
   renderQuickMealChips();
   renderHomeSuggestionCard();
   renderEveningPrompt();
+  renderWaterReminder();
 }
 
 function dismissOnboard(){
@@ -2221,18 +2242,53 @@ function dismissOnboard(){
 }
 
 // ── Water ──
+function getWaterGoal(){ return parseInt(localStorage.getItem('nc_water_goal')||'8'); }
+function saveWaterGoal(){
+  const v = parseInt(document.getElementById('cfg-water-goal')?.value)||8;
+  localStorage.setItem('nc_water_goal', Math.max(4,Math.min(16,v)));
+  renderWaterTracker();
+}
 function renderWaterTracker(){
   const w=getWater();
-  const glasses=Array.from({length:8},(_,i)=>`<span class="glass${i<w?' filled':''}" onclick="setGlass(${i+1})">💧</span>`).join('');
+  const goal=getWaterGoal();
+  const glasses=Array.from({length:goal},(_,i)=>`<span class="glass${i<w?' filled':''}" onclick="setGlass(${i+1})">💧</span>`).join('');
+  let waterMsg='';
+  if(w>=goal) waterMsg=`<div style="font-size:0.75rem;color:var(--green);font-weight:700;margin-top:6px;text-align:center;">🎉 ¡Objetivo de hidratación completado!</div>`;
+  else if(w>=Math.ceil(goal*0.75)) waterMsg=`<div style="font-size:0.75rem;color:var(--accent);margin-top:6px;text-align:center;">💧 Casi — ${goal-w} vaso${goal-w>1?'s':''} más para tu objetivo</div>`;
   document.getElementById('water-tracker-wrap').innerHTML=`
     <div class="card" style="padding:12px 16px;">
       <div class="water-row">
         <span class="water-label">Agua</span>
         <div class="water-glasses">${glasses}</div>
-        <span class="water-count">${w}/8</span>
+        <span class="water-count">${w}/${goal}</span>
+      </div>
+      ${waterMsg}
+    </div>`;
+}
+function renderWaterReminder(){
+  const el=document.getElementById('water-reminder-hoy');
+  if(!el)return;
+  const h=new Date().getHours();
+  const water=getWater();
+  const goal=getWaterGoal();
+  const dismissKey='nc_water_reminder_dismissed_'+dk();
+  if(h<15||water>=Math.floor(goal*0.4)||localStorage.getItem(dismissKey)){
+    el.style.display='none';return;
+  }
+  el.style.display='block';
+  el.innerHTML=`
+    <div style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+      <div>
+        <div style="font-size:0.82rem;font-weight:700;color:#38bdf8;margin-bottom:1px;">💧 Llevas poco agua hoy</div>
+        <div style="font-size:0.72rem;color:var(--muted);">Solo ${water} de ${goal} vasos — bebe algo ahora</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button onclick="quickAddWater();renderWaterReminder();renderWaterTracker();" style="padding:7px 11px;border-radius:8px;border:none;background:#0ea5e9;color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px;">+1 💧</button>
+        <button onclick="localStorage.setItem('nc_water_reminder_dismissed_'+dk(),'1');document.getElementById('water-reminder-hoy').style.display='none'" style="padding:7px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.75rem;cursor:pointer;min-height:44px;">✕</button>
       </div>
     </div>`;
 }
+
 function setGlass(n){
   const cur=getWater();
   setWater(cur===n?n-1:n); // tap same glass = unmark
@@ -2632,7 +2688,7 @@ Usa ingredientes de supermercado español. Cena realista entre semana. Que sacie
     document.getElementById('alternativas-section').style.display='block';
     saveComerHistory(prefs||'Sugerencia de cena', res);
   }catch(e){
-    document.getElementById('cena-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
+    document.getElementById('cena-result').innerHTML=`<div class="card"><div class="status-strip warn" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>⚠️ Error al generar — comprueba tu conexión</span><button onclick="getCenaSuggestion()" style="padding:6px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;">Reintentar</button></div></div>`;
   }
   btn.disabled=false;btn.innerHTML='Sugerir mi cena de hoy';
 }
@@ -2740,7 +2796,7 @@ Adapta la intensidad a energía ${chipState.energia}. Sé concreta y práctica.`
     setLastWorkoutDate(dk());
     renderYesterdayWorkout();
   }catch(e){
-    document.getElementById('entreno-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
+    document.getElementById('entreno-result').innerHTML=`<div class="card"><div class="status-strip warn" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>⚠️ Error al generar — comprueba tu conexión</span><button onclick="getEntrenoSuggestion()" style="padding:6px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;">Reintentar</button></div></div>`;
   }
   btn.disabled=false;btn.innerHTML='Dame un entrenamiento';
 }
@@ -3369,7 +3425,7 @@ Usa ingredientes de supermercado español o tuppers Wetaca. Práctico para entre
     document.getElementById('almuerzo-result').innerHTML=`<div class="card"><div class="card-title">Tu almuerzo de hoy</div><div class="ai-bubble">${formatAI(res)}</div></div>`;
     saveComerHistory(prefs||'Sugerencia de almuerzo', res);
   }catch(e){
-    document.getElementById('almuerzo-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
+    document.getElementById('almuerzo-result').innerHTML=`<div class="card"><div class="status-strip warn" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>⚠️ Error al generar — comprueba tu conexión</span><button onclick="getAlmuerzoSuggestion()" style="padding:6px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;">Reintentar</button></div></div>`;
   }
   btn.disabled=false;btn.innerHTML='Sugerir mi almuerzo';
 }
@@ -4504,8 +4560,7 @@ No uses listas ni headers. Texto corrido.`;
         </div>
       </div>`;
   } catch(e) {
-    wrap.innerHTML = `<button onclick="generarEvaluacionHoyIA()" class="btn btn-secondary" style="width:100%;font-size:0.82rem;">🧠 ¿Cómo voy hoy?</button>`;
-    showToast('Error: ' + e.message);
+    wrap.innerHTML = `<div style="padding:10px;background:var(--surface2);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-size:0.8rem;color:var(--muted);">⚠️ Error al generar la evaluación</span><button onclick="generarEvaluacionHoyIA()" style="padding:6px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;">Reintentar</button></div>`;
   }
 }
 
@@ -7509,7 +7564,7 @@ ESTRUCTURA OBLIGATORIA (siempre incluye las 4 partes):
     // Check achievements after workout generation
     checkAndUnlockAchievements();
   }catch(e){
-    document.getElementById('entreno-result').innerHTML=`<div class="card"><div class="status-strip warn">Error: ${esc(e.message)}</div></div>`;
+    document.getElementById('entreno-result').innerHTML=`<div class="card"><div class="status-strip warn" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>⚠️ Error al generar — comprueba tu conexión</span><button onclick="getEntrenoSuggestion()" style="padding:6px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;">Reintentar</button></div></div>`;
   }
   btn.disabled=false;btn.innerHTML='Dame un entrenamiento';
 };
@@ -8314,6 +8369,21 @@ function renderWeeklyRitual() {
       </div>
     </div>
     <button onclick="saveWeeklyRitual()" class="btn btn-primary" style="width:100%;">Guardar ritual</button>`;
+}
+
+// ═══════════════ SPRINT 2: HOME SECONDARY TOGGLE ═══════════════
+function renderHomeSecondaryToggle(){
+  const el = document.getElementById('home-secondary-toggle');
+  if(!el) return;
+  const open = localStorage.getItem('nc_home_secondary_open') === '1';
+  el.innerHTML = `<button onclick="toggleHomeSecondary()" style="width:100%;padding:9px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:0.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+    <span>${open?'▲':'▼'}</span> ${open?'Ocultar racha, retos y más':'Ver racha, retos y más'}
+  </button>`;
+}
+function toggleHomeSecondary(){
+  const open = localStorage.getItem('nc_home_secondary_open') === '1';
+  localStorage.setItem('nc_home_secondary_open', open ? '0' : '1');
+  renderHome();
 }
 
 // ═══════════════ UX 1: HOY EXTRAS TOGGLE ═══════════════
